@@ -1,75 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
+import SearchPanel from '@/components/reservations/SearchPanel';
+import BookingTable from '@/components/reservations/BookingTable';
+import BookingCard from '@/components/reservations/BookingCard';
+import Modal from '@/components/common/Modal';
 import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Calendar, 
-  User, 
-  Bed, 
-  DollarSign,
-  CheckCircle,
-  Clock,
-  X,
-  Edit,
-  Trash2,
-  Eye
+  Plus,
+  Users,
+  Grid,
+  List,
+  Download,
+  X
 } from 'lucide-react';
-import { mockReservations, mockGuests, mockRooms } from '@/data/mockData';
-import { Reservation } from '@/types';
+import { 
+  mockBookings, 
+  mockGuests, 
+  mockRooms, 
+  mockRoomTypes, 
+  mockRatePlans,
+  mockProperties 
+} from '@/data/mockData';
+import { Booking, Room, RoomType, RatePlan, Guest } from '@/types';
 
 export default function ReservationsPage() {
-  const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showNewReservation, setShowNewReservation] = useState(false);
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
-
-  const filteredReservations = reservations.filter(reservation => {
-    const matchesSearch = reservation.guest?.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         reservation.guest?.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         reservation.room?.number.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || reservation.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
+  const [rooms, setRooms] = useState<Room[]>(mockRooms);
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>(mockRoomTypes);
+  const [ratePlans, setRatePlans] = useState<RatePlan[]>(mockRatePlans);
+  const [guests, setGuests] = useState<Guest[]>(mockGuests);
+  
+  // Search & Availability Panel
+  const [searchParams, setSearchParams] = useState({
+    checkIn: '',
+    checkOut: '',
+    adults: 2,
+    children: 0,
+    roomType: '',
+    ratePlan: ''
   });
+  
+  // UI State
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [showNewBooking, setShowNewBooking] = useState(false);
+  const [showGroupBooking, setShowGroupBooking] = useState(false);
+  const [showRateRules, setShowRateRules] = useState(false);
+  const [searchResults, setSearchResults] = useState<Room[]>([]);
+  const [overbookingAlerts, setOverbookingAlerts] = useState<string[]>([]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'checked-in': return 'bg-green-100 text-green-800';
-      case 'checked-out': return 'bg-gray-100 text-gray-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Search availability
+  const searchAvailability = () => {
+    if (!searchParams.checkIn || !searchParams.checkOut) return;
+    
+    const availableRooms = rooms.filter(room => {
+      // Check if room is available for the selected dates
+      const isBooked = bookings.some(booking => 
+        booking.allocations?.some(allocation => 
+          allocation.room_id === room.room_id &&
+          ((searchParams.checkIn >= allocation.check_in_date && searchParams.checkIn < allocation.check_out_date) ||
+           (searchParams.checkOut > allocation.check_in_date && searchParams.checkOut <= allocation.check_out_date))
+        )
+      );
+      
+      return !isBooked && room.status === 'available';
+    });
+    
+    setSearchResults(availableRooms);
+    
+    // Check for overbooking risk
+    const totalRooms = rooms.length;
+    const requestedRooms = 1; // For now, assuming 1 room per search
+    const occupancyRate = (bookings.length / totalRooms) * 100;
+    
+    if (occupancyRate > 90) {
+      setOverbookingAlerts(['High occupancy risk - consider closing to arrival']);
+    } else {
+      setOverbookingAlerts([]);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'confirmed': return <Clock className="w-4 h-4" />;
-      case 'checked-in': return <CheckCircle className="w-4 h-4" />;
-      case 'checked-out': return <X className="w-4 h-4" />;
-      case 'cancelled': return <X className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
+  useEffect(() => {
+    searchAvailability();
+  }, [searchParams]);
 
-  const handleCheckIn = (reservationId: string) => {
-    setReservations(prev => prev.map(res => 
-      res.id === reservationId ? { ...res, status: 'checked-in' as const } : res
-    ));
-  };
 
-  const handleCheckOut = (reservationId: string) => {
-    setReservations(prev => prev.map(res => 
-      res.id === reservationId ? { ...res, status: 'checked-out' as const } : res
-    ));
-  };
-
-  const handleCancel = (reservationId: string) => {
-    setReservations(prev => prev.map(res => 
-      res.id === reservationId ? { ...res, status: 'cancelled' as const } : res
+  const handleBookingAction = (bookingId: string, action: string) => {
+    setBookings(prev => prev.map(booking => 
+      booking.booking_id === bookingId 
+        ? { ...booking, status: action as any }
+        : booking
     ));
   };
 
@@ -79,248 +100,260 @@ export default function ReservationsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-secondary-900">Reservations</h1>
-            <p className="text-secondary-600">Manage guest reservations and check-ins</p>
+            <h1 className="text-2xl font-bold text-secondary-900">Reservations & Booking</h1>
+            <p className="text-secondary-600">Manage bookings, availability, and rate rules</p>
           </div>
-          <button 
-            onClick={() => setShowNewReservation(true)}
-            className="btn-primary mt-4 sm:mt-0"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Reservation
-          </button>
+          <div className="flex space-x-2 mt-4 sm:mt-0">
+            <button 
+              onClick={() => setShowGroupBooking(true)}
+              className="btn-secondary"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Group Booking
+            </button>
+            <button 
+              onClick={() => setShowNewBooking(true)}
+              className="btn-primary"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Booking
+            </button>
+          </div>
         </div>
 
-        {/* Filters */}
+        {/* Search & Availability Panel */}
+        <SearchPanel
+          searchParams={searchParams}
+          setSearchParams={setSearchParams}
+          roomTypes={roomTypes}
+          ratePlans={ratePlans}
+          searchResults={searchResults}
+          overbookingAlerts={overbookingAlerts}
+          onRateRulesClick={() => setShowRateRules(true)}
+        />
+
+        {/* Booking Grid/Calendar View */}
         <div className="card">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
-                <input
-                  type="text"
-                  placeholder="Search by guest name or room number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 input"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="input"
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-secondary-900">Booking Grid</h3>
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded ${viewMode === 'grid' ? 'bg-primary-100 text-primary-600' : 'text-secondary-400'}`}
               >
-                <option value="all">All Status</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="checked-in">Checked In</option>
-                <option value="checked-out">Checked Out</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <button className="btn-secondary">
-                <Filter className="w-4 h-4 mr-2" />
-                Filter
+                <Grid className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded ${viewMode === 'list' ? 'bg-primary-100 text-primary-600' : 'text-secondary-400'}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button className="btn-secondary text-sm">
+                <Download className="w-4 h-4 mr-1" />
+                Export
               </button>
             </div>
           </div>
+
+          {viewMode === 'grid' ? (
+            <BookingTable
+              bookings={bookings}
+              onViewBooking={setSelectedBooking}
+              onEditBooking={setSelectedBooking}
+              onCheckIn={(bookingId) => handleBookingAction(bookingId, 'checked-in')}
+              onCheckOut={(bookingId) => handleBookingAction(bookingId, 'checked-out')}
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {bookings.map((booking) => (
+                <BookingCard
+                  key={booking.booking_id}
+                  booking={booking}
+                  onView={setSelectedBooking}
+                  onEdit={setSelectedBooking}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Reservations Table */}
-        <div className="card">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-secondary-200">
-              <thead className="bg-secondary-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Guest
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Room
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Check-in
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Check-out
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-secondary-200">
-                {filteredReservations.map((reservation) => (
-                  <tr key={reservation.id} className="hover:bg-secondary-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                          <User className="w-5 h-5 text-primary-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-secondary-900">
-                            {reservation.guest?.firstName} {reservation.guest?.lastName}
-                          </div>
-                          <div className="text-sm text-secondary-500">
-                            {reservation.guest?.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <Bed className="w-4 h-4 text-secondary-400 mr-2" />
-                        <span className="text-sm text-secondary-900">
-                          Room {reservation.room?.number}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
-                      {new Date(reservation.checkIn).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
-                      {new Date(reservation.checkOut).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <DollarSign className="w-4 h-4 text-secondary-400 mr-1" />
-                        <span className="text-sm font-medium text-secondary-900">
-                          ${reservation.totalAmount}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(reservation.status)}`}>
-                        {getStatusIcon(reservation.status)}
-                        <span className="ml-1 capitalize">{reservation.status.replace('-', ' ')}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setSelectedReservation(reservation)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setSelectedReservation(reservation)}
-                          className="text-secondary-600 hover:text-secondary-900"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        {reservation.status === 'confirmed' && (
-                          <button
-                            onClick={() => handleCheckIn(reservation.id)}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Check In
-                          </button>
-                        )}
-                        {reservation.status === 'checked-in' && (
-                          <button
-                            onClick={() => handleCheckOut(reservation.id)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Check Out
-                          </button>
-                        )}
-                        {reservation.status !== 'cancelled' && reservation.status !== 'checked-out' && (
-                          <button
-                            onClick={() => handleCancel(reservation.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* New Reservation Modal */}
-        {showNewReservation && (
+        {/* Booking Details Modal */}
+        {selectedBooking && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-secondary-900">New Reservation</h3>
+                <h3 className="text-lg font-semibold text-secondary-900">Booking Details</h3>
                 <button
-                  onClick={() => setShowNewReservation(false)}
+                  onClick={() => setSelectedBooking(null)}
                   className="text-secondary-400 hover:text-secondary-600"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
               
-              <form className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Guest Name
-                    </label>
-                    <input type="text" className="input" placeholder="Enter guest name" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Email
-                    </label>
-                    <input type="email" className="input" placeholder="Enter email" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Phone
-                    </label>
-                    <input type="tel" className="input" placeholder="Enter phone number" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Room
-                    </label>
-                    <select className="input">
-                      <option value="">Select room</option>
-                      {mockRooms.filter(room => room.status === 'available').map(room => (
-                        <option key={room.id} value={room.id}>
-                          Room {room.number} - {room.type} (${room.price}/night)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Check-in Date
-                    </label>
-                    <input type="date" className="input" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Check-out Date
-                    </label>
-                    <input type="date" className="input" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Adults
-                    </label>
-                    <input type="number" min="1" className="input" defaultValue="1" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary-700 mb-1">
-                      Children
-                    </label>
-                    <input type="number" min="0" className="input" defaultValue="0" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Guest Information */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-secondary-900">Guest Information</h4>
+                  {selectedBooking.guest ? (
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Name:</span> {selectedBooking.guest.firstName} {selectedBooking.guest.lastName}</p>
+                      <p><span className="font-medium">Email:</span> {selectedBooking.guest.email}</p>
+                      <p><span className="font-medium">Phone:</span> {selectedBooking.guest.phone}</p>
+                      <p><span className="font-medium">Nationality:</span> {selectedBooking.guest.nationality}</p>
+                      <p><span className="font-medium">ID:</span> {selectedBooking.guest.idNumber}</p>
+                      {selectedBooking.guest.loyaltyPoints > 0 && (
+                        <p><span className="font-medium">Loyalty Points:</span> {selectedBooking.guest.loyaltyPoints}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-secondary-500">No guest information available</p>
+                  )}
+                </div>
+
+                {/* Booking Details */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-secondary-900">Booking Details</h4>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Booking ID:</span> {selectedBooking.booking_id}</p>
+                    <p><span className="font-medium">Status:</span> 
+                      <span className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedBooking.status)}`}>
+                        {getStatusIcon(selectedBooking.status)}
+                        <span className="ml-1 capitalize">{selectedBooking.status.replace('-', ' ')}</span>
+                      </span>
+                    </p>
+                    <p><span className="font-medium">Source:</span> {selectedBooking.source}</p>
+                    <p><span className="font-medium">Check-in:</span> {new Date(selectedBooking.arrival_date).toLocaleDateString()}</p>
+                    <p><span className="font-medium">Check-out:</span> {new Date(selectedBooking.departure_date).toLocaleDateString()}</p>
+                    <p><span className="font-medium">Guests:</span> {selectedBooking.adults} adults, {selectedBooking.children} children</p>
+                    <p><span className="font-medium">Total Amount:</span> ${selectedBooking.total_amount}</p>
+                    {selectedBooking.special_requests && (
+                      <p><span className="font-medium">Special Requests:</span> {selectedBooking.special_requests}</p>
+                    )}
                   </div>
                 </div>
-                
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200 mt-6">
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="btn-secondary"
+                >
+                  Close
+                </button>
+                <button className="btn-primary">
+                  Edit Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* New Booking Modal */}
+        {showNewBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-secondary-900">New Booking</h3>
+                <button
+                  onClick={() => setShowNewBooking(false)}
+                  className="text-secondary-400 hover:text-secondary-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <form className="space-y-6">
+                {/* Guest Information */}
+                <div>
+                  <h4 className="font-medium text-secondary-900 mb-3">Guest Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        First Name
+                      </label>
+                      <input type="text" className="input" placeholder="Enter first name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Last Name
+                      </label>
+                      <input type="text" className="input" placeholder="Enter last name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Email
+                      </label>
+                      <input type="email" className="input" placeholder="Enter email" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Phone
+                      </label>
+                      <input type="tel" className="input" placeholder="Enter phone number" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Booking Details */}
+                <div>
+                  <h4 className="font-medium text-secondary-900 mb-3">Booking Details</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Check-in Date
+                      </label>
+                      <input type="date" className="input" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Check-out Date
+                      </label>
+                      <input type="date" className="input" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Room Type
+                      </label>
+                      <select className="input">
+                        <option value="">Select room type</option>
+                        {roomTypes.map(type => (
+                          <option key={type.room_type_id} value={type.room_type_id}>
+                            {type.name} - ${type.base_rate}/night
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Rate Plan
+                      </label>
+                      <select className="input">
+                        <option value="">Select rate plan</option>
+                        {ratePlans.map(plan => (
+                          <option key={plan.rate_plan_id} value={plan.rate_plan_id}>
+                            {plan.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Adults
+                      </label>
+                      <input type="number" min="1" className="input" defaultValue="2" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-secondary-700 mb-1">
+                        Children
+                      </label>
+                      <input type="number" min="0" className="input" defaultValue="0" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Special Requests */}
                 <div>
                   <label className="block text-sm font-medium text-secondary-700 mb-1">
                     Special Requests
@@ -332,10 +365,10 @@ export default function ReservationsPage() {
                   />
                 </div>
                 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex justify-end space-x-3 pt-4 border-t border-secondary-200">
                   <button
                     type="button"
-                    onClick={() => setShowNewReservation(false)}
+                    onClick={() => setShowNewBooking(false)}
                     className="btn-secondary"
                   >
                     Cancel
@@ -344,7 +377,7 @@ export default function ReservationsPage() {
                     type="submit"
                     className="btn-primary"
                   >
-                    Create Reservation
+                    Create Booking
                   </button>
                 </div>
               </form>
@@ -352,74 +385,57 @@ export default function ReservationsPage() {
           </div>
         )}
 
-        {/* Reservation Details Modal */}
-        {selectedReservation && (
+        {/* Rate Rules Modal */}
+        {showRateRules && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-secondary-900">Reservation Details</h3>
+                <h3 className="text-lg font-semibold text-secondary-900">Rate Rules Editor</h3>
                 <button
-                  onClick={() => setSelectedReservation(null)}
+                  onClick={() => setShowRateRules(false)}
                   className="text-secondary-400 hover:text-secondary-600"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
               
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-medium text-secondary-900">Guest Information</h4>
-                    <p className="text-sm text-secondary-600">
-                      {selectedReservation.guest?.firstName} {selectedReservation.guest?.lastName}
-                    </p>
-                    <p className="text-sm text-secondary-600">{selectedReservation.guest?.email}</p>
-                    <p className="text-sm text-secondary-600">{selectedReservation.guest?.phone}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium text-secondary-900">Reservation Details</h4>
-                    <p className="text-sm text-secondary-600">
-                      Room: {selectedReservation.room?.number}
-                    </p>
-                    <p className="text-sm text-secondary-600">
-                      Check-in: {new Date(selectedReservation.checkIn).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-secondary-600">
-                      Check-out: {new Date(selectedReservation.checkOut).toLocaleDateString()}
-                    </p>
-                  </div>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {ratePlans.map(plan => (
+                    <div key={plan.rate_plan_id} className="border border-secondary-200 rounded-lg p-4">
+                      <h4 className="font-medium text-secondary-900 mb-3">{plan.name}</h4>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="font-medium">Code:</span> {plan.code}</p>
+                        <p><span className="font-medium">Min LOS:</span> {plan.rules.min_los} nights</p>
+                        <p><span className="font-medium">Max LOS:</span> {plan.rules.max_los} nights</p>
+                        <p><span className="font-medium">Advance Booking:</span> {plan.rules.advance_booking_days} days</p>
+                        <p><span className="font-medium">Status:</span> 
+                          <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
+                            plan.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {plan.status}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="mt-3">
+                        <button className="btn-secondary text-sm">
+                          Edit Rules
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                
-                <div>
-                  <h4 className="font-medium text-secondary-900">Payment Information</h4>
-                  <p className="text-sm text-secondary-600">
-                    Total Amount: ${selectedReservation.totalAmount}
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    Paid Amount: ${selectedReservation.paidAmount}
-                  </p>
-                  <p className="text-sm text-secondary-600">
-                    Balance: ${selectedReservation.totalAmount - selectedReservation.paidAmount}
-                  </p>
-                </div>
-                
-                {selectedReservation.specialRequests && (
-                  <div>
-                    <h4 className="font-medium text-secondary-900">Special Requests</h4>
-                    <p className="text-sm text-secondary-600">{selectedReservation.specialRequests}</p>
-                  </div>
-                )}
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200 mt-6">
                 <button
-                  onClick={() => setSelectedReservation(null)}
+                  onClick={() => setShowRateRules(false)}
                   className="btn-secondary"
                 >
                   Close
                 </button>
                 <button className="btn-primary">
-                  Edit Reservation
+                  Add New Rate Plan
                 </button>
               </div>
             </div>

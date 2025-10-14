@@ -1,223 +1,212 @@
 'use client';
 
 import Layout from '@/components/Layout';
+import KPICard from '@/components/dashboard/KPICard';
+import ArrivalsDepartures from '@/components/dashboard/ArrivalsDepartures';
+import ActiveTasks from '@/components/dashboard/ActiveTasks';
+import RevenueSnapshot from '@/components/dashboard/RevenueSnapshot';
+import SystemAlerts from '@/components/dashboard/SystemAlerts';
+import LiveFeed from '@/components/dashboard/LiveFeed';
+import QuickActions from '@/components/dashboard/QuickActions';
 import { 
   DollarSign, 
-  Users, 
   Bed, 
-  Calendar, 
   TrendingUp, 
-  Clock,
-  CheckCircle,
-  AlertCircle
+  BarChart3,
+  Calendar
 } from 'lucide-react';
-import { mockDashboardStats } from '@/data/mockData';
+import { 
+  mockDashboardStats, 
+  mockBookings, 
+  mockHousekeepingTasks, 
+  mockSyncEvents
+} from '@/data/mockData';
 
 export default function DashboardPage() {
   const stats = mockDashboardStats;
 
-  const statCards = [
+  const kpiCards = [
     {
-      title: 'Total Revenue',
-      value: `$${stats.totalRevenue.toLocaleString()}`,
-      change: '+12.5%',
-      changeType: 'positive' as const,
+      title: 'Occupancy',
+      value: `${stats.occupancy.today}%`,
+      period: 'Today',
+      mtd: `${stats.occupancy.mtd}%`,
+      ytd: `${stats.occupancy.ytd}%`,
+      change: `${stats.occupancy.change_percent > 0 ? '+' : ''}${stats.occupancy.change_percent}%`,
+      changeType: stats.occupancy.change_percent > 0 ? 'positive' as const : 'negative' as const,
+      icon: Bed,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100'
+    },
+    {
+      title: 'ADR',
+      value: `$${stats.adr.today}`,
+      period: 'Average Daily Rate',
+      mtd: `$${stats.adr.mtd}`,
+      ytd: `$${stats.adr.ytd}`,
+      change: `${stats.adr.change_percent > 0 ? '+' : ''}${stats.adr.change_percent}%`,
+      changeType: stats.adr.change_percent > 0 ? 'positive' as const : 'negative' as const,
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
     },
     {
-      title: 'Occupancy Rate',
-      value: `${stats.occupancyRate}%`,
-      change: '+5.2%',
-      changeType: 'positive' as const,
+      title: 'RevPAR',
+      value: `$${stats.revpar.today}`,
+      period: 'Revenue per Available Room',
+      mtd: `$${stats.revpar.mtd}`,
+      ytd: `$${stats.revpar.ytd}`,
+      change: `${stats.revpar.change_percent > 0 ? '+' : ''}${stats.revpar.change_percent}%`,
+      changeType: stats.revpar.change_percent > 0 ? 'positive' as const : 'negative' as const,
       icon: TrendingUp,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
-    },
-    {
-      title: 'Total Guests',
-      value: stats.totalGuests.toString(),
-      change: '+8.1%',
-      changeType: 'positive' as const,
-      icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100'
     },
     {
-      title: 'Available Rooms',
-      value: stats.availableRooms.toString(),
-      change: '-2.3%',
-      changeType: 'negative' as const,
-      icon: Bed,
+      title: 'ARR',
+      value: `$${stats.arr.today.toLocaleString()}`,
+      period: 'Average Room Revenue',
+      mtd: `$${stats.arr.mtd.toLocaleString()}`,
+      ytd: `$${stats.arr.ytd.toLocaleString()}`,
+      change: `${stats.arr.change_percent > 0 ? '+' : ''}${stats.arr.change_percent}%`,
+      changeType: stats.arr.change_percent > 0 ? 'positive' as const : 'negative' as const,
+      icon: BarChart3,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100'
     }
   ];
 
-  const recentActivities = [
-    { id: 1, action: 'Guest checked in', guest: 'John Doe', room: '101', time: '2 minutes ago', type: 'checkin' },
-    { id: 2, action: 'New reservation', guest: 'Jane Smith', room: '205', time: '15 minutes ago', type: 'reservation' },
-    { id: 3, action: 'Room cleaned', guest: 'Room 102', room: '102', time: '1 hour ago', type: 'housekeeping' },
-    { id: 4, action: 'Payment received', guest: 'Mike Johnson', room: '301', time: '2 hours ago', type: 'payment' },
-    { id: 5, action: 'Guest checked out', guest: 'Sarah Wilson', room: '150', time: '3 hours ago', type: 'checkout' }
-  ];
+  // Generate arrivals and departures from mock data
+  const upcomingCheckIns = mockBookings
+    .filter(booking => booking.status === 'confirmed')
+    .slice(0, 6)
+    .map(booking => ({
+      guest: booking.guest ? `${booking.guest.firstName} ${booking.guest.lastName}` : 'Guest',
+      room: 'TBD', // Room assignment happens at check-in
+      time: '3:00 PM', // Default check-in time
+      status: 'confirmed' as const,
+      date: booking.arrival_date === new Date().toISOString().split('T')[0] ? 'Today' : 'Tomorrow'
+    }));
 
-  const upcomingCheckIns = [
-    { guest: 'Alice Brown', room: '201', time: '2:00 PM', status: 'confirmed' },
-    { guest: 'Bob Davis', room: '305', time: '3:30 PM', status: 'confirmed' },
-    { guest: 'Carol White', room: '108', time: '4:15 PM', status: 'pending' },
-    { guest: 'David Lee', room: '412', time: '5:00 PM', status: 'confirmed' }
-  ];
-
-  const upcomingCheckOuts = [
-    { guest: 'Emma Taylor', room: '203', time: '11:00 AM', status: 'ready' },
-    { guest: 'Frank Miller', room: '307', time: '12:00 PM', status: 'ready' },
-    { guest: 'Grace Wilson', room: '109', time: '1:00 PM', status: 'pending' },
-    { guest: 'Henry Brown', room: '415', time: '2:00 PM', status: 'ready' }
-  ];
+  const upcomingCheckOuts = mockBookings
+    .filter(booking => booking.status === 'checked-in')
+    .slice(0, 6)
+    .map(booking => ({
+      guest: booking.guest ? `${booking.guest.firstName} ${booking.guest.lastName}` : 'Guest',
+      room: '201', // Assigned room
+      time: '11:00 AM', // Default check-out time
+      status: 'ready' as const,
+      date: booking.departure_date === new Date().toISOString().split('T')[0] ? 'Today' : 'Tomorrow'
+    }));
 
   return (
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-900">Dashboard</h1>
-          <p className="text-secondary-600">Welcome back! Here's what's happening at your hotel today.</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((stat, index) => (
-            <div key={index} className="card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-secondary-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-secondary-900">{stat.value}</p>
-                  <p className={`text-sm ${stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                    {stat.change} from last month
-                  </p>
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-8 text-white">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex-1">
+              <div className="mb-4">
+                <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+                <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 inline-block">
+                  <span className="text-sm font-medium">
+                    {new Date().toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </span>
                 </div>
-                <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
+              </div>
+              
+              <p className="text-primary-100 text-lg mb-6">
+                Welcome back! Here's what's happening at your hotel today.
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-primary-100">System Online</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+                  <span className="text-primary-200">Last Sync:</span>
+                  <span className="font-medium">{stats.last_sync}</span>
+                </div>
+                <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+                  <span className="text-primary-200">Current Time:</span>
+                  <span className="font-medium">
+                    {new Date().toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      hour12: true 
+                    })}
+                  </span>
                 </div>
               </div>
             </div>
+            
+            <div className="mt-8 lg:mt-0 lg:ml-8">
+              <div className="flex flex-col gap-3">
+                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                  <Calendar className="w-4 h-4" />
+                  <span>Today's Schedule</span>
+                </button>
+                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                  <BarChart3 className="w-4 h-4" />
+                  <span>View Reports</span>
+                </button>
+                <button className="bg-white text-primary-600 hover:bg-primary-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Quick Actions</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Tiles */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {kpiCards.map((kpi, index) => (
+            <KPICard
+              key={index}
+              title={kpi.title}
+              value={kpi.value}
+              period={kpi.period}
+              mtd={kpi.mtd}
+              ytd={kpi.ytd}
+              change={kpi.change}
+              changeType={kpi.changeType}
+              icon={kpi.icon}
+              color={kpi.color}
+              bgColor={kpi.bgColor}
+            />
           ))}
         </div>
 
-        {/* Quick Actions */}
+        {/* Arrivals & Departures Timeline */}
+        <ArrivalsDepartures 
+          arrivals={upcomingCheckIns}
+          departures={upcomingCheckOuts}
+        />
+
+        {/* Active Tasks & Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Recent Activity */}
-          <div className="lg:col-span-2 card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-secondary-900">Recent Activity</h3>
-              <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-                View All
-              </button>
-            </div>
-            <div className="space-y-3">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-3 p-3 bg-secondary-50 rounded-lg">
-                  <div className={`p-2 rounded-full ${
-                    activity.type === 'checkin' ? 'bg-green-100' :
-                    activity.type === 'checkout' ? 'bg-blue-100' :
-                    activity.type === 'reservation' ? 'bg-purple-100' :
-                    activity.type === 'housekeeping' ? 'bg-yellow-100' :
-                    'bg-gray-100'
-                  }`}>
-                    {activity.type === 'checkin' && <CheckCircle className="w-4 h-4 text-green-600" />}
-                    {activity.type === 'checkout' && <Clock className="w-4 h-4 text-blue-600" />}
-                    {activity.type === 'reservation' && <Calendar className="w-4 h-4 text-purple-600" />}
-                    {activity.type === 'housekeeping' && <AlertCircle className="w-4 h-4 text-yellow-600" />}
-                    {activity.type === 'payment' && <DollarSign className="w-4 h-4 text-gray-600" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-secondary-900">{activity.action}</p>
-                    <p className="text-sm text-secondary-600">{activity.guest} - Room {activity.room}</p>
-                  </div>
-                  <div className="text-sm text-secondary-500">{activity.time}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="space-y-6">
-            {/* Today's Check-ins */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-secondary-900 mb-4">Today's Check-ins</h3>
-              <div className="space-y-3">
-                {upcomingCheckIns.map((checkin, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-secondary-50 rounded">
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">{checkin.guest}</p>
-                      <p className="text-xs text-secondary-600">Room {checkin.room}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-secondary-900">{checkin.time}</p>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        checkin.status === 'confirmed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {checkin.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Today's Check-outs */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-secondary-900 mb-4">Today's Check-outs</h3>
-              <div className="space-y-3">
-                {upcomingCheckOuts.map((checkout, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-secondary-50 rounded">
-                    <div>
-                      <p className="text-sm font-medium text-secondary-900">{checkout.guest}</p>
-                      <p className="text-xs text-secondary-600">Room {checkout.room}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-secondary-900">{checkout.time}</p>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        checkout.status === 'ready' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {checkout.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <ActiveTasks tasks={mockHousekeepingTasks} />
+          <RevenueSnapshot revenueByOutlet={stats.revenue_by_outlet} />
+          <SystemAlerts 
+            overbookRisk={stats.overbook_risk}
+            lowInventoryAlerts={stats.low_inventory_alerts}
+            syncErrors={stats.sync_errors}
+            pendingPayments={stats.pending_payments}
+          />
         </div>
+
+        {/* Live Feed (Audit Stream) */}
+        <LiveFeed events={mockSyncEvents} />
 
         {/* Quick Actions */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-secondary-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <button className="p-4 bg-primary-50 hover:bg-primary-100 rounded-lg text-center transition-colors">
-              <Calendar className="w-8 h-8 text-primary-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-primary-700">New Reservation</p>
-            </button>
-            <button className="p-4 bg-green-50 hover:bg-green-100 rounded-lg text-center transition-colors">
-              <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-green-700">Check In Guest</p>
-            </button>
-            <button className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg text-center transition-colors">
-              <Clock className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-blue-700">Check Out Guest</p>
-            </button>
-            <button className="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg text-center transition-colors">
-              <Users className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-purple-700">Add Staff</p>
-            </button>
-          </div>
-        </div>
+        <QuickActions />
       </div>
     </Layout>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { 
   Plus, 
@@ -35,6 +35,11 @@ export default function HousekeepingPage() {
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [showNewTask, setShowNewTask] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -90,7 +95,7 @@ export default function HousekeepingPage() {
   };
 
   const getRoomStatus = (roomNumber: string) => {
-    const room = rooms.find(r => r.number === roomNumber);
+    const room = rooms.find(r => r.room_number === roomNumber);
     return room?.status || 'unknown';
   };
 
@@ -344,7 +349,7 @@ export default function HousekeepingPage() {
                     <p className="text-xs text-secondary-600">{task.description}</p>
                     <p className="text-xs text-secondary-500">
                       Assigned to: {task.staff?.firstName} {task.staff?.lastName} • 
-                      Due: {new Date(task.dueDate).toLocaleDateString()}
+                      Due: {isClient ? new Date(task.dueDate).toLocaleDateString() : '--/--/----'}
                     </p>
                   </div>
                 </div>
@@ -524,7 +529,7 @@ export default function HousekeepingPage() {
                     </p>
                     <p className="text-sm text-secondary-600">Department: {selectedTask.department}</p>
                     <p className="text-sm text-secondary-600">
-                      Due: {new Date(selectedTask.dueDate).toLocaleString()}
+                      Due: {isClient ? new Date(selectedTask.dueDate).toLocaleString() : '--/--/---- --:--:--'}
                     </p>
                   </div>
                 </div>

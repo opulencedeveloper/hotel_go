@@ -50,10 +50,10 @@ export default function POSPage() {
 
   const addToCart = (item: POSItem) => {
     setCart(prev => {
-      const existingItem = prev.find(cartItem => cartItem.item.id === item.id);
+      const existingItem = prev.find(cartItem => cartItem.item.item_id === item.item_id);
       if (existingItem) {
         return prev.map(cartItem =>
-          cartItem.item.id === item.id
+          cartItem.item.item_id === item.item_id
             ? { ...cartItem, quantity: cartItem.quantity + 1 }
             : cartItem
         );
@@ -64,7 +64,7 @@ export default function POSPage() {
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart(prev => prev.filter(cartItem => cartItem.item.id !== itemId));
+    setCart(prev => prev.filter(cartItem => cartItem.item.item_id !== itemId));
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -72,7 +72,7 @@ export default function POSPage() {
       removeFromCart(itemId);
     } else {
       setCart(prev => prev.map(cartItem =>
-        cartItem.item.id === itemId
+        cartItem.item.item_id === itemId
           ? { ...cartItem, quantity }
           : cartItem
       ));
@@ -116,18 +116,20 @@ export default function POSPage() {
     if (cart.length === 0) return;
 
     const newOrder: POSOrder = {
-      id: (orders.length + 1).toString(),
+      order_id: (orders.length + 1).toString(),
+      outlet_id: 'outlet_001',
       items: cart.map(cartItem => ({
-        itemId: cartItem.item.id,
+        item_id: cartItem.item.item_id,
         quantity: cartItem.quantity,
-        price: cartItem.item.price
+        price: cartItem.item.price,
+        modifiers: []
       })),
       total: getTotal(),
       status: 'pending',
-      tableNumber: tableNumber || undefined,
-      roomNumber: roomNumber || undefined,
-      createdAt: new Date().toISOString(),
-      staffId: '1' // This would come from authentication
+      table_number: tableNumber || undefined,
+      room_number: roomNumber || undefined,
+      created_at: new Date().toISOString(),
+      staff_id: '1' // This would come from authentication
     };
 
     setOrders(prev => [newOrder, ...prev]);
@@ -138,7 +140,7 @@ export default function POSPage() {
 
   const updateOrderStatus = (orderId: string, status: POSOrder['status']) => {
     setOrders(prev => prev.map(order =>
-      order.id === orderId ? { ...order, status } : order
+      order.order_id === orderId ? { ...order, status } : order
     ));
   };
 
@@ -235,7 +237,7 @@ export default function POSPage() {
             {/* Menu Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredItems.map((item) => (
-                <div key={item.id} className="card hover:shadow-md transition-shadow">
+                <div key={item.item_id} className="card hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center">
                       <div className="p-2 bg-primary-100 rounded-lg mr-3">
@@ -302,14 +304,14 @@ export default function POSPage() {
                   <p className="text-sm text-secondary-500 text-center py-4">Cart is empty</p>
                 ) : (
                   cart.map((cartItem) => (
-                    <div key={cartItem.item.id} className="flex items-center justify-between p-2 bg-secondary-50 rounded">
+                    <div key={cartItem.item.item_id} className="flex items-center justify-between p-2 bg-secondary-50 rounded">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-secondary-900">{cartItem.item.name}</p>
                         <p className="text-xs text-secondary-600">${cartItem.item.price} each</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity - 1)}
+                          onClick={() => updateQuantity(cartItem.item.item_id, cartItem.quantity - 1)}
                           className="p-1 text-secondary-400 hover:text-secondary-600"
                         >
                           <Minus className="w-4 h-4" />
@@ -318,13 +320,13 @@ export default function POSPage() {
                           {cartItem.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(cartItem.item.id, cartItem.quantity + 1)}
+                          onClick={() => updateQuantity(cartItem.item.item_id, cartItem.quantity + 1)}
                           className="p-1 text-secondary-400 hover:text-secondary-600"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => removeFromCart(cartItem.item.id)}
+                          onClick={() => removeFromCart(cartItem.item.item_id)}
                           className="p-1 text-red-400 hover:text-red-600"
                         >
                           <X className="w-4 h-4" />
@@ -357,11 +359,11 @@ export default function POSPage() {
               <h3 className="text-lg font-semibold text-secondary-900 mb-4">Recent Orders</h3>
               <div className="space-y-3">
                 {orders.slice(0, 5).map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-3 bg-secondary-50 rounded">
+                  <div key={order.order_id} className="flex items-center justify-between p-3 bg-secondary-50 rounded">
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-secondary-900">
-                          Order #{order.id}
+                          Order #{order.order_id}
                         </p>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                           {getStatusIcon(order.status)}
@@ -369,12 +371,12 @@ export default function POSPage() {
                         </span>
                       </div>
                       <p className="text-xs text-secondary-600">
-                        {order.tableNumber && `Table ${order.tableNumber}`}
-                        {order.roomNumber && `Room ${order.roomNumber}`}
-                        {!order.tableNumber && !order.roomNumber && 'Takeout'}
+                        {order.table_number && `Table ${order.table_number}`}
+                        {order.room_number && `Room ${order.room_number}`}
+                        {!order.table_number && !order.room_number && 'Takeout'}
                       </p>
                       <p className="text-xs text-secondary-600">
-                        ${order.total.toFixed(2)} • {new Date(order.createdAt).toLocaleTimeString()}
+                        ${order.total.toFixed(2)} • {new Date(order.created_at).toLocaleTimeString()}
                       </p>
                     </div>
                     <div className="flex space-x-1">
@@ -386,7 +388,7 @@ export default function POSPage() {
                       </button>
                       {order.status === 'pending' && (
                         <button
-                          onClick={() => updateOrderStatus(order.id, 'preparing')}
+                          onClick={() => updateOrderStatus(order.order_id, 'preparing')}
                           className="text-blue-600 hover:text-blue-700"
                         >
                           Start
@@ -394,7 +396,7 @@ export default function POSPage() {
                       )}
                       {order.status === 'preparing' && (
                         <button
-                          onClick={() => updateOrderStatus(order.id, 'ready')}
+                          onClick={() => updateOrderStatus(order.order_id, 'ready')}
                           className="text-green-600 hover:text-green-700"
                         >
                           Ready
@@ -402,7 +404,7 @@ export default function POSPage() {
                       )}
                       {order.status === 'ready' && (
                         <button
-                          onClick={() => updateOrderStatus(order.id, 'served')}
+                          onClick={() => updateOrderStatus(order.order_id, 'served')}
                           className="text-gray-600 hover:text-gray-700"
                         >
                           Served
@@ -434,7 +436,7 @@ export default function POSPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium text-secondary-900">Order Information</h4>
-                    <p className="text-sm text-secondary-600">Order #: {selectedOrder.id}</p>
+                    <p className="text-sm text-secondary-600">Order #: {selectedOrder.order_id}</p>
                     <p className="text-sm text-secondary-600">
                       Status: <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
                         {getStatusIcon(selectedOrder.status)}
@@ -442,18 +444,18 @@ export default function POSPage() {
                       </span>
                     </p>
                     <p className="text-sm text-secondary-600">
-                      Created: {new Date(selectedOrder.createdAt).toLocaleString()}
+                      Created: {new Date(selectedOrder.created_at).toLocaleString()}
                     </p>
                   </div>
                   <div>
                     <h4 className="font-medium text-secondary-900">Location</h4>
-                    {selectedOrder.tableNumber && (
-                      <p className="text-sm text-secondary-600">Table: {selectedOrder.tableNumber}</p>
+                    {selectedOrder.table_number && (
+                      <p className="text-sm text-secondary-600">Table: {selectedOrder.table_number}</p>
                     )}
-                    {selectedOrder.roomNumber && (
-                      <p className="text-sm text-secondary-600">Room: {selectedOrder.roomNumber}</p>
+                    {selectedOrder.room_number && (
+                      <p className="text-sm text-secondary-600">Room: {selectedOrder.room_number}</p>
                     )}
-                    {!selectedOrder.tableNumber && !selectedOrder.roomNumber && (
+                    {!selectedOrder.table_number && !selectedOrder.room_number && (
                       <p className="text-sm text-secondary-600">Takeout Order</p>
                     )}
                   </div>
@@ -463,7 +465,7 @@ export default function POSPage() {
                   <h4 className="font-medium text-secondary-900">Items</h4>
                   <div className="space-y-2 mt-2">
                     {selectedOrder.items.map((item, index) => {
-                      const menuItem = items.find(i => i.id === item.itemId);
+                      const menuItem = items.find(i => i.item_id === item.item_id);
                       return (
                         <div key={index} className="flex justify-between items-center p-2 bg-secondary-50 rounded">
                           <div>
