@@ -12,7 +12,8 @@ import {
   Grid,
   List,
   Download,
-  X
+  X,
+  Printer
 } from 'lucide-react';
 import { 
   mockBookings, 
@@ -48,6 +49,10 @@ export default function ReservationsPage() {
   const [showNewBooking, setShowNewBooking] = useState(false);
   const [showGroupBooking, setShowGroupBooking] = useState(false);
   const [showRateRules, setShowRateRules] = useState(false);
+  const [showPrintReceipt, setShowPrintReceipt] = useState(false);
+  const [receiptBooking, setReceiptBooking] = useState<Booking | null>(null);
+  const [showEditBooking, setShowEditBooking] = useState(false);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
 
   // Group Booking Form State
   const [groupBookingForm, setGroupBookingForm] = useState({
@@ -62,6 +67,17 @@ export default function ReservationsPage() {
     ratePlan: '',
     specialRequests: '',
     billingInstructions: ''
+  });
+
+  // Edit Booking Form State
+  const [editBookingForm, setEditBookingForm] = useState({
+    arrivalDate: '',
+    departureDate: '',
+    adults: 2,
+    children: 0,
+    specialRequests: '',
+    status: 'confirmed' as 'confirmed' | 'checked-in' | 'checked-out' | 'cancelled' | 'no-show',
+    totalAmount: 0
   });
   const [searchResults, setSearchResults] = useState<Room[]>([]);
   const [overbookingAlerts, setOverbookingAlerts] = useState<string[]>([]);
@@ -148,6 +164,179 @@ export default function ReservationsPage() {
     });
   };
 
+  const handlePrintReceipt = (booking: Booking) => {
+    setReceiptBooking(booking);
+    setShowPrintReceipt(true);
+  };
+
+  const handleEditBooking = (booking: Booking) => {
+    setEditingBooking(booking);
+    setEditBookingForm({
+      arrivalDate: booking.arrival_date,
+      departureDate: booking.departure_date,
+      adults: booking.adults,
+      children: booking.children,
+      specialRequests: booking.special_requests,
+      status: booking.status,
+      totalAmount: booking.total_amount
+    });
+    setShowEditBooking(true);
+  };
+
+  const handleEditBookingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingBooking) {
+      console.log('Updating booking:', editingBooking.booking_id, editBookingForm);
+      
+      // Update the booking in the state
+      setBookings(prev => prev.map(booking => 
+        booking.booking_id === editingBooking.booking_id 
+          ? {
+              ...booking,
+              arrival_date: editBookingForm.arrivalDate,
+              departure_date: editBookingForm.departureDate,
+              adults: editBookingForm.adults,
+              children: editBookingForm.children,
+              special_requests: editBookingForm.specialRequests,
+              status: editBookingForm.status,
+              total_amount: editBookingForm.totalAmount
+            }
+          : booking
+      ));
+      
+      setShowEditBooking(false);
+      setEditingBooking(null);
+      
+      // Reset form
+      setEditBookingForm({
+        arrivalDate: '',
+        departureDate: '',
+        adults: 2,
+        children: 0,
+        specialRequests: '',
+        status: 'confirmed',
+        totalAmount: 0
+      });
+    }
+  };
+
+  const handlePrintReceiptConfirm = () => {
+    if (receiptBooking) {
+      // Create a printable receipt
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        const receiptContent = generateReceiptHTML(receiptBooking);
+        printWindow.document.write(receiptContent);
+        printWindow.document.close();
+        printWindow.print();
+        printWindow.close();
+      }
+    }
+    setShowPrintReceipt(false);
+    setReceiptBooking(null);
+  };
+
+  const generateReceiptHTML = (booking: Booking) => {
+    const guest = booking.guest;
+    const room = rooms.find(r => r.room_id === booking.allocations?.[0]?.room_id);
+    const roomType = roomTypes.find(rt => rt.room_type_id === room?.room_type_id);
+    const ratePlan = ratePlans.find(rp => rp.rate_plan_id === booking.allocations?.[0]?.rate_plan_id);
+    
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Booking Receipt - ${booking.booking_id}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+          .hotel-name { font-size: 24px; font-weight: bold; color: #2563eb; }
+          .receipt-title { font-size: 18px; margin: 10px 0; }
+          .section { margin: 20px 0; }
+          .section-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; color: #333; }
+          .info-row { display: flex; justify-content: space-between; margin: 5px 0; }
+          .label { font-weight: bold; }
+          .value { }
+          .total { font-size: 18px; font-weight: bold; border-top: 2px solid #333; padding-top: 10px; margin-top: 20px; }
+          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="hotel-name">Hotel Management System</div>
+          <div class="receipt-title">BOOKING RECEIPT</div>
+          <div>Receipt #: ${booking.booking_id}</div>
+          <div>Date: ${new Date().toLocaleDateString()}</div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Guest Information</div>
+          <div class="info-row">
+            <span class="label">Name:</span>
+            <span class="value">${guest?.firstName || ''} ${guest?.lastName || ''}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Email:</span>
+            <span class="value">${guest?.email || 'N/A'}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Phone:</span>
+            <span class="value">${guest?.phone || 'N/A'}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Booking Details</div>
+          <div class="info-row">
+            <span class="label">Room:</span>
+            <span class="value">${room?.room_number || 'TBD'} - ${roomType?.name || 'N/A'}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Check-in:</span>
+            <span class="value">${new Date(booking.arrival_date).toLocaleDateString()}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Check-out:</span>
+            <span class="value">${new Date(booking.departure_date).toLocaleDateString()}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Guests:</span>
+            <span class="value">${booking.adults} adults, ${booking.children} children</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Rate Plan:</span>
+            <span class="value">${ratePlan?.name || 'Standard'}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Status:</span>
+            <span class="value">${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Payment Information</div>
+          <div class="info-row">
+            <span class="label">Total Amount:</span>
+            <span class="value">$${booking.total_amount}</span>
+          </div>
+        </div>
+        
+        <div class="total">
+          <div class="info-row">
+            <span class="label">Total Amount:</span>
+            <span class="value">$${booking.total_amount}</span>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Thank you for choosing our hotel!</p>
+          <p>For any inquiries, please contact us at support@hotel.com</p>
+        </div>
+      </body>
+      </html>
+    `;
+  };
+
 
   const handleBookingAction = (bookingId: string, action: string) => {
     setBookings(prev => prev.map(booking => 
@@ -226,6 +415,7 @@ export default function ReservationsPage() {
               onEditBooking={setSelectedBooking}
               onCheckIn={(bookingId) => handleBookingAction(bookingId, 'checked-in')}
               onCheckOut={(bookingId) => handleBookingAction(bookingId, 'checked-out')}
+              onPrintReceipt={handlePrintReceipt}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -235,6 +425,7 @@ export default function ReservationsPage() {
                   booking={booking}
                   onView={setSelectedBooking}
                   onEdit={setSelectedBooking}
+                  onPrintReceipt={handlePrintReceipt}
                 />
               ))}
             </div>
@@ -305,7 +496,10 @@ export default function ReservationsPage() {
                 >
                   Close
                 </button>
-                <button className="btn-primary">
+                <button 
+                  onClick={() => handleEditBooking(selectedBooking)}
+                  className="btn-primary"
+                >
                   Edit Booking
                 </button>
               </div>
@@ -695,6 +889,239 @@ export default function ReservationsPage() {
                   >
                     <Users className="w-4 h-4 mr-2" />
                     Create Group Booking
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Print Receipt Confirmation Modal */}
+        {showPrintReceipt && receiptBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-secondary-900">Print Booking Receipt</h3>
+                <button
+                  onClick={() => setShowPrintReceipt(false)}
+                  className="text-secondary-400 hover:text-secondary-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-secondary-50 rounded-lg p-4">
+                  <h4 className="font-medium text-secondary-900 mb-2">Booking Information</h4>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Booking ID:</span> {receiptBooking.booking_id}</p>
+                    <p><span className="font-medium">Guest:</span> {receiptBooking.guest?.firstName} {receiptBooking.guest?.lastName}</p>
+                    <p><span className="font-medium">Check-in:</span> {isClient ? new Date(receiptBooking.arrival_date).toLocaleDateString() : '--/--/----'}</p>
+                    <p><span className="font-medium">Check-out:</span> {isClient ? new Date(receiptBooking.departure_date).toLocaleDateString() : '--/--/----'}</p>
+                    <p><span className="font-medium">Total Amount:</span> ${receiptBooking.total_amount}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start">
+                    <Printer className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
+                    <div>
+                      <h4 className="font-medium text-blue-900">Print Receipt</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        This will open a new window with a printable receipt for this booking. 
+                        The receipt includes all booking details, guest information, and payment information.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowPrintReceipt(false)}
+                  className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePrintReceiptConfirm}
+                  className="btn-primary flex items-center"
+                >
+                  <Printer className="w-4 h-4 mr-2" />
+                  Print Receipt
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Booking Modal */}
+        {showEditBooking && editingBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-secondary-900">Edit Booking</h3>
+                <button
+                  onClick={() => setShowEditBooking(false)}
+                  className="text-secondary-400 hover:text-secondary-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleEditBookingSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Booking ID
+                    </label>
+                    <input
+                      type="text"
+                      value={editingBooking.booking_id}
+                      disabled
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-secondary-50 text-secondary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Status *
+                    </label>
+                    <select
+                      value={editBookingForm.status}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, status: e.target.value as any})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="confirmed">Confirmed</option>
+                      <option value="checked-in">Checked In</option>
+                      <option value="checked-out">Checked Out</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="no-show">No Show</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Check-in Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editBookingForm.arrivalDate}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, arrivalDate: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Check-out Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={editBookingForm.departureDate}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, departureDate: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Adults *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={editBookingForm.adults}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, adults: parseInt(e.target.value) || 1})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Children
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editBookingForm.children}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, children: parseInt(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Total Amount *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={editBookingForm.totalAmount}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, totalAmount: parseFloat(e.target.value) || 0})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Special Requests
+                    </label>
+                    <textarea
+                      value={editBookingForm.specialRequests}
+                      onChange={(e) => setEditBookingForm({...editBookingForm, specialRequests: e.target.value})}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Any special requests or notes..."
+                    />
+                  </div>
+                </div>
+                
+                {/* Guest Information Display */}
+                {editingBooking.guest && (
+                  <div className="bg-secondary-50 rounded-lg p-4">
+                    <h4 className="font-medium text-secondary-900 mb-3">Guest Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-secondary-600">Name:</span>
+                        <span className="ml-2 font-medium text-secondary-900">
+                          {editingBooking.guest.firstName} {editingBooking.guest.lastName}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-secondary-600">Email:</span>
+                        <span className="ml-2 font-medium text-secondary-900">{editingBooking.guest.email}</span>
+                      </div>
+                      <div>
+                        <span className="text-secondary-600">Phone:</span>
+                        <span className="ml-2 font-medium text-secondary-900">{editingBooking.guest.phone}</span>
+                      </div>
+                      <div>
+                        <span className="text-secondary-600">Nationality:</span>
+                        <span className="ml-2 font-medium text-secondary-900">{editingBooking.guest.nationality}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditBooking(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    Update Booking
                   </button>
                 </div>
               </form>

@@ -10,7 +10,8 @@ import {
   X, 
   AlertTriangle, 
   Eye, 
-  Edit 
+  Edit,
+  Printer
 } from 'lucide-react';
 import { Booking } from '@/types';
 
@@ -20,6 +21,7 @@ interface BookingTableProps {
   onEditBooking: (booking: Booking) => void;
   onCheckIn: (bookingId: string) => void;
   onCheckOut: (bookingId: string) => void;
+  onPrintReceipt: (booking: Booking) => void;
 }
 
 export default function BookingTable({
@@ -27,7 +29,8 @@ export default function BookingTable({
   onViewBooking,
   onEditBooking,
   onCheckIn,
-  onCheckOut
+  onCheckOut,
+  onPrintReceipt
 }: BookingTableProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -145,6 +148,13 @@ export default function BookingTable({
                     title="Edit"
                   >
                     <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onPrintReceipt(booking)}
+                    className="text-blue-600 hover:text-blue-900"
+                    title="Print Receipt"
+                  >
+                    <Printer className="w-4 h-4" />
                   </button>
                   {booking.status === 'confirmed' && (
                     <button

@@ -11,7 +11,16 @@ import {
   Printer, 
   Mail,
   Download,
-  X
+  X,
+  Bed,
+  Utensils,
+  Heart,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  Building2,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 
 export default function FolioPage() {
@@ -79,8 +88,8 @@ export default function FolioPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-secondary-900">Folio & Payments</h1>
-            <p className="text-secondary-600">Manage guest financials, payments, and invoices</p>
+            <h1 className="text-2xl font-bold text-secondary-900">Payment Management</h1>
+            <p className="text-secondary-600">Centralized payment processing for all hotel services</p>
           </div>
           <div className="flex space-x-2 mt-4 sm:mt-0">
             <button 
@@ -95,7 +104,7 @@ export default function FolioPage() {
               className="btn-primary"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Record Payment
+              Process Payment
             </button>
           </div>
         </div>
@@ -107,6 +116,231 @@ export default function FolioPage() {
           totalOutstanding={folioStats.totalOutstanding}
           totalCharges={folioStats.totalCharges}
         />
+
+        {/* Service Payment Categories */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Room Payments */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Bed className="w-6 h-6 text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-blue-600">Room Revenue</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Today's Revenue</span>
+                <span className="text-sm font-medium text-secondary-900">$2,450.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Pending Payments</span>
+                <span className="text-sm font-medium text-orange-600">$850.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Occupancy Rate</span>
+                <span className="text-sm font-medium text-green-600">78%</span>
+              </div>
+            </div>
+            <button className="w-full mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+              View Room Payments
+            </button>
+          </div>
+
+          {/* Restaurant Payments */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-100 rounded-full">
+                <Utensils className="w-6 h-6 text-green-600" />
+              </div>
+              <span className="text-sm font-medium text-green-600">F&B Revenue</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Today's Revenue</span>
+                <span className="text-sm font-medium text-secondary-900">$1,280.50</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Pending Orders</span>
+                <span className="text-sm font-medium text-orange-600">$245.75</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Avg Order Value</span>
+                <span className="text-sm font-medium text-green-600">$32.50</span>
+              </div>
+            </div>
+            <button className="w-full mt-4 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm">
+              View F&B Payments
+            </button>
+          </div>
+
+          {/* Spa & Wellness Payments */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-100 rounded-full">
+                <Heart className="w-6 h-6 text-purple-600" />
+              </div>
+              <span className="text-sm font-medium text-purple-600">Spa & Wellness</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Today's Revenue</span>
+                <span className="text-sm font-medium text-secondary-900">$890.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Booked Services</span>
+                <span className="text-sm font-medium text-orange-600">12</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Avg Service Value</span>
+                <span className="text-sm font-medium text-green-600">$74.17</span>
+              </div>
+            </div>
+            <button className="w-full mt-4 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm">
+              View Spa Payments
+            </button>
+          </div>
+
+          {/* Event & Conference Payments */}
+          <div className="card">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Calendar className="w-6 h-6 text-orange-600" />
+              </div>
+              <span className="text-sm font-medium text-orange-600">Events & Conferences</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Today's Revenue</span>
+                <span className="text-sm font-medium text-secondary-900">$3,200.00</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Active Events</span>
+                <span className="text-sm font-medium text-orange-600">3</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-secondary-600">Avg Event Value</span>
+                <span className="text-sm font-medium text-green-600">$1,066.67</span>
+              </div>
+            </div>
+            <button className="w-full mt-4 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm">
+              View Event Payments
+            </button>
+          </div>
+        </div>
+
+        {/* Payment Methods Overview */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Payment Methods Breakdown */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-secondary-900 mb-4">Payment Methods Today</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <CreditCard className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="font-medium text-secondary-900">Credit Card</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-secondary-900">$4,850.25</div>
+                  <div className="text-sm text-secondary-600">68% of total</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span className="font-medium text-secondary-900">Cash</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-secondary-900">$1,280.00</div>
+                  <div className="text-sm text-secondary-600">18% of total</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="font-medium text-secondary-900">Bank Transfer</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-secondary-900">$980.50</div>
+                  <div className="text-sm text-secondary-600">14% of total</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Transactions */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-secondary-900 mb-4">Recent Transactions</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 border border-secondary-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-secondary-900">Room 205 - John Doe</div>
+                    <div className="text-sm text-secondary-600">Credit Card • 2 min ago</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-green-600">+$450.00</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border border-secondary-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-secondary-900">Restaurant - Table 12</div>
+                    <div className="text-sm text-secondary-600">Cash • 15 min ago</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-green-600">+$89.50</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border border-secondary-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-secondary-900">Spa Treatment - Jane Smith</div>
+                    <div className="text-sm text-secondary-600">Credit Card • 32 min ago</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-green-600">+$150.00</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 border border-secondary-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-secondary-900">Conference Room A</div>
+                    <div className="text-sm text-secondary-600">Pending • 1 hour ago</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold text-orange-600">$1,200.00</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Search and Filters */}
         <div className="card">
@@ -274,9 +508,9 @@ export default function FolioPage() {
         {/* Payment Modal */}
         {showPaymentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-secondary-900">Record Payment</h3>
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-secondary-900">Process Payment</h3>
                 <button
                   onClick={() => setShowPaymentModal(false)}
                   className="text-secondary-400 hover:text-secondary-600"
@@ -285,42 +519,131 @@ export default function FolioPage() {
                 </button>
               </div>
               
-              <form className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">
-                    Folio ID
-                  </label>
-                  <input type="text" className="input" placeholder="Enter folio ID" />
+              <form className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Service Type *
+                    </label>
+                    <select className="input" required>
+                      <option value="">Select service</option>
+                      <option value="room">Room & Accommodation</option>
+                      <option value="restaurant">Restaurant & F&B</option>
+                      <option value="spa">Spa & Wellness</option>
+                      <option value="event">Events & Conferences</option>
+                      <option value="retail">Retail & Gift Shop</option>
+                      <option value="transport">Transportation</option>
+                      <option value="other">Other Services</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Customer/Guest *
+                    </label>
+                    <input type="text" className="input" placeholder="Enter customer name" required />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Room/Table/Service ID
+                    </label>
+                    <input type="text" className="input" placeholder="e.g., Room 205, Table 12" />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Payment Amount *
+                    </label>
+                    <input type="number" step="0.01" className="input" placeholder="0.00" required />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Payment Method *
+                    </label>
+                    <select className="input" required>
+                      <option value="">Select method</option>
+                      <option value="cash">Cash</option>
+                      <option value="credit_card">Credit Card</option>
+                      <option value="debit_card">Debit Card</option>
+                      <option value="check">Check</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="mobile_payment">Mobile Payment</option>
+                      <option value="cryptocurrency">Cryptocurrency</option>
+                      <option value="voucher">Voucher/Coupon</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Currency
+                    </label>
+                    <select className="input">
+                      <option value="USD">🇺🇸 USD</option>
+                      <option value="EUR">🇪🇺 EUR</option>
+                      <option value="GBP">🇬🇧 GBP</option>
+                      <option value="JPY">🇯🇵 JPY</option>
+                      <option value="CAD">🇨🇦 CAD</option>
+                      <option value="AUD">🇦🇺 AUD</option>
+                    </select>
+                  </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">
-                    Payment Amount
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Service Description
                   </label>
-                  <input type="number" step="0.01" className="input" placeholder="0.00" />
+                  <textarea className="input" rows={3} placeholder="Describe the service or items purchased..."></textarea>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Staff Member
+                    </label>
+                    <input type="text" className="input" placeholder="Staff member processing payment" />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Reference/Transaction ID
+                    </label>
+                    <input type="text" className="input" placeholder="Payment reference or transaction ID" />
+                  </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">
-                    Payment Method
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Additional Notes
                   </label>
-                  <select className="input">
-                    <option value="">Select method</option>
-                    <option value="cash">Cash</option>
-                    <option value="card">Credit Card</option>
-                    <option value="check">Check</option>
-                    <option value="transfer">Bank Transfer</option>
-                  </select>
+                  <textarea className="input" rows={2} placeholder="Any additional notes or special instructions..."></textarea>
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium text-secondary-700 mb-1">
-                    Reference/Notes
-                  </label>
-                  <textarea className="input" rows={3} placeholder="Payment reference or notes..."></textarea>
+                {/* Payment Summary */}
+                <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+                  <h4 className="font-medium text-secondary-900 mb-3">Payment Summary</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-secondary-600">Service Type:</span>
+                      <span className="font-medium text-secondary-900">Selected service</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary-600">Amount:</span>
+                      <span className="font-medium text-secondary-900">$0.00</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-secondary-600">Payment Method:</span>
+                      <span className="font-medium text-secondary-900">Selected method</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="font-medium text-secondary-900">Total:</span>
+                      <span className="font-bold text-secondary-900">$0.00</span>
+                    </div>
+                  </div>
                 </div>
                 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
                   <button
                     type="button"
                     onClick={() => setShowPaymentModal(false)}
@@ -332,7 +655,8 @@ export default function FolioPage() {
                     type="submit"
                     className="btn-primary"
                   >
-                    Record Payment
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Process Payment
                   </button>
                 </div>
               </form>

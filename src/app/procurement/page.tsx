@@ -13,6 +13,8 @@ export default function ProcurementPage() {
   const [showReorderModal, setShowReorderModal] = useState(false);
   const [selectedReorderItem, setSelectedReorderItem] = useState<any>(null);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
   
   // Mock inventory data
   const mockInventory = [
@@ -85,6 +87,29 @@ export default function ProcurementPage() {
     description: '',
     unit: 'pieces',
     location: '',
+    notes: ''
+  });
+
+  // Add Category Form State
+  const [addCategoryForm, setAddCategoryForm] = useState({
+    name: '',
+    description: '',
+    color: '#3B82F6',
+    icon: 'package'
+  });
+
+  // Add Supplier Form State
+  const [addSupplierForm, setAddSupplierForm] = useState({
+    name: '',
+    contact_person: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    country: '',
+    postal_code: '',
+    payment_terms: '30',
+    currency: 'USD',
     notes: ''
   });
 
@@ -186,6 +211,39 @@ export default function ProcurementPage() {
       description: '',
       unit: 'pieces',
       location: '',
+      notes: ''
+    });
+  };
+
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Adding new category:', addCategoryForm);
+    setShowAddCategoryModal(false);
+    // Reset form
+    setAddCategoryForm({
+      name: '',
+      description: '',
+      color: '#3B82F6',
+      icon: 'package'
+    });
+  };
+
+  const handleAddSupplierSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Adding new supplier:', addSupplierForm);
+    setShowAddSupplierModal(false);
+    // Reset form
+    setAddSupplierForm({
+      name: '',
+      contact_person: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      country: '',
+      postal_code: '',
+      payment_terms: '30',
+      currency: 'USD',
       notes: ''
     });
   };
@@ -357,6 +415,20 @@ export default function ProcurementPage() {
                   <option value="housekeeping">Housekeeping</option>
                   <option value="linen">Linen</option>
                 </select>
+                <button 
+                  onClick={() => setShowAddCategoryModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Category</span>
+                </button>
+                <button 
+                  onClick={() => setShowAddSupplierModal(true)}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Supplier</span>
+                </button>
                 <button 
                   onClick={() => setShowAddItemModal(true)}
                   className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2"
@@ -1328,6 +1400,378 @@ export default function ProcurementPage() {
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Item
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add Category Modal */}
+        {showAddCategoryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Add New Category</h2>
+                <button
+                  onClick={() => setShowAddCategoryModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleAddCategorySubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Category Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addCategoryForm.name}
+                      onChange={(e) => setAddCategoryForm({...addCategoryForm, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter category name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Color
+                    </label>
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="color"
+                        value={addCategoryForm.color}
+                        onChange={(e) => setAddCategoryForm({...addCategoryForm, color: e.target.value})}
+                        className="w-12 h-10 border border-secondary-300 rounded-lg cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={addCategoryForm.color}
+                        onChange={(e) => setAddCategoryForm({...addCategoryForm, color: e.target.value})}
+                        className="flex-1 px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="#3B82F6"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Icon
+                    </label>
+                    <select
+                      value={addCategoryForm.icon}
+                      onChange={(e) => setAddCategoryForm({...addCategoryForm, icon: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="package">📦 Package</option>
+                      <option value="food">🍽️ Food</option>
+                      <option value="beverage">🥤 Beverage</option>
+                      <option value="cleaning">🧽 Cleaning</option>
+                      <option value="linen">🛏️ Linen</option>
+                      <option value="maintenance">🔧 Maintenance</option>
+                      <option value="office">📋 Office</option>
+                      <option value="medical">🏥 Medical</option>
+                      <option value="safety">🛡️ Safety</option>
+                      <option value="electronics">📱 Electronics</option>
+                    </select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={addCategoryForm.description}
+                      onChange={(e) => setAddCategoryForm({...addCategoryForm, description: e.target.value})}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter category description..."
+                    />
+                  </div>
+                </div>
+                
+                {/* Category Preview */}
+                <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+                  <h4 className="font-medium text-secondary-900 mb-3">Category Preview</h4>
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
+                      style={{ backgroundColor: addCategoryForm.color }}
+                    >
+                      {addCategoryForm.icon === 'package' && '📦'}
+                      {addCategoryForm.icon === 'food' && '🍽️'}
+                      {addCategoryForm.icon === 'beverage' && '🥤'}
+                      {addCategoryForm.icon === 'cleaning' && '🧽'}
+                      {addCategoryForm.icon === 'linen' && '🛏️'}
+                      {addCategoryForm.icon === 'maintenance' && '🔧'}
+                      {addCategoryForm.icon === 'office' && '📋'}
+                      {addCategoryForm.icon === 'medical' && '🏥'}
+                      {addCategoryForm.icon === 'safety' && '🛡️'}
+                      {addCategoryForm.icon === 'electronics' && '📱'}
+                    </div>
+                    <div>
+                      <span className="font-medium text-secondary-900">{addCategoryForm.name || 'Category Name'}</span>
+                      <p className="text-sm text-secondary-600">{addCategoryForm.description || 'Category description...'}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCategoryModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Category
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add Supplier Modal */}
+        {showAddSupplierModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Add New Supplier</h2>
+                <button
+                  onClick={() => setShowAddSupplierModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleAddSupplierSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Company Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addSupplierForm.name}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Contact Person *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addSupplierForm.contact_person}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, contact_person: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter contact person name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={addSupplierForm.email}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter email address"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={addSupplierForm.phone}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Address *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addSupplierForm.address}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, address: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter street address"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      City *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addSupplierForm.city}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, city: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter city"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Country *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={addSupplierForm.country}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, country: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter country"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      value={addSupplierForm.postal_code}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, postal_code: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter postal code"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Payment Terms (Days)
+                    </label>
+                    <select
+                      value={addSupplierForm.payment_terms}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, payment_terms: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="0">Cash on Delivery</option>
+                      <option value="7">7 Days</option>
+                      <option value="15">15 Days</option>
+                      <option value="30">30 Days</option>
+                      <option value="45">45 Days</option>
+                      <option value="60">60 Days</option>
+                      <option value="90">90 Days</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Currency
+                    </label>
+                    <select
+                      value={addSupplierForm.currency}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, currency: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="USD">🇺🇸 US Dollar (USD)</option>
+                      <option value="EUR">🇪🇺 Euro (EUR)</option>
+                      <option value="GBP">🇬🇧 British Pound (GBP)</option>
+                      <option value="JPY">🇯🇵 Japanese Yen (JPY)</option>
+                      <option value="CAD">🇨🇦 Canadian Dollar (CAD)</option>
+                      <option value="AUD">🇦🇺 Australian Dollar (AUD)</option>
+                      <option value="CHF">🇨🇭 Swiss Franc (CHF)</option>
+                      <option value="CNY">🇨🇳 Chinese Yuan (CNY)</option>
+                      <option value="INR">🇮🇳 Indian Rupee (INR)</option>
+                      <option value="BRL">🇧🇷 Brazilian Real (BRL)</option>
+                    </select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={addSupplierForm.notes}
+                      onChange={(e) => setAddSupplierForm({...addSupplierForm, notes: e.target.value})}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Additional notes about the supplier..."
+                    />
+                  </div>
+                </div>
+                
+                {/* Supplier Preview */}
+                <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+                  <h4 className="font-medium text-secondary-900 mb-3">Supplier Preview</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-secondary-600">Company:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.name || 'Company Name'}</span>
+                    </div>
+                    <div>
+                      <span className="text-secondary-600">Contact:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.contact_person || 'Contact Person'}</span>
+                    </div>
+                    <div>
+                      <span className="text-secondary-600">Email:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.email || 'email@example.com'}</span>
+                    </div>
+                    <div>
+                      <span className="text-secondary-600">Phone:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.phone || '+1234567890'}</span>
+                    </div>
+                    <div>
+                      <span className="text-secondary-600">Location:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.city}, {addSupplierForm.country}</span>
+                    </div>
+                    <div>
+                      <span className="text-secondary-600">Payment:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.payment_terms} days</span>
+                    </div>
+                    <div>
+                      <span className="text-secondary-600">Currency:</span>
+                      <span className="font-medium text-secondary-900 ml-1">{addSupplierForm.currency}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddSupplierModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Supplier
                   </button>
                 </div>
               </form>

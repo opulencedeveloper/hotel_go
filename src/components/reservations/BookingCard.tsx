@@ -9,7 +9,8 @@ import {
   Clock, 
   CheckCircle, 
   X, 
-  AlertTriangle 
+  AlertTriangle,
+  Printer
 } from 'lucide-react';
 import { Booking } from '@/types';
 
@@ -17,9 +18,10 @@ interface BookingCardProps {
   booking: Booking;
   onView: (booking: Booking) => void;
   onEdit: (booking: Booking) => void;
+  onPrintReceipt: (booking: Booking) => void;
 }
 
-export default function BookingCard({ booking, onView, onEdit }: BookingCardProps) {
+export default function BookingCard({ booking, onView, onEdit, onPrintReceipt }: BookingCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-blue-100 text-blue-800';
@@ -95,6 +97,13 @@ export default function BookingCard({ booking, onView, onEdit }: BookingCardProp
           className="text-secondary-600 hover:text-secondary-700 text-sm"
         >
           Edit
+        </button>
+        <button
+          onClick={() => onPrintReceipt(booking)}
+          className="text-blue-600 hover:text-blue-700 text-sm flex items-center"
+        >
+          <Printer className="w-3 h-3 mr-1" />
+          Print
         </button>
       </div>
     </div>
