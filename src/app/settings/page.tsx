@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { Settings, Cog, Database, Bell, Shield, Globe, Palette, CheckCircle, AlertTriangle, Wrench, Save, RefreshCw, Eye, EyeOff, User, Building, Clock, Mail, Phone, MapPin, CreditCard, Lock, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings, Cog, Database, Bell, Shield, Globe, Palette, CheckCircle, AlertTriangle, Wrench, Save, RefreshCw, Eye, EyeOff, User, Building, Clock, Mail, Phone, MapPin, CreditCard, Lock, Sun, Moon, Monitor, Calendar } from 'lucide-react';
 import { mockProperties } from '@/data/mockData';
 
 export default function SettingsPage() {

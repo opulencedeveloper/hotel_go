@@ -52,12 +52,12 @@ export const mockHotels: Hotel[] = [
 ];
 
 export const mockRooms: Room[] = [
-  { id: '1', number: '101', type: 'single', status: 'occupied', price: 120, floor: 1, amenities: ['WiFi', 'TV', 'AC'], lastCleaned: '2024-01-10' },
-  { id: '2', number: '102', type: 'double', status: 'available', price: 180, floor: 1, amenities: ['WiFi', 'TV', 'AC', 'Mini Bar'] },
-  { id: '3', number: '201', type: 'suite', status: 'maintenance', price: 350, floor: 2, amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Balcony', 'Jacuzzi'] },
-  { id: '4', number: '202', type: 'deluxe', status: 'cleaning', price: 250, floor: 2, amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Balcony'] },
-  { id: '5', number: '301', type: 'single', status: 'available', price: 120, floor: 3, amenities: ['WiFi', 'TV', 'AC'] },
-  { id: '6', number: '302', type: 'double', status: 'occupied', price: 180, floor: 3, amenities: ['WiFi', 'TV', 'AC', 'Mini Bar'] }
+  { room_id: '1', property_id: 'prop_001', room_number: '101', room_type_id: 'type_001', status: 'occupied', floor: 1, last_cleaned: '2024-01-10' },
+  { room_id: '2', property_id: 'prop_001', room_number: '102', room_type_id: 'type_002', status: 'available', floor: 1 },
+  { room_id: '3', property_id: 'prop_001', room_number: '201', room_type_id: 'type_003', status: 'maintenance', floor: 2 },
+  { room_id: '4', property_id: 'prop_001', room_number: '202', room_type_id: 'type_002', status: 'cleaning', floor: 2 },
+  { room_id: '5', property_id: 'prop_001', room_number: '301', room_type_id: 'type_001', status: 'available', floor: 3 },
+  { room_id: '6', property_id: 'prop_001', room_number: '302', room_type_id: 'type_002', status: 'occupied', floor: 3 }
 ];
 
 export const mockGuests: Guest[] = [
@@ -200,25 +200,26 @@ export const mockTasks: Task[] = [
 ];
 
 export const mockPOSItems: POSItem[] = [
-  { id: '1', name: 'Caesar Salad', category: 'food', price: 12.99, description: 'Fresh romaine lettuce with caesar dressing', available: true },
-  { id: '2', name: 'Grilled Salmon', category: 'food', price: 24.99, description: 'Atlantic salmon with lemon butter sauce', available: true },
-  { id: '3', name: 'Coca Cola', category: 'beverage', price: 3.99, description: 'Classic soft drink', available: true },
-  { id: '4', name: 'Red Wine', category: 'beverage', price: 8.99, description: 'House red wine', available: true },
-  { id: '5', name: 'Room Service', category: 'service', price: 5.00, description: 'Room service delivery fee', available: true }
+  { item_id: '1', outlet_id: 'outlet_001', name: 'Caesar Salad', category: 'food', price: 12.99, description: 'Fresh romaine lettuce with caesar dressing', available: true, modifiers: [], ingredients: [] },
+  { item_id: '2', outlet_id: 'outlet_001', name: 'Grilled Salmon', category: 'food', price: 24.99, description: 'Atlantic salmon with lemon butter sauce', available: true, modifiers: [], ingredients: [] },
+  { item_id: '3', outlet_id: 'outlet_001', name: 'Coca Cola', category: 'beverage', price: 3.99, description: 'Classic soft drink', available: true, modifiers: [], ingredients: [] },
+  { item_id: '4', outlet_id: 'outlet_001', name: 'Red Wine', category: 'beverage', price: 8.99, description: 'House red wine', available: true, modifiers: [], ingredients: [] },
+  { item_id: '5', outlet_id: 'outlet_001', name: 'Room Service', category: 'service', price: 5.00, description: 'Room service delivery fee', available: true, modifiers: [], ingredients: [] }
 ];
 
 export const mockPOSOrders: POSOrder[] = [
   {
-    id: '1',
+    order_id: '1',
+    outlet_id: 'outlet_001',
     items: [
-      { itemId: '1', quantity: 2, price: 12.99 },
-      { itemId: '3', quantity: 2, price: 3.99 }
+      { item_id: '1', quantity: 2, price: 12.99, modifiers: [], notes: '' },
+      { item_id: '3', quantity: 2, price: 3.99, modifiers: [], notes: '' }
     ],
     total: 33.96,
     status: 'served',
-    roomNumber: '101',
-    createdAt: '2024-01-15T14:30:00',
-    staffId: '2'
+    room_number: '101',
+    created_at: '2024-01-15T14:30:00',
+    staff_id: '2'
   }
 ];
 
@@ -792,9 +793,9 @@ export const mockRoomTypes = [
     room_type_id: 'type_003',
     property_id: 'prop_001',
     name: 'Suite',
-    description: 'Luxurious suite with separate living area',
+    description: 'Luxurious suite with premium amenities',
     capacity: 4,
-    base_rate: 400,
+    base_rate: 350,
     amenities: ['WiFi', 'TV', 'AC', 'Mini Bar', 'Balcony', 'Jacuzzi'],
     images: ['/images/suite-1.jpg', '/images/suite-2.jpg']
   }

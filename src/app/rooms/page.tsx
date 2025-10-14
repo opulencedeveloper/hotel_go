@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { 
   Plus, 
@@ -26,6 +26,7 @@ import { mockRooms } from '@/data/mockData';
 import { Room } from '@/types';
 
 export default function RoomsPage() {
+  const [isClient, setIsClient] = useState(false);
   const [rooms, setRooms] = useState<Room[]>(mockRooms);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -33,11 +34,15 @@ export default function RoomsPage() {
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const filteredRooms = rooms.filter(room => {
-    const matchesSearch = room.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         room.type.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = room.room_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         room.room_type_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
-    const matchesType = typeFilter === 'all' || room.type === typeFilter;
+    const matchesType = typeFilter === 'all' || room.room_type_id === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
 
@@ -75,7 +80,7 @@ export default function RoomsPage() {
 
   const handleStatusChange = (roomId: string, newStatus: Room['status']) => {
     setRooms(prev => prev.map(room => 
-      room.id === roomId ? { ...room, status: newStatus } : room
+      room.room_id === roomId ? { ...room, status: newStatus } : room
     ));
   };
 
@@ -178,12 +183,12 @@ export default function RoomsPage() {
         {/* Rooms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredRooms.map((room) => (
-            <div key={room.id} className="card hover:shadow-md transition-shadow">
+            <div key={room.room_id} className="card hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center">
                   <Bed className="w-5 h-5 text-primary-600 mr-2" />
                   <span className="text-lg font-semibold text-secondary-900">
-                    Room {room.number}
+                    Room {room.room_number}
                   </span>
                 </div>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(room.status)}`}>
@@ -195,7 +200,7 @@ export default function RoomsPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-secondary-600">Type</span>
-                  <span className="text-sm font-medium text-secondary-900 capitalize">{room.type}</span>
+                  <span className="text-sm font-medium text-secondary-900 capitalize">{room.room_type_id}</span>
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -203,26 +208,11 @@ export default function RoomsPage() {
                   <span className="text-sm font-medium text-secondary-900">{room.floor}</span>
                 </div>
                 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-secondary-600">Price</span>
-                  <span className="text-sm font-medium text-secondary-900">${room.price}/night</span>
-                </div>
                 
-                <div>
-                  <span className="text-sm text-secondary-600">Amenities</span>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {room.amenities.map((amenity, index) => (
-                      <div key={index} className="flex items-center text-xs text-secondary-600 bg-secondary-100 px-2 py-1 rounded">
-                        {getAmenityIcon(amenity)}
-                        <span className="ml-1">{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
                 
-                {room.lastCleaned && (
+                {room.last_cleaned && (
                   <div className="text-xs text-secondary-500">
-                    Last cleaned: {new Date(room.lastCleaned).toLocaleDateString()}
+                    Last cleaned: {isClient ? new Date(room.last_cleaned).toLocaleDateString() : '--/--/----'}
                   </div>
                 )}
               </div>
@@ -246,7 +236,7 @@ export default function RoomsPage() {
                 <div className="flex space-x-1">
                   {room.status === 'available' && (
                     <button
-                      onClick={() => handleStatusChange(room.id, 'occupied')}
+                      onClick={() => handleStatusChange(room.room_id, 'occupied')}
                       className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200"
                     >
                       Mark Occupied
@@ -254,7 +244,7 @@ export default function RoomsPage() {
                   )}
                   {room.status === 'occupied' && (
                     <button
-                      onClick={() => handleStatusChange(room.id, 'cleaning')}
+                      onClick={() => handleStatusChange(room.room_id, 'cleaning')}
                       className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200"
                     >
                       Mark Cleaning
@@ -262,7 +252,7 @@ export default function RoomsPage() {
                   )}
                   {room.status === 'cleaning' && (
                     <button
-                      onClick={() => handleStatusChange(room.id, 'available')}
+                      onClick={() => handleStatusChange(room.room_id, 'available')}
                       className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200"
                     >
                       Mark Available
@@ -374,10 +364,9 @@ export default function RoomsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium text-secondary-900">Room Information</h4>
-                    <p className="text-sm text-secondary-600">Number: {selectedRoom.number}</p>
-                    <p className="text-sm text-secondary-600">Type: {selectedRoom.type}</p>
-                    <p className="text-sm text-secondary-600">Floor: {selectedRoom.floor}</p>
-                    <p className="text-sm text-secondary-600">Price: ${selectedRoom.price}/night</p>
+                     <p className="text-sm text-secondary-600">Number: {selectedRoom.room_number}</p>
+                     <p className="text-sm text-secondary-600">Type: {selectedRoom.room_type_id}</p>
+                     <p className="text-sm text-secondary-600">Floor: {selectedRoom.floor}</p>
                   </div>
                   <div>
                     <h4 className="font-medium text-secondary-900">Status</h4>
@@ -389,22 +378,13 @@ export default function RoomsPage() {
                 </div>
                 
                 <div>
-                  <h4 className="font-medium text-secondary-900">Amenities</h4>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedRoom.amenities.map((amenity, index) => (
-                      <div key={index} className="flex items-center text-sm text-secondary-600 bg-secondary-100 px-3 py-1 rounded">
-                        {getAmenityIcon(amenity)}
-                        <span className="ml-1">{amenity}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
                 
-                {selectedRoom.lastCleaned && (
+                {selectedRoom.last_cleaned && (
                   <div>
                     <h4 className="font-medium text-secondary-900">Last Cleaned</h4>
                     <p className="text-sm text-secondary-600">
-                      {new Date(selectedRoom.lastCleaned).toLocaleDateString()}
+                      {isClient ? new Date(selectedRoom.last_cleaned).toLocaleDateString() : '--/--/----'}
                     </p>
                   </div>
                 )}

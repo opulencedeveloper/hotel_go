@@ -25,7 +25,7 @@ export default function AnalyticsPage() {
     return sum + nights;
   }, 0) / totalBookings;
   
-  const occupancyRate = (stats.occupancy.today + stats.occupancy.week + stats.occupancy.month) / 3;
+  const occupancyRate = (stats.occupancy.today + stats.occupancy.mtd + stats.occupancy.ytd) / 3;
   const availableRooms = mockRooms.filter(room => room.status === 'available').length;
   const totalRooms = mockRooms.length;
   

@@ -25,6 +25,7 @@ import {
 import { Booking, Room, RoomType, RatePlan, Guest } from '@/types';
 
 export default function ReservationsPage() {
+  const [isClient, setIsClient] = useState(false);
   const [bookings, setBookings] = useState<Booking[]>(mockBookings);
   const [rooms, setRooms] = useState<Room[]>(mockRooms);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>(mockRoomTypes);
@@ -49,6 +50,33 @@ export default function ReservationsPage() {
   const [showRateRules, setShowRateRules] = useState(false);
   const [searchResults, setSearchResults] = useState<Room[]>([]);
   const [overbookingAlerts, setOverbookingAlerts] = useState<string[]>([]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Helper functions for status display
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'checked-in': return 'bg-green-100 text-green-800';
+      case 'checked-out': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'no-show': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'confirmed': return '✓';
+      case 'checked-in': return '🏠';
+      case 'checked-out': return '📤';
+      case 'cancelled': return '❌';
+      case 'no-show': return '⚠️';
+      default: return '❓';
+    }
+  };
 
   // Search availability
   const searchAvailability = () => {
@@ -224,8 +252,8 @@ export default function ReservationsPage() {
                       </span>
                     </p>
                     <p><span className="font-medium">Source:</span> {selectedBooking.source}</p>
-                    <p><span className="font-medium">Check-in:</span> {new Date(selectedBooking.arrival_date).toLocaleDateString()}</p>
-                    <p><span className="font-medium">Check-out:</span> {new Date(selectedBooking.departure_date).toLocaleDateString()}</p>
+                    <p><span className="font-medium">Check-in:</span> {isClient ? new Date(selectedBooking.arrival_date).toLocaleDateString() : '--/--/----'}</p>
+                    <p><span className="font-medium">Check-out:</span> {isClient ? new Date(selectedBooking.departure_date).toLocaleDateString() : '--/--/----'}</p>
                     <p><span className="font-medium">Guests:</span> {selectedBooking.adults} adults, {selectedBooking.children} children</p>
                     <p><span className="font-medium">Total Amount:</span> ${selectedBooking.total_amount}</p>
                     {selectedBooking.special_requests && (
