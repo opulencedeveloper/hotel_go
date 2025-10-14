@@ -48,6 +48,21 @@ export default function ReservationsPage() {
   const [showNewBooking, setShowNewBooking] = useState(false);
   const [showGroupBooking, setShowGroupBooking] = useState(false);
   const [showRateRules, setShowRateRules] = useState(false);
+
+  // Group Booking Form State
+  const [groupBookingForm, setGroupBookingForm] = useState({
+    groupName: '',
+    contactPerson: '',
+    email: '',
+    phone: '',
+    checkIn: '',
+    checkOut: '',
+    totalRooms: 1,
+    roomType: '',
+    ratePlan: '',
+    specialRequests: '',
+    billingInstructions: ''
+  });
   const [searchResults, setSearchResults] = useState<Room[]>([]);
   const [overbookingAlerts, setOverbookingAlerts] = useState<string[]>([]);
 
@@ -112,6 +127,26 @@ export default function ReservationsPage() {
   useEffect(() => {
     searchAvailability();
   }, [searchParams]);
+
+  const handleGroupBookingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating group booking:', groupBookingForm);
+    setShowGroupBooking(false);
+    // Reset form
+    setGroupBookingForm({
+      groupName: '',
+      contactPerson: '',
+      email: '',
+      phone: '',
+      checkIn: '',
+      checkOut: '',
+      totalRooms: 1,
+      roomType: '',
+      ratePlan: '',
+      specialRequests: '',
+      billingInstructions: ''
+    });
+  };
 
 
   const handleBookingAction = (bookingId: string, action: string) => {
@@ -466,6 +501,203 @@ export default function ReservationsPage() {
                   Add New Rate Plan
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Booking Modal */}
+        {showGroupBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-secondary-900">Group Booking</h3>
+                <button
+                  onClick={() => setShowGroupBooking(false)}
+                  className="text-secondary-400 hover:text-secondary-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleGroupBookingSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Group Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={groupBookingForm.groupName}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, groupName: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter group name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Contact Person *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={groupBookingForm.contactPerson}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, contactPerson: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Contact person name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={groupBookingForm.email}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="group@email.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={groupBookingForm.phone}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Check-in Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={groupBookingForm.checkIn}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, checkIn: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Check-out Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={groupBookingForm.checkOut}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, checkOut: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Total Rooms *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={groupBookingForm.totalRooms}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, totalRooms: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Room Type *
+                    </label>
+                    <select
+                      required
+                      value={groupBookingForm.roomType}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, roomType: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select room type</option>
+                      {roomTypes.map(type => (
+                        <option key={type.room_type_id} value={type.room_type_id}>
+                          {type.name} - ${type.base_rate}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Rate Plan
+                    </label>
+                    <select
+                      value={groupBookingForm.ratePlan}
+                      onChange={(e) => setGroupBookingForm({...groupBookingForm, ratePlan: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select rate plan</option>
+                      {ratePlans.map(plan => (
+                        <option key={plan.rate_plan_id} value={plan.rate_plan_id}>
+                          {plan.name} - {plan.code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Special Requests
+                  </label>
+                  <textarea
+                    value={groupBookingForm.specialRequests}
+                    onChange={(e) => setGroupBookingForm({...groupBookingForm, specialRequests: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Any special requests for the group..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Billing Instructions
+                  </label>
+                  <textarea
+                    value={groupBookingForm.billingInstructions}
+                    onChange={(e) => setGroupBookingForm({...groupBookingForm, billingInstructions: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Special billing arrangements, payment terms, etc..."
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowGroupBooking(false)}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Create Group Booking
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

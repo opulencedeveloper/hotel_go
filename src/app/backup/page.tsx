@@ -1,7 +1,7 @@
 'use client';
 
 import Layout from '@/components/Layout';
-import { Archive, Download, Upload, Shield, Clock, CheckCircle, AlertTriangle, Database, HardDrive, Plus, Eye, Trash2, Play, Pause, Settings } from 'lucide-react';
+import { Archive, Download, Upload, Shield, Clock, CheckCircle, AlertTriangle, Database, HardDrive, Plus, Eye, Trash2, Play, Pause, Settings, X } from 'lucide-react';
 import { mockBackups, mockSyncEvents, mockOfflineQueue } from '@/data/mockData';
 import { useState, useEffect } from 'react';
 
@@ -9,6 +9,29 @@ export default function BackupPage() {
   const [selectedBackupType, setSelectedBackupType] = useState('all');
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Form states
+  const [restoreForm, setRestoreForm] = useState({
+    backupId: '',
+    restoreType: 'full',
+    targetDate: '',
+    includeSettings: true,
+    includeData: true,
+    confirmRestore: false
+  });
+
+  const [settingsForm, setSettingsForm] = useState({
+    autoBackup: true,
+    backupFrequency: 'daily',
+    retentionDays: 30,
+    compressionEnabled: true,
+    encryptionEnabled: true,
+    cloudSync: true,
+    emailNotifications: true,
+    maxBackupSize: 1000
+  });
 
   useEffect(() => {
     setIsClient(true);
@@ -41,6 +64,39 @@ export default function BackupPage() {
       setIsCreatingBackup(false);
       // In a real app, this would trigger the actual backup process
     }, 2000);
+  };
+
+  // Form handlers
+  const handleRestoreSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Restoring data:', restoreForm);
+    setShowRestoreModal(false);
+    // Reset form
+    setRestoreForm({
+      backupId: '',
+      restoreType: 'full',
+      targetDate: '',
+      includeSettings: true,
+      includeData: true,
+      confirmRestore: false
+    });
+  };
+
+  const handleSettingsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Updating backup settings:', settingsForm);
+    setShowSettingsModal(false);
+    // Reset form
+    setSettingsForm({
+      autoBackup: true,
+      backupFrequency: 'daily',
+      retentionDays: 30,
+      compressionEnabled: true,
+      encryptionEnabled: true,
+      cloudSync: true,
+      emailNotifications: true,
+      maxBackupSize: 1000
+    });
   };
 
   return (
@@ -96,11 +152,17 @@ export default function BackupPage() {
                     </>
                   )}
                 </button>
-                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={() => setShowRestoreModal(true)}
+                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <Upload className="w-4 h-4" />
                   <span>Restore Data</span>
                 </button>
-                <button className="bg-white text-indigo-600 hover:bg-indigo-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={() => setShowSettingsModal(true)}
+                  className="bg-white text-indigo-600 hover:bg-indigo-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <Settings className="w-4 h-4" />
                   <span>Settings</span>
                 </button>
@@ -424,6 +486,291 @@ export default function BackupPage() {
             </div>
           </div>
         </div>
+
+        {/* Restore Data Modal */}
+        {showRestoreModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Restore Data from Backup</h2>
+                <button
+                  onClick={() => setShowRestoreModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleRestoreSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Select Backup *
+                    </label>
+                    <select
+                      required
+                      value={restoreForm.backupId}
+                      onChange={(e) => setRestoreForm({...restoreForm, backupId: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select a backup</option>
+                      {completedBackups.map(backup => (
+                        <option key={backup.backup_id} value={backup.backup_id}>
+                          {backup.backup_type} - {isClient ? new Date(backup.created_at).toLocaleDateString() : '--/--/----'} ({formatFileSize(backup.size_bytes)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Restore Type *
+                    </label>
+                    <select
+                      required
+                      value={restoreForm.restoreType}
+                      onChange={(e) => setRestoreForm({...restoreForm, restoreType: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="full">Full System Restore</option>
+                      <option value="partial">Partial Restore</option>
+                      <option value="database">Database Only</option>
+                      <option value="files">Files Only</option>
+                      <option value="settings">Settings Only</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Target Date
+                    </label>
+                    <input
+                      type="date"
+                      value={restoreForm.targetDate}
+                      onChange={(e) => setRestoreForm({...restoreForm, targetDate: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-secondary-900">Restore Options</h4>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={restoreForm.includeSettings}
+                          onChange={(e) => setRestoreForm({...restoreForm, includeSettings: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Include System Settings</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={restoreForm.includeData}
+                          onChange={(e) => setRestoreForm({...restoreForm, includeData: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Include User Data</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={restoreForm.confirmRestore}
+                          onChange={(e) => setRestoreForm({...restoreForm, confirmRestore: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">I understand this will overwrite current data</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-medium text-red-900 mb-2">⚠️ Important Warning</h4>
+                  <div className="text-sm text-red-800 space-y-1">
+                    <p>• This operation will overwrite your current data</p>
+                    <p>• Make sure to create a backup before proceeding</p>
+                    <p>• The restore process may take several minutes</p>
+                    <p>• System will be temporarily unavailable during restore</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowRestoreModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!restoreForm.confirmRestore}
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Restore Data
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Settings Modal */}
+        {showSettingsModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Backup Settings</h2>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Backup Frequency *
+                    </label>
+                    <select
+                      required
+                      value={settingsForm.backupFrequency}
+                      onChange={(e) => setSettingsForm({...settingsForm, backupFrequency: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="hourly">Hourly</option>
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Retention Period (Days) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      max="365"
+                      value={settingsForm.retentionDays}
+                      onChange={(e) => setSettingsForm({...settingsForm, retentionDays: parseInt(e.target.value) || 30})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Max Backup Size (MB) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="100"
+                      max="10000"
+                      value={settingsForm.maxBackupSize}
+                      onChange={(e) => setSettingsForm({...settingsForm, maxBackupSize: parseInt(e.target.value) || 1000})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-secondary-900">Backup Options</h4>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={settingsForm.autoBackup}
+                          onChange={(e) => setSettingsForm({...settingsForm, autoBackup: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Enable Automatic Backups</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={settingsForm.compressionEnabled}
+                          onChange={(e) => setSettingsForm({...settingsForm, compressionEnabled: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Enable Compression</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={settingsForm.encryptionEnabled}
+                          onChange={(e) => setSettingsForm({...settingsForm, encryptionEnabled: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Enable Encryption</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={settingsForm.cloudSync}
+                          onChange={(e) => setSettingsForm({...settingsForm, cloudSync: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Enable Cloud Sync</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={settingsForm.emailNotifications}
+                          onChange={(e) => setSettingsForm({...settingsForm, emailNotifications: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Email Notifications</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Current Backup Status</h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <p>• Total backups: {completedBackups.length}</p>
+                    <p>• Storage used: {formatFileSize(totalStorageUsed)}</p>
+                    <p>• Pending sync items: {pendingSyncItems}</p>
+                    <p>• Last backup: {isClient ? new Date().toLocaleDateString() : '--/--/----'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Save Settings
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -36,6 +36,7 @@ export default function FrontDeskPage() {
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const [showRoomAssignment, setShowRoomAssignment] = useState(false);
+  const [showNewReservationModal, setShowNewReservationModal] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<any>(null);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +47,19 @@ export default function FrontDeskPage() {
   const [rooms, setRooms] = useState<Room[]>(mockRooms);
   const [roomTypes, setRoomTypes] = useState<RoomType[]>(mockRoomTypes);
   const [folios, setFolios] = useState<Folio[]>(mockFolios);
+
+  // New Reservation Form State
+  const [newReservationForm, setNewReservationForm] = useState({
+    guestName: '',
+    email: '',
+    phone: '',
+    checkIn: '',
+    checkOut: '',
+    adults: 2,
+    children: 0,
+    roomType: '',
+    specialRequests: ''
+  });
 
   // Filter data based on current date and status
   const today = new Date().toISOString().split('T')[0];
@@ -121,6 +135,24 @@ export default function FrontDeskPage() {
     return rooms.filter(room => room.status === 'available');
   };
 
+  const handleNewReservationSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating new reservation:', newReservationForm);
+    setShowNewReservationModal(false);
+    // Reset form
+    setNewReservationForm({
+      guestName: '',
+      email: '',
+      phone: '',
+      checkIn: '',
+      checkOut: '',
+      adults: 2,
+      children: 0,
+      roomType: '',
+      specialRequests: ''
+    });
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -147,7 +179,10 @@ export default function FrontDeskPage() {
                 <Plus className="w-4 h-4 mr-2" />
                 Walk-in
               </button>
-              <button className="btn-primary">
+              <button 
+                onClick={() => setShowNewReservationModal(true)}
+                className="btn-primary"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 New Reservation
               </button>
@@ -789,6 +824,167 @@ export default function FrontDeskPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* New Reservation Modal */}
+        {showNewReservationModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">New Reservation</h2>
+                <button
+                  onClick={() => setShowNewReservationModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleNewReservationSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Guest Name *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newReservationForm.guestName}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, guestName: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Enter guest name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={newReservationForm.email}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="guest@email.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={newReservationForm.phone}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="+1 (555) 123-4567"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Room Type
+                    </label>
+                    <select
+                      value={newReservationForm.roomType}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, roomType: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select room type</option>
+                      {roomTypes.map(type => (
+                        <option key={type.room_type_id} value={type.room_type_id}>
+                          {type.name} - ${type.base_rate}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Check-in Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newReservationForm.checkIn}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, checkIn: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Check-out Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={newReservationForm.checkOut}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, checkOut: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Adults
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newReservationForm.adults}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, adults: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Children
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newReservationForm.children}
+                      onChange={(e) => setNewReservationForm({...newReservationForm, children: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Special Requests
+                  </label>
+                  <textarea
+                    value={newReservationForm.specialRequests}
+                    onChange={(e) => setNewReservationForm({...newReservationForm, specialRequests: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Any special requests or notes..."
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewReservationModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Reservation
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

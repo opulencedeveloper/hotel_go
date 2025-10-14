@@ -40,6 +40,18 @@ export default function POSPage() {
   const [selectedOrder, setSelectedOrder] = useState<POSOrder | null>(null);
   const [tableNumber, setTableNumber] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
+  const [showNewOrderModal, setShowNewOrderModal] = useState(false);
+
+  // New Order Form State
+  const [newOrderForm, setNewOrderForm] = useState({
+    table_number: '',
+    room_number: '',
+    customer_name: '',
+    customer_phone: '',
+    order_type: 'dine_in',
+    payment_method: 'cash',
+    notes: ''
+  });
 
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -144,6 +156,22 @@ export default function POSPage() {
     ));
   };
 
+  const handleNewOrderSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Creating new order:', newOrderForm);
+    setShowNewOrderModal(false);
+    // Reset form
+    setNewOrderForm({
+      table_number: '',
+      room_number: '',
+      customer_name: '',
+      customer_phone: '',
+      order_type: 'dine_in',
+      payment_method: 'cash',
+      notes: ''
+    });
+  };
+
   const posStats = {
     totalOrders: orders.length,
     pendingOrders: orders.filter(o => o.status === 'pending').length,
@@ -166,7 +194,10 @@ export default function POSPage() {
               <Printer className="w-4 h-4 mr-2" />
               Print Receipt
             </button>
-            <button className="btn-primary">
+            <button 
+              onClick={() => setShowNewOrderModal(true)}
+              className="btn-primary"
+            >
               <Receipt className="w-4 h-4 mr-2" />
               New Order
             </button>
@@ -505,6 +536,141 @@ export default function POSPage() {
                   Print Receipt
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* New Order Modal */}
+        {showNewOrderModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Create New Order</h2>
+                <button
+                  onClick={() => setShowNewOrderModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleNewOrderSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Customer Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrderForm.customer_name}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, customer_name: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Customer name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Customer Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={newOrderForm.customer_phone}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, customer_phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="+1-555-000-0000"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Table Number
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrderForm.table_number}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, table_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Table number"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Room Number
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrderForm.room_number}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, room_number: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Room number"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Order Type
+                    </label>
+                    <select
+                      value={newOrderForm.order_type}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, order_type: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="dine_in">Dine In</option>
+                      <option value="takeout">Takeout</option>
+                      <option value="delivery">Delivery</option>
+                      <option value="room_service">Room Service</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Payment Method
+                    </label>
+                    <select
+                      value={newOrderForm.payment_method}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, payment_method: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="card">Card</option>
+                      <option value="room_charge">Room Charge</option>
+                      <option value="split">Split Payment</option>
+                    </select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Order Notes
+                    </label>
+                    <textarea
+                      value={newOrderForm.notes}
+                      onChange={(e) => setNewOrderForm({...newOrderForm, notes: e.target.value})}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Special instructions or notes..."
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowNewOrderModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Receipt className="w-4 h-4 mr-2" />
+                    Create Order
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

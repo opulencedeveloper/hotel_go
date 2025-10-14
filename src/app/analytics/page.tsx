@@ -2,13 +2,40 @@
 
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { BarChart3, TrendingUp, PieChart, Activity, Target, AlertTriangle, CheckCircle, Database, DollarSign, Users, Bed, Calendar, Download, Filter, Eye, RefreshCw } from 'lucide-react';
+import { BarChart3, TrendingUp, PieChart, Activity, Target, AlertTriangle, CheckCircle, Database, DollarSign, Users, Bed, Calendar, Download, Filter, Eye, RefreshCw, X } from 'lucide-react';
 import { mockDashboardStats, mockBookings, mockRooms, mockGuestProfiles } from '@/data/mockData';
 
 export default function AnalyticsPage() {
   const [isClient, setIsClient] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('revenue');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [showFiltersModal, setShowFiltersModal] = useState(false);
+
+  // Form states
+  const [exportForm, setExportForm] = useState({
+    reportType: 'comprehensive',
+    format: 'pdf',
+    dateRange: '30d',
+    includeCharts: true,
+    includeDetails: true
+  });
+
+  const [refreshForm, setRefreshForm] = useState({
+    dataSource: 'all',
+    refreshType: 'full',
+    includeRealTime: true
+  });
+
+  const [filtersForm, setFiltersForm] = useState({
+    dateRange: '30d',
+    roomTypes: [] as string[],
+    revenueRange: { min: 0, max: 1000000 },
+    occupancyRange: { min: 0, max: 100 },
+    guestSegments: [] as string[],
+    channels: [] as string[]
+  });
 
   useEffect(() => {
     setIsClient(true);
@@ -63,6 +90,48 @@ export default function AnalyticsPage() {
     { name: 'Guest Satisfaction', value: '4.7/5', change: '+0.2', trend: 'up' }
   ];
 
+  // Form handlers
+  const handleExportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Exporting report:', exportForm);
+    setShowExportModal(false);
+    // Reset form
+    setExportForm({
+      reportType: 'comprehensive',
+      format: 'pdf',
+      dateRange: '30d',
+      includeCharts: true,
+      includeDetails: true
+    });
+  };
+
+  const handleRefreshSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Refreshing data:', refreshForm);
+    setShowRefreshModal(false);
+    // Reset form
+    setRefreshForm({
+      dataSource: 'all',
+      refreshType: 'full',
+      includeRealTime: true
+    });
+  };
+
+  const handleFiltersSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Applying filters:', filtersForm);
+    setShowFiltersModal(false);
+    // Reset form
+    setFiltersForm({
+      dateRange: '30d',
+      roomTypes: [] as string[],
+      revenueRange: { min: 0, max: 1000000 },
+      occupancyRange: { min: 0, max: 100 },
+      guestSegments: [] as string[],
+      channels: [] as string[]
+    });
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -99,15 +168,24 @@ export default function AnalyticsPage() {
             
             <div className="mt-8 lg:mt-0 lg:ml-8">
               <div className="flex flex-col gap-3">
-                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={() => setShowExportModal(true)}
+                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <Download className="w-4 h-4" />
                   <span>Export Report</span>
                 </button>
-                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={() => setShowRefreshModal(true)}
+                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <RefreshCw className="w-4 h-4" />
                   <span>Refresh Data</span>
                 </button>
-                <button className="bg-white text-blue-600 hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={() => setShowFiltersModal(true)}
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <Filter className="w-4 h-4" />
                   <span>Custom Filters</span>
                 </button>
@@ -358,6 +436,406 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+
+        {/* Export Report Modal */}
+        {showExportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Export Analytics Report</h2>
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleExportSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Report Type *
+                    </label>
+                    <select
+                      required
+                      value={exportForm.reportType}
+                      onChange={(e) => setExportForm({...exportForm, reportType: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="comprehensive">Comprehensive Report</option>
+                      <option value="revenue">Revenue Analysis</option>
+                      <option value="occupancy">Occupancy Report</option>
+                      <option value="guest">Guest Analytics</option>
+                      <option value="performance">Performance Metrics</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Export Format *
+                    </label>
+                    <select
+                      required
+                      value={exportForm.format}
+                      onChange={(e) => setExportForm({...exportForm, format: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="pdf">PDF Document</option>
+                      <option value="excel">Excel Spreadsheet</option>
+                      <option value="csv">CSV Data</option>
+                      <option value="json">JSON Data</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Date Range *
+                    </label>
+                    <select
+                      required
+                      value={exportForm.dateRange}
+                      onChange={(e) => setExportForm({...exportForm, dateRange: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="7d">Last 7 Days</option>
+                      <option value="30d">Last 30 Days</option>
+                      <option value="90d">Last 90 Days</option>
+                      <option value="1y">Last Year</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <div className="space-y-3">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={exportForm.includeCharts}
+                          onChange={(e) => setExportForm({...exportForm, includeCharts: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Include Charts and Graphs</span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={exportForm.includeDetails}
+                          onChange={(e) => setExportForm({...exportForm, includeDetails: e.target.checked})}
+                          className="mr-3 rounded border-secondary-300"
+                        />
+                        <span className="text-sm text-secondary-700">Include Detailed Breakdowns</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowExportModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Report
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Refresh Data Modal */}
+        {showRefreshModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Refresh Analytics Data</h2>
+                <button
+                  onClick={() => setShowRefreshModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleRefreshSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Data Source *
+                    </label>
+                    <select
+                      required
+                      value={refreshForm.dataSource}
+                      onChange={(e) => setRefreshForm({...refreshForm, dataSource: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="all">All Data Sources</option>
+                      <option value="bookings">Bookings & Reservations</option>
+                      <option value="revenue">Revenue Data</option>
+                      <option value="occupancy">Occupancy Data</option>
+                      <option value="guests">Guest Data</option>
+                      <option value="rooms">Room Data</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Refresh Type *
+                    </label>
+                    <select
+                      required
+                      value={refreshForm.refreshType}
+                      onChange={(e) => setRefreshForm({...refreshForm, refreshType: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="full">Full Refresh</option>
+                      <option value="incremental">Incremental Update</option>
+                      <option value="realtime">Real-time Sync</option>
+                      <option value="scheduled">Scheduled Refresh</option>
+                    </select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={refreshForm.includeRealTime}
+                        onChange={(e) => setRefreshForm({...refreshForm, includeRealTime: e.target.checked})}
+                        className="mr-3 rounded border-secondary-300"
+                      />
+                      <span className="text-sm text-secondary-700">Enable Real-time Data Updates</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Refresh Information</h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <p>• Last refresh: {isClient ? new Date().toLocaleString() : '--:-- --'}</p>
+                    <p>• Data points: {totalBookings} bookings, {totalRooms} rooms</p>
+                    <p>• Estimated time: 2-5 minutes</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowRefreshModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Data
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Filters Modal */}
+        {showFiltersModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-secondary-900">Custom Analytics Filters</h2>
+                <button
+                  onClick={() => setShowFiltersModal(false)}
+                  className="p-2 hover:bg-secondary-100 rounded-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleFiltersSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Date Range *
+                    </label>
+                    <select
+                      required
+                      value={filtersForm.dateRange}
+                      onChange={(e) => setFiltersForm({...filtersForm, dateRange: e.target.value})}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="7d">Last 7 Days</option>
+                      <option value="30d">Last 30 Days</option>
+                      <option value="90d">Last 90 Days</option>
+                      <option value="1y">Last Year</option>
+                      <option value="custom">Custom Range</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Revenue Range ($)
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        value={filtersForm.revenueRange.min}
+                        onChange={(e) => setFiltersForm({
+                          ...filtersForm, 
+                          revenueRange: {...filtersForm.revenueRange, min: parseInt(e.target.value) || 0}
+                        })}
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Min"
+                      />
+                      <input
+                        type="number"
+                        value={filtersForm.revenueRange.max}
+                        onChange={(e) => setFiltersForm({
+                          ...filtersForm, 
+                          revenueRange: {...filtersForm.revenueRange, max: parseInt(e.target.value) || 1000000}
+                        })}
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Max"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Occupancy Range (%)
+                    </label>
+                    <div className="flex space-x-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={filtersForm.occupancyRange.min}
+                        onChange={(e) => setFiltersForm({
+                          ...filtersForm, 
+                          occupancyRange: {...filtersForm.occupancyRange, min: parseInt(e.target.value) || 0}
+                        })}
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Min %"
+                      />
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={filtersForm.occupancyRange.max}
+                        onChange={(e) => setFiltersForm({
+                          ...filtersForm, 
+                          occupancyRange: {...filtersForm.occupancyRange, max: parseInt(e.target.value) || 100}
+                        })}
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Max %"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Room Types
+                    </label>
+                    <select
+                      multiple
+                      value={filtersForm.roomTypes}
+                      onChange={(e) => {
+                        const values = Array.from(e.target.selectedOptions, option => option.value);
+                        setFiltersForm({...filtersForm, roomTypes: values});
+                      }}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="standard">Standard</option>
+                      <option value="deluxe">Deluxe</option>
+                      <option value="suite">Suite</option>
+                      <option value="presidential">Presidential</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Guest Segments
+                    </label>
+                    <select
+                      multiple
+                      value={filtersForm.guestSegments}
+                      onChange={(e) => {
+                        const values = Array.from(e.target.selectedOptions, option => option.value);
+                        setFiltersForm({...filtersForm, guestSegments: values});
+                      }}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="business">Business</option>
+                      <option value="leisure">Leisure</option>
+                      <option value="repeat">Repeat Guests</option>
+                      <option value="new">New Guests</option>
+                      <option value="group">Group Bookings</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Booking Channels
+                    </label>
+                    <select
+                      multiple
+                      value={filtersForm.channels}
+                      onChange={(e) => {
+                        const values = Array.from(e.target.selectedOptions, option => option.value);
+                        setFiltersForm({...filtersForm, channels: values});
+                      }}
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="direct">Direct</option>
+                      <option value="ota">Online Travel Agency</option>
+                      <option value="phone">Phone</option>
+                      <option value="walk-in">Walk-in</option>
+                      <option value="corporate">Corporate</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+                  <h4 className="font-medium text-secondary-900 mb-3">Filter Preview</h4>
+                  <div className="text-sm text-secondary-700 space-y-1">
+                    <p>• Date Range: {filtersForm.dateRange}</p>
+                    <p>• Revenue: ${filtersForm.revenueRange.min.toLocaleString()} - ${filtersForm.revenueRange.max.toLocaleString()}</p>
+                    <p>• Occupancy: {filtersForm.occupancyRange.min}% - {filtersForm.occupancyRange.max}%</p>
+                    <p>• Room Types: {filtersForm.roomTypes.length > 0 ? filtersForm.roomTypes.join(', ') : 'All'}</p>
+                    <p>• Guest Segments: {filtersForm.guestSegments.length > 0 ? filtersForm.guestSegments.join(', ') : 'All'}</p>
+                    <p>• Channels: {filtersForm.channels.length > 0 ? filtersForm.channels.join(', ') : 'All'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200">
+                  <button
+                    type="button"
+                    onClick={() => setShowFiltersModal(false)}
+                    className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Apply Filters
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
 import ArrivalsDepartures from '@/components/dashboard/ArrivalsDepartures';
@@ -23,7 +24,24 @@ import {
 } from '@/data/mockData';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const stats = mockDashboardStats;
+
+  const handleTodaySchedule = () => {
+    router.push('/reservations');
+  };
+
+  const handleViewReports = () => {
+    router.push('/reports');
+  };
+
+  const handleQuickActions = () => {
+    // Scroll to the Quick Actions section
+    const quickActionsElement = document.getElementById('quick-actions');
+    if (quickActionsElement) {
+      quickActionsElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const kpiCards = [
     {
@@ -148,15 +166,24 @@ export default function DashboardPage() {
             
             <div className="mt-8 lg:mt-0 lg:ml-8">
               <div className="flex flex-col gap-3">
-                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={handleTodaySchedule}
+                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <Calendar className="w-4 h-4" />
                   <span>Today's Schedule</span>
                 </button>
-                <button className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={handleViewReports}
+                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <BarChart3 className="w-4 h-4" />
                   <span>View Reports</span>
                 </button>
-                <button className="bg-white text-primary-600 hover:bg-primary-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]">
+                <button 
+                  onClick={handleQuickActions}
+                  className="bg-white text-primary-600 hover:bg-primary-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                >
                   <TrendingUp className="w-4 h-4" />
                   <span>Quick Actions</span>
                 </button>
@@ -206,7 +233,9 @@ export default function DashboardPage() {
         <LiveFeed events={mockSyncEvents} />
 
         {/* Quick Actions */}
-        <QuickActions />
+        <div id="quick-actions">
+          <QuickActions />
+        </div>
       </div>
     </Layout>
   );
