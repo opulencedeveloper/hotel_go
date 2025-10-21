@@ -204,7 +204,7 @@ export default function EmailVerifiedPage() {
                   <AlertCircle className="h-12 w-12 text-orange-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-4">
-                  Connection Error
+                  An Error Occured
                 </h3>
                 <p className="text-blue-100 mb-6">{errorMessage}</p>
 
