@@ -46,7 +46,7 @@ export default function EmailVerifiedPage() {
       setErrorMessage(
         typeof error === 'string' ? error : "Network error occurred. Please check your connection and try again."
       );
-      toast.error("Verification failed due to network error. Please try again.");
+    //  toast.error("Verification failed due to network error. Please try again.");
     }
   }, [error, verificationStatus]);
 
