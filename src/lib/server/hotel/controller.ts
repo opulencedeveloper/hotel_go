@@ -48,7 +48,7 @@ class HotelController {
       });
     }
 
-    sendEmailVerificationMail({
+  await  sendEmailVerificationMail({
       email: body.email,
       otp: createdUser.otp,
       expiryTime: createdUser.expiryTime,
