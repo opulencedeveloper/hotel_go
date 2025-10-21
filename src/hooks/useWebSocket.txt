@@ -1,0 +1,266 @@
+'use client';
+
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useNotifications } from '@/components/notifications/NotificationSystem';
+import { useDispatch } from 'react-redux';
+import { RootState } from '@/store/redux';
+
+export interface WebSocketMessage {
+  type: string;
+  data: any;
+  timestamp: string;
+}
+
+export interface WebSocketEvent {
+  type: 'reservation' | 'guest' | 'room' | 'staff' | 'dashboard' | 'system';
+  action: 'created' | 'updated' | 'deleted' | 'status_changed';
+  data: any;
+  userId?: string;
+}
+
+export const useWebSocket = (url: string, options?: {
+  reconnectInterval?: number;
+  maxReconnectAttempts?: number;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onError?: (error: Event) => void;
+}) => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { addNotification } = useNotifications();
+  const dispatch = useDispatch();
+
+  const {
+    reconnectInterval = 3000,
+    maxReconnectAttempts = 5,
+    onConnect,
+    onDisconnect,
+    onError
+  } = options || {};
+
+  const connect = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    try {
+      wsRef.current = new WebSocket(url);
+
+      wsRef.current.onopen = () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        setReconnectAttempts(0);
+        onConnect?.();
+      };
+
+      wsRef.current.onclose = (event) => {
+        console.log('WebSocket disconnected', event);
+        setIsConnected(false);
+        onDisconnect?.();
+
+        // Attempt to reconnect if not a clean close
+        if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+          console.log(`Attempting to reconnect... (${reconnectAttempts + 1}/${maxReconnectAttempts})`);
+          setReconnectAttempts(prev => prev + 1);
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connect();
+          }, reconnectInterval);
+        }
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        onError?.(error);
+      };
+
+      wsRef.current.onmessage = (event) => {
+        try {
+          const message: WebSocketMessage = JSON.parse(event.data);
+          handleMessage(message);
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket connection:', error);
+    }
+  }, [url, reconnectInterval, maxReconnectAttempts, reconnectAttempts, onConnect, onDisconnect, onError]);
+
+  const disconnect = useCallback(() => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'Manual disconnect');
+    }
+  }, []);
+
+  const sendMessage = useCallback((message: any) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(message));
+    } else {
+      console.warn('WebSocket is not connected. Cannot send message.');
+    }
+  }, []);
+
+  const handleMessage = useCallback((message: WebSocketMessage) => {
+    console.log('Received WebSocket message:', message);
+
+    switch (message.type) {
+      case 'reservation_update':
+        handleReservationUpdate(message.data);
+        break;
+      case 'guest_update':
+        handleGuestUpdate(message.data);
+        break;
+      case 'room_update':
+        handleRoomUpdate(message.data);
+        break;
+      case 'staff_update':
+        handleStaffUpdate(message.data);
+        break;
+      case 'dashboard_update':
+        handleDashboardUpdate(message.data);
+        break;
+      case 'system_alert':
+        handleSystemAlert(message.data);
+        break;
+      default:
+        console.log('Unknown message type:', message.type);
+    }
+  }, []);
+
+  const handleReservationUpdate = useCallback((data: WebSocketEvent) => {
+    // Update Redux state
+    switch (data.action) {
+      case 'created':
+        dispatch({ type: 'reservations/addReservation', payload: data.data });
+        addNotification({
+          type: 'info',
+          title: 'New Reservation',
+          message: `Reservation created for ${data.data.guest?.firstName} ${data.data.guest?.lastName}`,
+          persistent: false
+        });
+        break;
+      case 'updated':
+        dispatch({ type: 'reservations/updateReservation', payload: { id: data.data.id, updates: data.data } });
+        break;
+      case 'status_changed':
+        dispatch({ type: 'reservations/updateReservationStatus', payload: { id: data.data.id, status: data.data.status } });
+        addNotification({
+          type: 'success',
+          title: 'Reservation Status Updated',
+          message: `Reservation status changed to ${data.data.status}`,
+          persistent: false
+        });
+        break;
+    }
+  }, [dispatch, addNotification]);
+
+  const handleGuestUpdate = useCallback((data: WebSocketEvent) => {
+    switch (data.action) {
+      case 'created':
+        dispatch({ type: 'guests/addGuest', payload: data.data });
+        break;
+      case 'updated':
+        dispatch({ type: 'guests/updateGuest', payload: { id: data.data.id, updates: data.data } });
+        break;
+    }
+  }, [dispatch]);
+
+  const handleRoomUpdate = useCallback((data: WebSocketEvent) => {
+    switch (data.action) {
+      case 'updated':
+        dispatch({ type: 'rooms/updateRoom', payload: { id: data.data.room_id, updates: data.data } });
+        break;
+      case 'status_changed':
+        dispatch({ type: 'rooms/updateRoomStatus', payload: { id: data.data.room_id, status: data.data.status } });
+        addNotification({
+          type: 'info',
+          title: 'Room Status Updated',
+          message: `Room ${data.data.room_number} status changed to ${data.data.status}`,
+          persistent: false
+        });
+        break;
+    }
+  }, [dispatch, addNotification]);
+
+  const handleStaffUpdate = useCallback((data: WebSocketEvent) => {
+    switch (data.action) {
+      case 'created':
+        dispatch({ type: 'staff/addStaff', payload: data.data });
+        break;
+      case 'updated':
+        dispatch({ type: 'staff/updateStaff', payload: { id: data.data.id, updates: data.data } });
+        break;
+    }
+  }, [dispatch]);
+
+  const handleDashboardUpdate = useCallback((data: any) => {
+    dispatch({ type: 'dashboard/updateStats', payload: data });
+  }, [dispatch]);
+
+  const handleSystemAlert = useCallback((data: any) => {
+    addNotification({
+      type: data.severity || 'warning',
+      title: data.title || 'System Alert',
+      message: data.message,
+      persistent: data.persistent || false
+    });
+  }, [addNotification]);
+
+  useEffect(() => {
+    connect();
+
+    return () => {
+      disconnect();
+    };
+  }, [connect, disconnect]);
+
+  return {
+    isConnected,
+    reconnectAttempts,
+    sendMessage,
+    connect,
+    disconnect
+  };
+};
+
+// Hook for real-time dashboard updates
+export const useRealTimeDashboard = () => {
+  const { sendMessage } = useWebSocket('/ws/dashboard', {
+    onConnect: () => {
+      // Subscribe to dashboard updates
+      sendMessage({ type: 'subscribe', channel: 'dashboard' });
+    }
+  });
+
+  return { sendMessage };
+};
+
+// Hook for real-time reservation updates
+export const useRealTimeReservations = () => {
+  const { sendMessage } = useWebSocket('/ws/reservations', {
+    onConnect: () => {
+      // Subscribe to reservation updates
+      sendMessage({ type: 'subscribe', channel: 'reservations' });
+    }
+  });
+
+  return { sendMessage };
+};
+
+// Hook for real-time room updates
+export const useRealTimeRooms = () => {
+  const { sendMessage } = useWebSocket('/ws/rooms', {
+    onConnect: () => {
+      // Subscribe to room updates
+      sendMessage({ type: 'subscribe', channel: 'rooms' });
+    }
+  });
+
+  return { sendMessage };
+};
+

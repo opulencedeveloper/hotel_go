@@ -1,0 +1,309 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '@/store/redux';
+import { useReservationsService } from '@/services/reservationsService';
+import { useGuestsService } from '@/services/guestsService';
+import { useRoomsService } from '@/services/roomsService';
+import { Reservation } from '@/store/slices/reservationsSlice';
+import { RoleGuard } from '@/components/auth/RoleGuard';
+import { UserRole } from '@/lib/auth';
+
+interface ReservationFormProps {
+  reservation?: Reservation;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export const ReservationForm = ({ reservation, onSuccess, onCancel }: ReservationFormProps) => {
+  const dispatch = useDispatch();
+  const { createReservation, updateReservationById, isLoading } = useReservationsService();
+  const { fetchGuests } = useGuestsService();
+  const { getAvailableRooms } = useRoomsService();
+  
+  const guests = useSelector((state: RootState) => state.guests.guests);
+  const rooms = useSelector((state: RootState) => state.rooms.rooms);
+  
+  const [formData, setFormData] = useState({
+    guestId: reservation?.guestId || '',
+    roomId: reservation?.roomId || '',
+    checkIn: reservation?.checkIn || '',
+    checkOut: reservation?.checkOut || '',
+    adults: reservation?.adults || 1,
+    children: reservation?.children || 0,
+    specialRequests: reservation?.specialRequests || '',
+    totalAmount: reservation?.totalAmount || 0,
+    paidAmount: reservation?.paidAmount || 0
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchGuests();
+  }, [fetchGuests]);
+
+  useEffect(() => {
+    if (formData.checkIn && formData.checkOut) {
+      getAvailableRooms({
+        checkIn: formData.checkIn,
+        checkOut: formData.checkOut
+      }).then(() => {
+        setAvailableRooms(rooms.filter(room => room.status === 'available'));
+      });
+    }
+  }, [formData.checkIn, formData.checkOut, rooms, getAvailableRooms]);
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.guestId) newErrors.guestId = 'Guest is required';
+    if (!formData.roomId) newErrors.roomId = 'Room is required';
+    if (!formData.checkIn) newErrors.checkIn = 'Check-in date is required';
+    if (!formData.checkOut) newErrors.checkOut = 'Check-out date is required';
+    if (formData.adults < 1) newErrors.adults = 'At least 1 adult is required';
+    if (formData.children < 0) newErrors.children = 'Children count cannot be negative';
+
+    if (formData.checkIn && formData.checkOut) {
+      const checkInDate = new Date(formData.checkIn);
+      const checkOutDate = new Date(formData.checkOut);
+      
+      if (checkOutDate <= checkInDate) {
+        newErrors.checkOut = 'Check-out date must be after check-in date';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    try {
+      if (reservation) {
+        await updateReservationById(reservation.id, formData);
+      } else {
+        await createReservation(formData);
+      }
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error saving reservation:', error);
+    }
+  };
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  return (
+    <div className="bg-white shadow-lg rounded-lg p-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        {reservation ? 'Edit Reservation' : 'Create New Reservation'}
+      </h2>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Guest Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Guest *
+            </label>
+            <select
+              value={formData.guestId}
+              onChange={(e) => handleInputChange('guestId', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                errors.guestId ? 'border-red-500' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Select a guest</option>
+              {guests.map(guest => (
+                <option key={guest.id} value={guest.id}>
+                  {guest.firstName} {guest.lastName} - {guest.email}
+                </option>
+              ))}
+            </select>
+            {errors.guestId && (
+              <p className="mt-1 text-sm text-red-600">{errors.guestId}</p>
+            )}
+          </div>
+
+          {/* Room Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Room *
+            </label>
+            <select
+              value={formData.roomId}
+              onChange={(e) => handleInputChange('roomId', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                errors.roomId ? 'border-red-500' : 'border-gray-300'
+              }`}
+            >
+              <option value="">Select a room</option>
+              {availableRooms.map(room => (
+                <option key={room.room_id} value={room.room_id}>
+                  Room {room.room_number} - Floor {room.floor}
+                </option>
+              ))}
+            </select>
+            {errors.roomId && (
+              <p className="mt-1 text-sm text-red-600">{errors.roomId}</p>
+            )}
+          </div>
+
+          {/* Check-in Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Check-in Date *
+            </label>
+            <input
+              type="date"
+              value={formData.checkIn}
+              onChange={(e) => handleInputChange('checkIn', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                errors.checkIn ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.checkIn && (
+              <p className="mt-1 text-sm text-red-600">{errors.checkIn}</p>
+            )}
+          </div>
+
+          {/* Check-out Date */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Check-out Date *
+            </label>
+            <input
+              type="date"
+              value={formData.checkOut}
+              onChange={(e) => handleInputChange('checkOut', e.target.value)}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                errors.checkOut ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.checkOut && (
+              <p className="mt-1 text-sm text-red-600">{errors.checkOut}</p>
+            )}
+          </div>
+
+          {/* Adults */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Adults *
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.adults}
+              onChange={(e) => handleInputChange('adults', parseInt(e.target.value))}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                errors.adults ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.adults && (
+              <p className="mt-1 text-sm text-red-600">{errors.adults}</p>
+            )}
+          </div>
+
+          {/* Children */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Children
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formData.children}
+              onChange={(e) => handleInputChange('children', parseInt(e.target.value))}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                errors.children ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.children && (
+              <p className="mt-1 text-sm text-red-600">{errors.children}</p>
+            )}
+          </div>
+
+          {/* Total Amount */}
+          <RoleGuard allowedRoles={['admin', 'manager', 'front_desk']}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Total Amount
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.totalAmount}
+                onChange={(e) => handleInputChange('totalAmount', parseFloat(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </RoleGuard>
+
+          {/* Paid Amount */}
+          <RoleGuard allowedRoles={['admin', 'manager', 'front_desk']}>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Paid Amount
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.paidAmount}
+                onChange={(e) => handleInputChange('paidAmount', parseFloat(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          </RoleGuard>
+        </div>
+
+        {/* Special Requests */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Special Requests
+          </label>
+          <textarea
+            value={formData.specialRequests}
+            onChange={(e) => handleInputChange('specialRequests', e.target.value)}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+            placeholder="Any special requests or notes..."
+          />
+        </div>
+
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-4 pt-6 border-t">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+          >
+            {isLoading ? 'Saving...' : (reservation ? 'Update Reservation' : 'Create Reservation')}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+
+
+
+

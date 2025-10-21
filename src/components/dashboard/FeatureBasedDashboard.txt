@@ -1,0 +1,200 @@
+'use client';
+
+import { FeatureGuard, useFeaturePermissions } from '@/components/auth/FeatureGuard';
+
+export const FeatureBasedDashboard = () => {
+  const { canAccessFeature } = useFeaturePermissions();
+
+  return (
+    <div className="space-y-6">
+      {/* Header - visible to all */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">Welcome back, {user?.firstName}!</p>
+      </div>
+
+      {/* KPI Cards - different cards for different roles */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        {/* Occupancy Rate - visible to operational roles */}
+        <FeatureGuard screen="dashboard" feature="view_operational_kpis">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">O</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Occupancy Rate</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {dashboardStats?.occupancyRate || 0}%
+                </p>
+              </div>
+            </div>
+          </div>
+        </FeatureGuard>
+
+        {/* Revenue - visible to financial roles */}
+        <FeatureGuard screen="dashboard" feature="view_financial_kpis">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">$</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Revenue</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  ${dashboardStats?.totalRevenue || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+        </FeatureGuard>
+
+        {/* Available Rooms - visible to operational roles */}
+        <FeatureGuard screen="dashboard" feature="view_operational_kpis">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">R</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Available Rooms</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {dashboardStats?.availableRooms || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+        </FeatureGuard>
+
+        {/* Staff Performance - visible to management roles */}
+        <FeatureGuard screen="dashboard" feature="view_staff_performance">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">S</span>
+                </div>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Staff Performance</p>
+                <p className="text-2xl font-semibold text-gray-900">4.2/5</p>
+              </div>
+            </div>
+          </div>
+        </FeatureGuard>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Revenue Chart - visible to financial roles */}
+        <FeatureGuard screen="dashboard" feature="view_financial_kpis">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Revenue Trend</h3>
+            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+              <p className="text-gray-500">Revenue Chart Placeholder</p>
+            </div>
+          </div>
+        </FeatureGuard>
+
+        {/* Occupancy Chart - visible to operational roles */}
+        <FeatureGuard screen="dashboard" feature="view_operational_kpis">
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Occupancy Trend</h3>
+            <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+              <p className="text-gray-500">Occupancy Chart Placeholder</p>
+            </div>
+          </div>
+        </FeatureGuard>
+      </div>
+
+      {/* Action Buttons - different actions for different roles */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+        <div className="flex flex-wrap gap-4">
+          
+          {/* Create Reservation - front desk roles */}
+          <FeatureGuard screen="reservations" feature="create_reservation">
+            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+              New Reservation
+            </button>
+          </FeatureGuard>
+
+          {/* Export Data - management roles */}
+          <FeatureGuard screen="dashboard" feature="export_data">
+            <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              Export Data
+            </button>
+          </FeatureGuard>
+
+          {/* View Reports - management roles */}
+          <FeatureGuard screen="reports" feature="view_reports">
+            <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              View Reports
+            </button>
+          </FeatureGuard>
+
+          {/* Manage Staff - management roles */}
+          <FeatureGuard screen="staff" feature="manage_staff">
+            <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              Manage Staff
+            </button>
+          </FeatureGuard>
+        </div>
+      </div>
+
+      {/* Recent Activity - different data for different roles */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+        
+        {/* Financial Activity - visible to financial roles */}
+        <FeatureGuard screen="dashboard" feature="view_financial_kpis">
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Financial Activity</h4>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-600">Payment received: $1,200 - Room 101</li>
+              <li className="text-sm text-gray-600">Refund processed: $300 - Room 205</li>
+              <li className="text-sm text-gray-600">Invoice generated: $2,500 - Corporate Account</li>
+            </ul>
+          </div>
+        </FeatureGuard>
+
+        {/* Operational Activity - visible to operational roles */}
+        <FeatureGuard screen="dashboard" feature="view_operational_kpis">
+          <div className="mb-4">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Operational Activity</h4>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-600">Room 101 checked out</li>
+              <li className="text-sm text-gray-600">Room 205 maintenance completed</li>
+              <li className="text-sm text-gray-600">New reservation created - Room 301</li>
+            </ul>
+          </div>
+        </FeatureGuard>
+
+        {/* Staff Activity - visible to management roles */}
+        <FeatureGuard screen="dashboard" feature="view_staff_performance">
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Staff Activity</h4>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-600">John Smith completed housekeeping tasks</li>
+              <li className="text-sm text-gray-600">Sarah Johnson updated room status</li>
+              <li className="text-sm text-gray-600">Mike Wilson processed check-in</li>
+            </ul>
+          </div>
+        </FeatureGuard>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+

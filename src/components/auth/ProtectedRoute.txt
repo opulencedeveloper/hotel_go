@@ -1,0 +1,58 @@
+'use client';
+
+import { ReactNode } from 'react';
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+  allowedRoles?: any[];
+  requiredPermissions?: string[];
+  redirectTo?: string;
+  fallback?: ReactNode;
+}
+
+// ProtectedRoute - All users have access to all routes
+export const ProtectedRoute = ({
+  children,
+  allowedRoles = [],
+  requiredPermissions = [],
+  redirectTo = '/login',
+  fallback = null
+}: ProtectedRouteProps) => {
+  return <>{children}</>;
+};
+
+// Higher-order component for protecting routes - Always allows access
+export const withProtectedRoute = <P extends object>(
+  Component: React.ComponentType<P>,
+  options?: Omit<ProtectedRouteProps, 'children'>
+) => {
+  return (props: P) => (
+    <ProtectedRoute {...options}>
+      <Component {...props} />
+    </ProtectedRoute>
+  );
+};
+
+// Hook for route protection logic - Always allows access
+export const useRouteProtection = () => {
+  const checkAccess = (
+    allowedRoles?: any[],
+    requiredPermissions?: string[]
+  ): boolean => {
+    return true;
+  };
+
+  const redirectIfNoAccess = (
+    allowedRoles?: any[],
+    requiredPermissions?: string[],
+    redirectTo: string = '/dashboard'
+  ) => {
+    // No redirect needed - all users have access
+  };
+
+  return {
+    checkAccess,
+    redirectIfNoAccess,
+    user: null
+  };
+};

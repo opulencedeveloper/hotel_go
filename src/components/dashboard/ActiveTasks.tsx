@@ -14,13 +14,16 @@ interface ActiveTasksProps {
 }
 
 export default function ActiveTasks({ tasks }: ActiveTasksProps) {
+  
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-secondary-900">Active Tasks</h3>
-        <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
-          View All
-        </button>
+        {(
+          <button className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+            View All
+          </button>
+        )}
       </div>
       <div className="space-y-3">
         {tasks.slice(0, 3).map((task) => (

@@ -1,0 +1,249 @@
+'use client';
+
+import { useState } from 'react';
+import { FeatureGuard, useFeaturePermissions } from '@/components/auth/FeatureGuard';
+import { Reservation } from '@/store/slices/reservationsSlice';
+
+interface ReservationTableWithFeaturesProps {
+  reservations: Reservation[];
+  onEdit?: (reservation: Reservation) => void;
+  onDelete?: (reservation: Reservation) => void;
+  onCheckIn?: (reservation: Reservation) => void;
+  onCheckOut?: (reservation: Reservation) => void;
+  onCancel?: (reservation: Reservation) => void;
+}
+
+export const ReservationTableWithFeatures = ({
+  reservations,
+  onEdit,
+  onDelete,
+  onCheckIn,
+  onCheckOut,
+  onCancel
+}: ReservationTableWithFeaturesProps) => {
+  const { canAccessFeature } = useFeaturePermissions();
+  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
+
+  return (
+    <div className="bg-white shadow rounded-lg overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h3 className="text-lg font-medium text-gray-900">Reservations</h3>
+        <p className="text-sm text-gray-500">
+          {reservations.length} reservations found
+        </p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Guest
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Room
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dates
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              {/* Financial data - only visible to certain roles */}
+              <FeatureGuard screen="reservations" feature="view_financial_data">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Status
+                </th>
+              </FeatureGuard>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {reservations.map((reservation) => (
+              <tr key={reservation.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">
+                    {reservation.guest?.firstName} {reservation.guest?.lastName}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {reservation.guest?.email}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {reservation.room?.roomNumber}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {reservation.room?.roomType}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {new Date(reservation.checkIn).toLocaleDateString()}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    to {new Date(reservation.checkOut).toLocaleDateString()}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    reservation.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    reservation.status === 'checked-in' ? 'bg-blue-100 text-blue-800' :
+                    reservation.status === 'checked-out' ? 'bg-gray-100 text-gray-800' :
+                    reservation.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                    'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {reservation.status}
+                  </span>
+                </td>
+                
+                {/* Financial data - only visible to certain roles */}
+                <FeatureGuard screen="reservations" feature="view_financial_data">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${reservation.totalAmount}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      reservation.paidAmount >= reservation.totalAmount ? 'bg-green-100 text-green-800' :
+                      reservation.paidAmount > 0 ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {reservation.paidAmount >= reservation.totalAmount ? 'Paid' :
+                       reservation.paidAmount > 0 ? 'Partial' : 'Pending'}
+                    </span>
+                  </td>
+                </FeatureGuard>
+
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-2">
+                    {/* View button - available to all */}
+                    <button
+                      onClick={() => setSelectedReservation(reservation)}
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      View
+                    </button>
+
+                    {/* Edit button - restricted to certain roles */}
+                    <FeatureGuard 
+                      screen="reservations" 
+                      feature="edit_reservation"
+                      fallback={<span className="text-gray-400">Edit</span>}
+                    >
+                      <button
+                        onClick={() => onEdit?.(reservation)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Edit
+                      </button>
+                    </FeatureGuard>
+
+                    {/* Check-in button - restricted to front desk roles */}
+                    <FeatureGuard 
+                      screen="reservations" 
+                      feature="check_in_out"
+                      fallback={<span className="text-gray-400">Check-in</span>}
+                    >
+                      {reservation.status === 'confirmed' && (
+                        <button
+                          onClick={() => onCheckIn?.(reservation)}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Check-in
+                        </button>
+                      )}
+                    </FeatureGuard>
+
+                    {/* Check-out button - restricted to front desk roles */}
+                    <FeatureGuard 
+                      screen="reservations" 
+                      feature="check_in_out"
+                      fallback={<span className="text-gray-400">Check-out</span>}
+                    >
+                      {reservation.status === 'checked-in' && (
+                        <button
+                          onClick={() => onCheckOut?.(reservation)}
+                          className="text-orange-600 hover:text-orange-900"
+                        >
+                          Check-out
+                        </button>
+                      )}
+                    </FeatureGuard>
+
+                    {/* Cancel button - restricted to certain roles */}
+                    <FeatureGuard 
+                      screen="reservations" 
+                      feature="cancel_reservation"
+                      fallback={<span className="text-gray-400">Cancel</span>}
+                    >
+                      {reservation.status === 'confirmed' && (
+                        <button
+                          onClick={() => onCancel?.(reservation)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </FeatureGuard>
+
+                    {/* Delete button - restricted to admin/manager only */}
+                    <FeatureGuard 
+                      screen="reservations" 
+                      feature="delete_reservation"
+                      fallback={<span className="text-gray-400">Delete</span>}
+                    >
+                      <button
+                        onClick={() => onDelete?.(reservation)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Delete
+                      </button>
+                    </FeatureGuard>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Conditional features based on permissions */}
+      <div className="px-6 py-4 border-t border-gray-200">
+        <div className="flex justify-between items-center">
+          <div className="flex space-x-4">
+            {/* Export button - only for certain roles */}
+            <FeatureGuard screen="reservations" feature="export_data">
+              <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Export
+              </button>
+            </FeatureGuard>
+
+            {/* Bulk actions - only for certain roles */}
+            <FeatureGuard screen="reservations" feature="bulk_actions">
+              <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Bulk Actions
+              </button>
+            </FeatureGuard>
+          </div>
+
+          {/* Create button - restricted to certain roles */}
+          <FeatureGuard screen="reservations" feature="create_reservation">
+            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              New Reservation
+            </button>
+          </FeatureGuard>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+
+
+

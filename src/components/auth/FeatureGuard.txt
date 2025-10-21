@@ -1,0 +1,232 @@
+'use client';
+
+import { ReactNode } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/redux';
+import { UserRole } from '@/lib/auth';
+
+// Feature-level permissions for granular access control
+export interface FeaturePermission {
+  feature: string;
+  actions: string[];
+  roles: UserRole[];
+  fallback?: ReactNode;
+}
+
+// Define feature permissions for different screens
+export const FEATURE_PERMISSIONS: Record<string, FeaturePermission[]> = {
+  reservations: [
+    {
+      feature: 'create_reservation',
+      actions: ['create'],
+      roles: ['admin', 'manager', 'front_desk'],
+      fallback: <span className="text-gray-400 text-sm">Create access required</span>
+    },
+    {
+      feature: 'edit_reservation',
+      actions: ['edit', 'update'],
+      roles: ['admin', 'manager', 'front_desk'],
+      fallback: <span className="text-gray-400 text-sm">Edit access required</span>
+    },
+    {
+      feature: 'delete_reservation',
+      actions: ['delete'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Delete access required</span>
+    },
+    {
+      feature: 'view_financial_data',
+      actions: ['view'],
+      roles: ['admin', 'manager', 'accounting'],
+      fallback: <span className="text-gray-400 text-sm">Financial data hidden</span>
+    },
+    {
+      feature: 'cancel_reservation',
+      actions: ['cancel'],
+      roles: ['admin', 'manager', 'front_desk'],
+      fallback: <span className="text-gray-400 text-sm">Cancel access required</span>
+    },
+    {
+      feature: 'check_in_out',
+      actions: ['checkin', 'checkout'],
+      roles: ['admin', 'manager', 'front_desk'],
+      fallback: <span className="text-gray-400 text-sm">Check-in/out access required</span>
+    }
+  ],
+  staff: [
+    {
+      feature: 'create_staff',
+      actions: ['create'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Create access required</span>
+    },
+    {
+      feature: 'edit_staff',
+      actions: ['edit', 'update'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Edit access required</span>
+    },
+    {
+      feature: 'delete_staff',
+      actions: ['delete'],
+      roles: ['admin'],
+      fallback: <span className="text-gray-400 text-sm">Delete access required</span>
+    },
+    {
+      feature: 'view_salary_info',
+      actions: ['view'],
+      roles: ['admin', 'manager', 'accounting'],
+      fallback: <span className="text-gray-400 text-sm">Salary information hidden</span>
+    },
+    {
+      feature: 'manage_schedule',
+      actions: ['schedule'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Schedule access required</span>
+    }
+  ],
+  rooms: [
+    {
+      feature: 'create_room',
+      actions: ['create'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Create access required</span>
+    },
+    {
+      feature: 'edit_room',
+      actions: ['edit', 'update'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Edit access required</span>
+    },
+    {
+      feature: 'delete_room',
+      actions: ['delete'],
+      roles: ['admin'],
+      fallback: <span className="text-gray-400 text-sm">Delete access required</span>
+    },
+    {
+      feature: 'view_room_status',
+      actions: ['view'],
+      roles: ['admin', 'manager', 'front_desk', 'housekeeping'],
+      fallback: <span className="text-gray-400 text-sm">Room status hidden</span>
+    },
+    {
+      feature: 'update_room_status',
+      actions: ['update_status'],
+      roles: ['admin', 'manager', 'front_desk', 'housekeeping'],
+      fallback: <span className="text-gray-400 text-sm">Status update access required</span>
+    }
+  ],
+  dashboard: [
+    {
+      feature: 'view_financial_kpis',
+      actions: ['view'],
+      roles: ['admin', 'manager', 'accounting'],
+      fallback: <span className="text-gray-400 text-sm">Financial KPIs hidden</span>
+    },
+    {
+      feature: 'view_operational_kpis',
+      actions: ['view'],
+      roles: ['admin', 'manager', 'front_desk', 'housekeeping', 'kitchen'],
+      fallback: <span className="text-gray-400 text-sm">Operational KPIs hidden</span>
+    },
+    {
+      feature: 'view_staff_performance',
+      actions: ['view'],
+      roles: ['admin', 'manager'],
+      fallback: <span className="text-gray-400 text-sm">Staff performance hidden</span>
+    },
+    {
+      feature: 'export_data',
+      actions: ['export'],
+      roles: ['admin', 'manager', 'accounting'],
+      fallback: <span className="text-gray-400 text-sm">Export access required</span>
+    }
+  ]
+};
+
+interface FeatureGuardProps {
+  children: ReactNode;
+  screen: string;
+  feature: string;
+  action?: string;
+  fallback?: ReactNode;
+}
+
+export const FeatureGuard = ({ 
+  children, 
+  screen, 
+  feature, 
+  action = 'view',
+  fallback 
+}: FeatureGuardProps) => {
+  const currentUser = useSelector((state: RootState) => state.user.currentUser);
+  
+  if (!currentUser) {
+    return <>{fallback}</>;
+  }
+
+  // Get feature permissions for the screen
+  const screenPermissions = FEATURE_PERMISSIONS[screen] || [];
+  const featurePermission = screenPermissions.find(p => p.feature === feature);
+  
+  if (!featurePermission) {
+    // If no specific permission defined, allow access (backward compatibility)
+    return <>{children}</>;
+  }
+
+  // Check if user has access to this feature
+  const hasAccess = featurePermission.roles.includes(currentUser.role as UserRole) &&
+    (featurePermission.actions.includes(action) || featurePermission.actions.includes('*'));
+
+  return hasAccess ? <>{children}</> : <>{fallback || featurePermission.fallback}</>;
+};
+
+// Hook for checking feature permissions
+export const useFeaturePermissions = () => {
+  const currentUser = useSelector((state: RootState) => state.user.currentUser);
+  
+  const canAccessFeature = (screen: string, feature: string, action: string = 'view'): boolean => {
+    if (!currentUser) return false;
+    
+    const screenPermissions = FEATURE_PERMISSIONS[screen] || [];
+    const featurePermission = screenPermissions.find(p => p.feature === feature);
+    
+    if (!featurePermission) return true; // Default to allow if no permission defined
+    
+    return featurePermission.roles.includes(currentUser.role as UserRole) &&
+      (featurePermission.actions.includes(action) || featurePermission.actions.includes('*'));
+  };
+
+  const getFeatureFallback = (screen: string, feature: string): ReactNode => {
+    const screenPermissions = FEATURE_PERMISSIONS[screen] || [];
+    const featurePermission = screenPermissions.find(p => p.feature === feature);
+    return featurePermission?.fallback || null;
+  };
+
+  return {
+    canAccessFeature,
+    getFeatureFallback,
+    user: currentUser
+  };
+};
+
+// Higher-order component for feature-based access
+export const withFeatureGuard = <P extends object>(
+  Component: React.ComponentType<P>,
+  screen: string,
+  feature: string,
+  action: string = 'view',
+  fallback?: ReactNode
+) => {
+  return (props: P) => (
+    <FeatureGuard screen={screen} feature={feature} action={action} fallback={fallback}>
+      <Component {...props} />
+    </FeatureGuard>
+  );
+};
+
+
+
+
+

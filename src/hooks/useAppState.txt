@@ -1,0 +1,121 @@
+'use client';
+
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { 
+  selectUser, 
+  selectIsLoading, 
+  selectError, 
+  selectIsAuthenticated,
+  loginUser, 
+  logout, 
+  checkAuth,
+  hasPermission as hasPermissionHelper,
+  canAccessRoute as canAccessRouteHelper
+} from '@/store/slices/authSlice';
+import {
+  selectCurrentUser,
+  selectHotels,
+  selectStaff,
+  selectGuests,
+  selectReservations,
+  selectDashboardStats,
+  selectUserLoading,
+  selectUserError,
+  accountActions
+} from '@/store/redux/user-slice';
+import { LoginCredentials } from '@/lib/auth';
+import { useEffect } from 'react';
+import { tokenStorage } from '@/lib/auth-storage';
+
+export function useAppState() {
+  const dispatch = useAppDispatch();
+  
+  // Auth state
+  const authUser = useAppSelector(selectUser);
+  const authLoading = useAppSelector(selectIsLoading);
+  const authError = useAppSelector(selectError);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  
+  // User/App state
+  const currentUser = useAppSelector(selectCurrentUser);
+  const hotels = useAppSelector(selectHotels);
+  const staff = useAppSelector(selectStaff);
+  const guests = useAppSelector(selectGuests);
+  const reservations = useAppSelector(selectReservations);
+  const dashboardStats = useAppSelector(selectDashboardStats);
+  const userLoading = useAppSelector(selectUserLoading);
+  const userError = useAppSelector(selectUserError);
+
+  // Check for existing session on mount (only once)
+  useEffect(() => {
+    const userSession = tokenStorage.getUserSession();
+    if (userSession && !authUser) {
+      dispatch(checkAuth());
+    }
+  }, []); // Empty dependency array - only run once
+
+  // Set current user when auth user changes
+  useEffect(() => {
+    if (authUser && authUser.id !== currentUser?.id) {
+      dispatch(accountActions.setCurrentUser(authUser));
+    }
+  }, [authUser?.id, currentUser?.id, dispatch]);
+
+  const login = async (credentials: LoginCredentials): Promise<boolean> => {
+    try {
+      const result = await dispatch(loginUser(credentials));
+      return result.type.endsWith('fulfilled');
+    } catch (error) {
+      console.error('Login failed:', error);
+      return false;
+    }
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    dispatch(accountActions.setCurrentUser(null));
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    return hasPermissionHelper(authUser, permission);
+  };
+
+  const canAccessRoute = (route: string): boolean => {
+    return canAccessRouteHelper(authUser, route);
+  };
+
+  return {
+    // Auth
+    user: authUser,
+    isLoading: authLoading || userLoading,
+    error: authError || userError,
+    isAuthenticated,
+    login,
+    logout: handleLogout,
+    hasPermission,
+    canAccessRoute,
+    
+    // App Data
+    currentUser,
+    hotels,
+    staff,
+    guests,
+    reservations,
+    dashboardStats,
+    
+    // Actions
+    setCurrentUser: (user: any) => dispatch(accountActions.setCurrentUser(user)),
+    setHotels: (hotels: any[]) => dispatch(accountActions.setHotels(hotels)),
+    setStaff: (staff: any[]) => dispatch(accountActions.setStaff(staff)),
+    setGuests: (guests: any[]) => dispatch(accountActions.setGuests(guests)),
+    setReservations: (reservations: any[]) => dispatch(accountActions.setReservations(reservations)),
+    setDashboardStats: (stats: any) => dispatch(accountActions.setDashboardStats(stats)),
+    addGuest: (guest: any) => dispatch(accountActions.addGuest(guest)),
+    updateGuest: (id: string, updates: any) => dispatch(accountActions.updateGuest({ id, updates })),
+    addReservation: (reservation: any) => dispatch(accountActions.addReservation(reservation)),
+    updateReservation: (id: string, updates: any) => dispatch(accountActions.updateReservation({ id, updates })),
+    clearError: () => {
+      dispatch(accountActions.clearError());
+    },
+  };
+}

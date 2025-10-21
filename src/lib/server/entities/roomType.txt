@@ -1,0 +1,62 @@
+import mongoose, { Schema } from "mongoose";
+
+export interface IRoomType {
+  _id: string;
+  name: string;
+  description: string;
+  capacity: number;
+  baseRate: number;
+  amenities: string[];
+  images: string[];
+  size: number; // in square meters
+  bedType: 'single' | 'double' | 'queen' | 'king' | 'twin' | 'sofa_bed';
+  smokingAllowed: boolean;
+  petFriendly: boolean;
+  accessible: boolean;
+  hotelId: mongoose.Types.ObjectId;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const roomTypeSchema: Schema = new Schema(
+  {
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    capacity: { type: Number, required: true, min: 1, max: 10 },
+    baseRate: { type: Number, required: true, min: 0 },
+    amenities: [{ type: String }],
+    images: [{ type: String }],
+    size: { type: Number, required: true, min: 0 },
+    bedType: { 
+      type: String, 
+      required: true,
+      enum: ['single', 'double', 'queen', 'king', 'twin', 'sofa_bed']
+    },
+    smokingAllowed: { type: Boolean, default: false },
+    petFriendly: { type: Boolean, default: false },
+    accessible: { type: Boolean, default: false },
+    hotelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hotel",
+      required: true,
+    },
+    isActive: { type: Boolean, default: true },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes for better performance
+roomTypeSchema.index({ hotelId: 1, name: 1 }, { unique: true });
+roomTypeSchema.index({ hotelId: 1, isActive: 1 });
+roomTypeSchema.index({ hotelId: 1, baseRate: 1 });
+
+const RoomType =
+  (mongoose.models.RoomType as mongoose.Model<IRoomType>) ||
+  mongoose.model<IRoomType>("RoomType", roomTypeSchema);
+
+export default RoomType;
+
+

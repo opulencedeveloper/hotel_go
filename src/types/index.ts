@@ -1,4 +1,10 @@
 // Multi-tenant Account Model
+
+export interface LayoutProps {
+  children: React.ReactNode;
+}
+
+
 export interface Account {
   account_id: string;
   name: string;

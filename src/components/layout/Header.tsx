@@ -1,0 +1,1939 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { mockProperties, mockDashboardStats } from "@/data/mockData";
+import { getRoleDisplayName } from "@/lib/auth";
+import {
+  Home,
+  Calendar,
+  Bed,
+  Users,
+  ShoppingCart,
+  Settings,
+  BarChart3,
+  Menu,
+  X,
+  LogOut,
+  Bell,
+  Search,
+  DollarSign,
+  TrendingUp,
+  Shield,
+  Database,
+  ChefHat,
+  Wrench,
+  FileText,
+  Package,
+  Building,
+  ChevronDown,
+  Wifi,
+  Star,
+  WifiOff,
+  Clock,
+  Globe,
+  CreditCard,
+  UserCheck,
+  ClipboardList,
+  Calculator,
+  Heart,
+  Truck,
+  PieChart,
+  Download,
+  Lock,
+  Archive,
+  CheckCircle,
+  Save,
+} from "lucide-react";
+import { RootState } from "@/store";
+import { StayType, UserRole } from "@/utils/enum";
+import { useDispatch, useSelector } from "react-redux";
+import { countries } from "@/resources/auth";
+import { useHttp } from "@/hooks/useHttp";
+import {
+  RoomSliceParams,
+  RoomTypeSliceParams,
+} from "@/types/room-management/room-management";
+import { roomActions } from "@/store/redux/room-slice";
+import { RoomStatus } from "@/types/room-management/enum";
+import { PaymentMethod } from "@/lib/server/stay/enum";
+import { paymentMethodList } from "@/resources";
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+// Icon mapping for navigation items
+const iconMap: Record<string, any> = {
+  Home,
+  Calendar,
+  Bed,
+  UserCheck,
+  Star,
+  Building,
+  CreditCard,
+  ShoppingCart,
+  ChefHat,
+  Wrench,
+  Users,
+  TrendingUp,
+  Calculator,
+  Heart,
+  Truck,
+  PieChart,
+  Download,
+  Lock,
+  Archive,
+  Settings,
+};
+
+interface HeaderProps {
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+}
+
+export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
+  const [propertySelectorOpen, setPropertySelectorOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState("");
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [stayType, setStayType] = useState<StayType>(StayType.RESERVED);
+  const [showWalkInModal, setShowWalkInModal] = useState(false);
+
+  // Refs for date and time inputs
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const checkOutDateRef = useRef<HTMLInputElement>(null);
+  // Reservation date refs
+  const reservationCheckInRef = useRef<HTMLInputElement>(null);
+  const reservationCheckOutRef = useRef<HTMLInputElement>(null);
+
+  const user = useSelector((state: RootState) => state.user);
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const room = useSelector((state: RootState) => state.room);
+  const dispatch = useDispatch();
+  const selectedHotelId = hotel.selectedHotelId;
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === selectedHotelId);
+  const selectedHotelName = selectedHotel?.hotelName || "No hotel selected";
+  const occupancyPercentage =
+    (selectedHotel!.totalRoomsOccupied! / selectedHotel!.totalRooms!) * 100;
+  const { hotelRooms } = room;
+
+  // HTTP hook for fetching rooms
+  const {
+    isLoading: isLoadingRooms,
+    sendHttpRequest: fetchRoomsReq,
+    error: fetchRoomsError,
+  } = useHttp();
+
+  // HTTP hook for reservations
+  const {
+    isLoading: isCreatingReservation,
+    sendHttpRequest: createReservationRequest,
+    error: reservationError,
+  } = useHttp();
+
+  // Function to fetch rooms
+  const handleFetchRooms = () => {
+    if (selectedHotelId) {
+      fetchRoomsReq({
+        requestConfig: {
+          url: "/hotel/room-info",
+          method: "GET",
+        },
+        successRes: (res) => {
+          const resData = res?.data?.data;
+          const fetchedRoomTypes: RoomTypeSliceParams[] =
+            resData?.hotelRoomTypes;
+          const fetchedRooms: RoomSliceParams[] =
+            resData?.hotelRooms?.map((room: any) => ({
+              _id: room._id,
+              floor: room.floor,
+              roomNumber: room.roomNumber,
+              roomTypeId: room.roomTypeId?._id ?? "", // ensure it's a string
+              roomTypeName: room.roomTypeId?.name ?? "", // populate field from roomType
+              roomStatus: room.roomStatus,
+              note: room.note,
+              lastCleaned: room?.lastCleaned,
+            })) ?? [];
+
+          dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
+          dispatch(roomActions.setRooms(fetchedRooms));
+        },
+      });
+    }
+  };
+
+  // Validation functions
+  const validateField = (fieldName: string, value: string): string => {
+    switch (fieldName) {
+      case "roomNumber":
+        if (!value) return "Room number is required";
+        return "";
+      case "guestName":
+        if (!value) return "Guest name is required";
+        if (value.length < 2) return "Guest name must be at least 2 characters";
+        return "";
+      case "phone":
+        if (!value) return "Phone number is required";
+        if (!/^[0-9\s\-()]{7,15}$/.test(value))
+          return "Please enter a valid phone number";
+        return "";
+      case "email":
+        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return "Please enter a valid email address";
+        }
+        return "";
+      case "address":
+        if (!value) return "Address is required";
+        if (value.length < 5) return "Address must be at least 5 characters";
+        return "";
+      case "paymentMethod":
+        if (!value) return "Payment method is required";
+        return "";
+      case "checkInDate":
+        if (!value) return "Check-in date is required";
+        return "";
+      case "checkOutDate": {
+        if (!value) return "Check-out date is required";
+        if (checkInForm.checkInDate) {
+          const outDate = new Date(value);
+          const inDate = new Date(checkInForm.checkInDate);
+          outDate.setHours(0, 0, 0, 0);
+          inDate.setHours(0, 0, 0, 0);
+          if (outDate <= inDate)
+            return "Check-out date must be after check-in date";
+        }
+        return "";
+      }
+      case "roomType":
+        if (!value) return "Room selection is required";
+        return "";
+      case "checkIn": {
+        if (!value) return "Check-in date is required";
+        const selected = new Date(value);
+        const today = new Date();
+        selected.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        // Check if check-in date is in the past
+        if (selected < today) return "Check-in date cannot be in the past";
+
+        // For WALK_IN: check-in date must be today
+        if (stayType === StayType.WALK_IN) {
+          if (selected.getTime() !== today.getTime()) {
+            return "Walk-in check-in date must be today. Please use Bookings or Reservations for future dates.";
+          }
+        } else {
+          // For RESERVED and BOOKED: check-in date cannot be today
+          if (selected.getTime() === today.getTime()) {
+            return "Check-in date cannot be today. Please use Walk-in instead for same-day check-in.";
+          }
+        }
+
+        return "";
+      }
+      case "checkOut": {
+        if (!value) return "Check-out date is required";
+        if (reservationForm.checkIn) {
+          const outDate = new Date(value);
+          const inDate = new Date(reservationForm.checkIn);
+          outDate.setHours(0, 0, 0, 0);
+          inDate.setHours(0, 0, 0, 0);
+          if (outDate <= inDate)
+            return "Check-out date must be after check-in date";
+        }
+        return "";
+      }
+      case "adults":
+        if (!value || parseInt(value) < 1)
+          return "At least 1 adult is required";
+        if (parseInt(value) > 10) return "Maximum 10 adults allowed";
+        return "";
+      case "children":
+        if (value && parseInt(value) < 0)
+          return "Children count cannot be negative";
+        if (value && parseInt(value) > 10) return "Maximum 10 children allowed";
+        return "";
+      case "paymentDate":
+        if (!value) return "Payment date is required for reservations";
+        const paymentDate = new Date(value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        paymentDate.setHours(0, 0, 0, 0);
+
+        // Check if payment date is in the past
+        if (paymentDate < today) {
+          return "Payment date cannot be in the past.";
+        }
+
+        // Check if payment date is today
+        if (paymentDate.getTime() === today.getTime()) {
+          return "Payment date cannot be today. Please book a room instead for immediate payment.";
+        }
+
+        // Check if payment date is before check-in date
+        if (reservationForm.checkIn) {
+          const checkInDate = new Date(reservationForm.checkIn);
+          checkInDate.setHours(0, 0, 0, 0);
+          if (paymentDate >= checkInDate) {
+            return "Payment date must be before the check-in date.";
+          }
+        }
+
+        return "";
+      case "adults":
+        if (!value || parseInt(value) < 1)
+          return "At least 1 adult is required";
+        if (parseInt(value) > 10) return "Maximum 10 adults allowed";
+        return "";
+      default:
+        return "";
+    }
+  };
+
+  // Reservation form validation
+  const validateReservationForm = (): boolean => {
+    const errors = {
+      guestName: validateField("guestName", reservationForm.guestName),
+      phone: validateField("phone", reservationForm.phone),
+      email: validateField("email", reservationForm.email),
+      address: validateField("address", reservationForm.address),
+      roomType: validateField("roomType", reservationForm.roomType),
+      checkIn: validateField("checkIn", reservationForm.checkIn),
+      checkOut: validateField("checkOut", reservationForm.checkOut),
+      adults: validateField("adults", reservationForm.adults.toString()),
+      children: validateField("children", reservationForm.children.toString()),
+      paymentDate:
+        stayType === StayType.RESERVED
+          ? validateField("paymentDate", reservationForm.paymentDate)
+          : "",
+      paymentMethod: validateField(
+        "paymentMethod",
+        reservationForm.paymentMethod
+      ),
+    };
+
+    setReservationErrors(errors);
+    return !Object.values(errors).some((error) => error !== "");
+  };
+
+  console.log("selectedHotel", selectedHotel);
+
+  const isAdmin = user?.userRole === UserRole.SuperAdmin;
+
+  const [reservationForm, setReservationForm] = useState({
+    guestName: "",
+    email: "",
+    phone: "",
+    address: "",
+    checkIn: "",
+    checkOut: "",
+    adults: 2,
+    children: 0,
+    roomType: "",
+    specialRequests: "",
+    paymentDate: "",
+    paymentMethod: "",
+  });
+
+  const [checkInForm, setCheckInForm] = useState({
+    roomNumber: "",
+    guestName: "",
+    countryCode: "+1",
+    phone: "",
+    email: "",
+    address: "",
+    paymentMethod: "",
+    checkInDate: "",
+    checkInTime: "",
+    checkOutDate: "",
+  });
+
+  // Walk-in form state
+  const [walkInForm, setWalkInForm] = useState({
+    guestName: "",
+    email: "",
+    phone: "",
+    checkIn: "",
+    checkOut: "",
+    adults: 2,
+    children: 0,
+    roomType: "",
+    paymentMethod: "",
+    specialRequests: "",
+  });
+
+  // Reservation form validation errors
+  const [reservationErrors, setReservationErrors] = useState({
+    guestName: "",
+    phone: "",
+    email: "",
+    address: "",
+    roomType: "",
+    checkIn: "",
+    checkOut: "",
+    adults: "",
+    children: "",
+    paymentDate: "",
+    paymentMethod: "",
+  });
+
+  // Form submission handlers
+  const handleReservationSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateReservationForm()) {
+      return;
+    }
+
+    // Find the selected room
+    const selectedRoom = hotelRooms?.find(
+      (room) => room.roomNumber === reservationForm.roomType
+    );
+    if (!selectedRoom) {
+      setReservationErrors({
+        ...reservationErrors,
+        roomType: "Selected room not found",
+      });
+      return;
+    }
+
+    // Prepare the request data
+    const reservationData = {
+      guestName: reservationForm.guestName,
+      emailAddress: reservationForm.email || undefined,
+      phoneNumber: reservationForm.phone,
+      address: reservationForm.address,
+      roomId: selectedRoom._id,
+      checkInDate: reservationForm.checkIn,
+      checkOutDate: reservationForm.checkOut,
+      adults: reservationForm.adults,
+      type: stayType,
+      ...(stayType === StayType.RESERVED && {
+        paymentDate: reservationForm.paymentDate,
+      }),
+      children: reservationForm.children,
+      specialRequests: reservationForm.specialRequests || undefined,
+      paymentMethod: reservationForm.paymentMethod,
+    };
+
+    // Make the HTTP request
+    createReservationRequest({
+      requestConfig: {
+        url: "/hotel/create-stay",
+        method: "POST",
+        body: reservationData,
+        successMessage: "Created successfully!",
+      },
+      successRes: (res) => {
+        console.log("Reservation created successfully:", res.data);
+
+        return;
+
+        // if (stayType === StayType.WALK_IN) {
+        //   dispatch(
+        //     roomActions.updateRoomStatus({
+        //       roomId: selectedRoom._id,
+        //       status: RoomStatus.Occupied,
+        //     })
+        //   );
+        // }
+
+        setShowReservationModal(false);
+        setReservationForm({
+          guestName: "",
+          email: "",
+          phone: "",
+          address: "",
+          checkIn: "",
+          checkOut: "",
+          adults: 2,
+          children: 0,
+          roomType: "",
+          specialRequests: "",
+          paymentDate: "",
+          paymentMethod: "",
+        });
+        setReservationErrors({
+          guestName: "",
+          phone: "",
+          email: "",
+          address: "",
+          roomType: "",
+          checkIn: "",
+          checkOut: "",
+          adults: "",
+          children: "",
+          paymentDate: "",
+          paymentMethod: "",
+        });
+      },
+    });
+  };
+
+  const handleWalkInSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Processing walk-in:", walkInForm);
+    setShowWalkInModal(false);
+    setWalkInForm({
+      guestName: "",
+      email: "",
+      phone: "",
+      checkIn: "",
+      checkOut: "",
+      adults: 2,
+      children: 0,
+      roomType: "",
+      paymentMethod: "",
+      specialRequests: "",
+    });
+  };
+
+  // Mock data for property selector and context ribbon
+  const currentProperty = mockProperties[0];
+  const stats = mockDashboardStats;
+
+  // Update current time to prevent hydration mismatch
+  useEffect(() => {
+    const updateTime = () => {
+      const time = new Date().toLocaleString("en-US", {
+        timeZone: currentProperty.timezone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      setCurrentTime(time);
+    };
+
+    // Set initial time
+    updateTime();
+
+    // Update every minute
+    const interval = setInterval(updateTime, 60000);
+
+    return () => clearInterval(interval);
+  }, [currentProperty.timezone]);
+
+  // Keyboard shortcuts for front-desk operations
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isAdmin || !user) return; // Skip shortcuts for admin users or when not logged in
+
+      // Only trigger shortcuts when not typing in input fields
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      switch (event.key) {
+        case "F1":
+          event.preventDefault();
+          window.location.href = "/reservations?action=new";
+          break;
+        case "F2":
+          event.preventDefault();
+          window.location.href = "/front-desk?action=checkin";
+          break;
+        case "F3":
+          event.preventDefault();
+          // Focus search
+          const searchInput = document.querySelector(
+            'input[placeholder*="Search"]'
+          ) as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+          }
+          break;
+        case "Escape":
+          // Close any open modals/dropdowns
+          setPropertySelectorOpen(false);
+          setSidebarOpen(false);
+          break;
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isAdmin, user]);
+
+  return (
+    <header>
+      {
+        <div className="bg-primary-600 text-white py-2 px-4">
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-2 sm:space-x-6 overflow-x-auto">
+              <div className="flex items-center space-x-2 min-w-0">
+                <Building className="w-4 h-4 flex-shrink-0" />
+                <span className="font-medium truncate">{selectedHotelName}</span>
+              </div>
+              <div className="hidden sm:flex items-center space-x-2">
+                <Clock className="w-4 h-4" />
+                <span>{currentTime || "--:-- --"}</span>
+              </div>
+              <div className="hidden md:flex items-center space-x-2">
+                <Globe className="w-4 h-4" />
+                <span>{selectedHotel!.currency}</span>
+              </div>
+              <div className="hidden lg:flex items-center space-x-2">
+                <Bed className="w-4 h-4" />
+                <span>{stats.occupancy.today}% Occupancy</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {stats.online_status ? (
+                <>
+                  <Wifi className="w-4 h-4" />
+                  <span className="hidden sm:inline">Online - {stats.last_sync}</span>
+                  <span className="sm:hidden">Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4" />
+                  <span className="hidden sm:inline">Offline Mode</span>
+                  <span className="sm:hidden">Offline</span>
+                </>
+              )}
+              {stats.pending_sync_items > 0 && (
+                <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs">
+                  {stats.pending_sync_items}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      }
+
+      {/* Top bar */}
+      <div className="sticky top-0 z-40 bg-white border-b border-secondary-200">
+        {/* First row - Main navigation and title */}
+        <div className="flex items-center justify-between h-16 px-4">
+          <div className="flex items-center min-w-0 flex-1">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-md text-secondary-400 hover:text-secondary-600 lg:hidden flex-shrink-0"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="ml-4 lg:ml-0 min-w-0 flex-1">
+              <h2 className="text-lg font-semibold text-secondary-900 truncate">
+                {isAdmin ? "Admin Dashboard" : "Hotel Management"}
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Search - Hidden on mobile, shown on tablet+ */}
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                className="pl-10 pr-4 py-2 w-48 lg:w-64 border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+
+            {/* Notifications */}
+            <button className="p-2 text-secondary-400 hover:text-secondary-600 relative flex-shrink-0">
+              <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
+                3
+              </span>
+            </button>
+
+            {/* User profile */}
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-sm font-medium">
+                  {user ? `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}` : "U"}
+                </span>
+              </div>
+              <div className="hidden sm:block min-w-0">
+                <p className="text-sm font-medium text-secondary-900 truncate">
+                  {user ? `${user.firstName} ${user.lastName}` : "User"}
+                </p>
+                <p className="text-xs text-secondary-500 truncate">
+                  {user ? getRoleDisplayName(user.userRole!) : "Guest"}
+                </p>
+                {user && (
+                  <p className="text-xs text-primary-600 font-medium truncate">
+                    {/* DEPT PLACEHOLDER */}
+                    {/* {user.department} */}
+                  </p>
+                )}
+              </div>
+              <button
+                // onClick={logout}
+                className="p-2 text-secondary-400 hover:text-secondary-600 flex-shrink-0"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Second row - Property selector, quick actions, and mobile search */}
+        {true && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between h-auto sm:h-12 px-4 py-2 sm:py-0 bg-secondary-50 border-t border-secondary-100 gap-3 sm:gap-0">
+            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+              {/* Property Selector */}
+              <div className="relative min-w-0 flex-1 sm:flex-none">
+                <button
+                  onClick={() => setPropertySelectorOpen(!propertySelectorOpen)}
+                  className="flex items-center space-x-2 px-3 py-2 bg-white border border-secondary-300 rounded-lg hover:bg-secondary-50 w-full sm:w-auto min-w-0"
+                >
+                  <Building className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-secondary-700 truncate">
+                    {selectedHotelName}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                </button>
+
+                {propertySelectorOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-80 max-w-[calc(100vw-2rem)] bg-white border border-secondary-200 rounded-lg shadow-lg z-50">
+                    <div className="p-3">
+                      <div className="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-3">
+                        Switch Property
+                      </div>
+                      {hotel.hotels.map((property) => (
+                        <button
+                          key={property._id}
+                          className="w-full text-left px-3 py-3 hover:bg-secondary-50 rounded-md border border-transparent hover:border-secondary-200 transition-colors"
+                          onClick={() => setPropertySelectorOpen(false)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-secondary-900 line-clamp-1">
+                                {property.hotelName}
+                              </div>
+                              <div className="text-sm text-secondary-500 line-clamp-1">
+                                {property.address}
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0 ml-2">
+                              <div className="text-sm font-medium text-secondary-900">
+                                {occupancyPercentage}%
+                              </div>
+                              <div className="text-xs text-secondary-500">
+                                Occupancy
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                      <div className="mt-3 pt-3 border-t border-secondary-200">
+                        <button className="w-full text-left px-3 py-2 text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-md">
+                          + Add New Property
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Search */}
+              <div className="relative md:hidden flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400" />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="pl-10 pr-4 py-2 w-full border border-secondary-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Quick Actions */}
+              <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto">
+                <button
+                  onClick={() => {
+                    setStayType(StayType.RESERVED);
+                    setShowReservationModal(true);
+                    // Re-validate check-in date when stay type changes
+                    if (reservationForm.checkIn) {
+                      const checkInError = validateField(
+                        "checkIn",
+                        reservationForm.checkIn
+                      );
+                      setReservationErrors((prev) => ({
+                        ...prev,
+                        checkIn: checkInError,
+                      }));
+                    }
+                  }}
+                  className="px-2 sm:px-3 py-1 bg-primary-600 text-white text-xs sm:text-sm rounded-md hover:bg-primary-700 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  + Reservation
+                </button>
+                <button
+                  onClick={() => {
+                    setStayType(StayType.BOOKED);
+                    setShowReservationModal(true);
+                    // Re-validate check-in date when stay type changes
+                    if (reservationForm.checkIn) {
+                      const checkInError = validateField(
+                        "checkIn",
+                        reservationForm.checkIn
+                      );
+                      setReservationErrors((prev) => ({
+                        ...prev,
+                        checkIn: checkInError,
+                      }));
+                    }
+                  }}
+                  className="px-2 sm:px-3 py-1 bg-green-600 text-white text-xs sm:text-sm rounded-md hover:bg-green-700 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  + Book
+                </button>
+                <button
+                  onClick={() => {
+                    setStayType(StayType.WALK_IN);
+                    setShowReservationModal(true);
+                    // Set check-in date to today for WALK_IN
+                    const today = new Date().toISOString().split("T")[0];
+                    setReservationForm((prev) => ({
+                      ...prev,
+                      checkIn: today,
+                    }));
+                    // Clear any existing check-in errors
+                    setReservationErrors((prev) => ({
+                      ...prev,
+                      checkIn: "",
+                    }));
+                  }}
+                  className="px-2 sm:px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded-md hover:bg-blue-700 transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  + Walk-in
+                </button>
+              </div>
+
+              {/* Keyboard Shortcuts Help */}
+              <button
+                className="p-2 text-secondary-400 hover:text-secondary-600 hidden lg:block flex-shrink-0"
+                title="Keyboard Shortcuts: F1=New Reservation, F2=Check-in, F3=Search, Esc=Close"
+              >
+                <span className="text-xs font-mono">F1 F2 F3</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showReservationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-secondary-900">
+                {stayType === StayType.RESERVED
+                  ? "New Reservation"
+                  : stayType === StayType.BOOKED
+                  ? "New Booking"
+                  : "Walk-in"}
+              </h2>
+              <button
+                onClick={() => {
+                  setReservationForm({
+                    guestName: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                    checkIn: "",
+                    checkOut: "",
+                    adults: 2,
+                    children: 0,
+                    roomType: "",
+                    specialRequests: "",
+                    paymentDate: "",
+                    paymentMethod: "",
+                  });
+                  setReservationErrors({
+                    guestName: "",
+                    phone: "",
+                    email: "",
+                    address: "",
+                    roomType: "",
+                    checkIn: "",
+                    checkOut: "",
+                    adults: "",
+                    children: "",
+                    paymentDate: "",
+                    paymentMethod: "",
+                  });
+                  setShowReservationModal(false);
+                }}
+                className="p-2 hover:bg-secondary-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReservationSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Guest Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={reservationForm.guestName}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        guestName: e.target.value,
+                      });
+                      const error = validateField("guestName", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        guestName: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField("guestName", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        guestName: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.guestName
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                    placeholder="Enter guest name"
+                  />
+                  {reservationErrors.guestName && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.guestName}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={reservationForm.email}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        email: e.target.value,
+                      });
+                      const error = validateField("email", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        email: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField("email", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        email: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.email
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                    placeholder="guest@email.com"
+                  />
+                  {reservationErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.email}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    value={reservationForm.phone}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        phone: e.target.value,
+                      });
+                      const error = validateField("phone", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        phone: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField("phone", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        phone: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.phone
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                  {reservationErrors.phone && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.phone}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Address *
+                  </label>
+                  <input
+                    type="text"
+                    value={reservationForm.address}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        address: e.target.value,
+                      });
+                      const error = validateField("address", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        address: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField("address", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        address: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.address
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                    placeholder="Enter guest address"
+                  />
+                  {reservationErrors.address && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.address}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Select Room *
+                  </label>
+                  {hotelRooms && hotelRooms.length > 0 ? (
+                    <select
+                      value={reservationForm.roomType}
+                      onChange={(e) => {
+                        setReservationForm({
+                          ...reservationForm,
+                          roomType: e.target.value,
+                        });
+                        const error = validateField("roomType", e.target.value);
+                        setReservationErrors({
+                          ...reservationErrors,
+                          roomType: error,
+                        });
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField("roomType", e.target.value);
+                        setReservationErrors({
+                          ...reservationErrors,
+                          roomType: error,
+                        });
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                        reservationErrors.roomType
+                          ? "border-red-500"
+                          : "border-secondary-300"
+                      }`}
+                    >
+                      <option value="">Select available room</option>
+                      {hotelRooms?.filter(
+                        (room) => room.roomStatus === RoomStatus.Available
+                      ).length > 0 ? (
+                        hotelRooms
+                          ?.filter((room) => room.roomStatus === "available")
+                          .map((room) => (
+                            <option key={room._id} value={room.roomNumber}>
+                              {room.roomNumber} - {room.roomTypeName || "Room"}
+                            </option>
+                          ))
+                      ) : (
+                        <option value="" disabled>
+                          No available rooms
+                        </option>
+                      )}
+                    </select>
+                  ) : (
+                    <div className="w-full">
+                      <button
+                        type="button"
+                        onClick={handleFetchRooms}
+                        disabled={isLoadingRooms}
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {isLoadingRooms ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
+                            Loading rooms...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4 mr-2" />
+                            Load Available Rooms
+                          </>
+                        )}
+                      </button>
+                      {fetchRoomsError && (
+                        <p className="mt-1 text-sm text-red-600">
+                          Failed to load rooms. Please try again.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {reservationErrors.roomType && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.roomType}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Check-in Date *
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={reservationCheckInRef}
+                      type="date"
+                      value={reservationForm.checkIn}
+                      onChange={(e) => {
+                        const newCheckIn = e.target.value;
+                        setReservationForm({
+                          ...reservationForm,
+                          checkIn: newCheckIn,
+                        });
+                        const checkInError = validateField(
+                          "checkIn",
+                          newCheckIn
+                        );
+
+                        // Re-validate payment date if it exists
+                        let paymentDateError = "";
+                        if (reservationForm.paymentDate) {
+                          paymentDateError = validateField(
+                            "paymentDate",
+                            reservationForm.paymentDate
+                          );
+                        }
+
+                        setReservationErrors({
+                          ...reservationErrors,
+                          checkIn: checkInError,
+                          paymentDate: paymentDateError,
+                        });
+                      }}
+                      onBlur={(e) => {
+                        const checkInError = validateField(
+                          "checkIn",
+                          e.target.value
+                        );
+
+                        // Re-validate payment date if it exists
+                        let paymentDateError = "";
+                        if (reservationForm.paymentDate) {
+                          paymentDateError = validateField(
+                            "paymentDate",
+                            reservationForm.paymentDate
+                          );
+                        }
+
+                        setReservationErrors({
+                          ...reservationErrors,
+                          checkIn: checkInError,
+                          paymentDate: paymentDateError,
+                        });
+                      }}
+                      onClick={() => {
+                        if (reservationCheckInRef.current) {
+                          reservationCheckInRef.current.showPicker();
+                        }
+                      }}
+                      // min={stayType === StayType.WALK_IN ? new Date().toISOString().split("T")[0] : (() => {
+                      //   const tomorrow = new Date();
+                      //   tomorrow.setDate(tomorrow.getDate() + 1);
+                      //   return tomorrow.toISOString().split("T")[0];
+                      // })()}
+                      //  max={stayType === StayType.WALK_IN ? new Date().toISOString().split("T")[0] : undefined}
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer ${
+                        reservationErrors.checkIn
+                          ? "border-red-500"
+                          : "border-secondary-300"
+                      }`}
+                      style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "textfield",
+                        colorScheme: "light",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (reservationCheckInRef.current) {
+                          reservationCheckInRef.current.showPicker();
+                        }
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400 hover:text-secondary-600 focus:outline-none focus:text-primary-500"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {reservationErrors.checkIn && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.checkIn}
+                    </p>
+                  )}
+                </div>
+
+                {stayType === StayType.RESERVED && (
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-700 mb-2">
+                      Expected Payment Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={reservationForm.paymentDate}
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        console.log("Payment date changed:", newValue);
+                        setReservationForm((prev) => ({
+                          ...prev,
+                          paymentDate: newValue,
+                        }));
+                        const error = validateField("paymentDate", newValue);
+                        setReservationErrors((prev) => ({
+                          ...prev,
+                          paymentDate: error,
+                        }));
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField(
+                          "paymentDate",
+                          e.target.value
+                        );
+                        setReservationErrors((prev) => ({
+                          ...prev,
+                          paymentDate: error,
+                        }));
+                      }}
+                      onClick={(e) => {
+                        // Make the entire input clickable to open date picker
+                        const target = e.target as HTMLInputElement;
+                        if (target && typeof target.showPicker === "function") {
+                          target.showPicker();
+                        }
+                      }}
+                      // min={(() => {
+                      //   const today = new Date();
+                      //   return today.toISOString().split('T')[0];
+                      // })()}
+                      // max={reservationForm.checkIn ? (() => {
+                      //   const checkInDate = new Date(reservationForm.checkIn);
+                      //   checkInDate.setDate(checkInDate.getDate() - 1);
+                      //   return checkInDate.toISOString().split('T')[0];
+                      // })() : undefined}
+                      placeholder="YYYY-MM-DD"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer ${
+                        reservationErrors.paymentDate
+                          ? "border-red-500"
+                          : "border-secondary-300"
+                      }`}
+                    />
+                    {reservationErrors.paymentDate && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {reservationErrors.paymentDate}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Payment Method *
+                  </label>
+                  <select
+                    value={reservationForm.paymentMethod}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        paymentMethod: e.target.value,
+                      });
+                      const error = validateField(
+                        "paymentMethod",
+                        e.target.value
+                      );
+                      setReservationErrors({
+                        ...reservationErrors,
+                        paymentMethod: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField(
+                        "paymentMethod",
+                        e.target.value
+                      );
+                      setReservationErrors({
+                        ...reservationErrors,
+                        paymentMethod: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.paymentMethod
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                  >
+                    <option value="">Select payment method</option>
+                    {paymentMethodList.map((method) => (
+                      <option key={method.value} value={method.value}>
+                        {method.label}
+                      </option>
+                    ))}
+                  </select>
+                  {reservationErrors.paymentMethod && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.paymentMethod}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Check-out Date *
+                  </label>
+                  <div className="relative">
+                    <input
+                      ref={reservationCheckOutRef}
+                      type="date"
+                      value={reservationForm.checkOut}
+                      onChange={(e) => {
+                        setReservationForm({
+                          ...reservationForm,
+                          checkOut: e.target.value,
+                        });
+                        const error = validateField("checkOut", e.target.value);
+                        setReservationErrors({
+                          ...reservationErrors,
+                          checkOut: error,
+                        });
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField("checkOut", e.target.value);
+                        setReservationErrors({
+                          ...reservationErrors,
+                          checkOut: error,
+                        });
+                      }}
+                      onClick={() => {
+                        if (reservationCheckOutRef.current) {
+                          reservationCheckOutRef.current.showPicker();
+                        }
+                      }}
+                      min={
+                        reservationForm.checkIn ||
+                        new Date().toISOString().split("T")[0]
+                      }
+                      className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 cursor-pointer ${
+                        reservationErrors.checkOut
+                          ? "border-red-500"
+                          : "border-secondary-300"
+                      }`}
+                      style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "textfield",
+                        colorScheme: "light",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (reservationCheckOutRef.current) {
+                          reservationCheckOutRef.current.showPicker();
+                        }
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-secondary-400 hover:text-secondary-600 focus:outline-none focus:text-primary-500"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {reservationErrors.checkOut && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.checkOut}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Adults *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={reservationForm.adults}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        adults: parseInt(e.target.value) || 1,
+                      });
+                      const error = validateField("adults", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        adults: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField("adults", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        adults: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.adults
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                  />
+                  {reservationErrors.adults && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.adults}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Children
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={reservationForm.children}
+                    onChange={(e) => {
+                      setReservationForm({
+                        ...reservationForm,
+                        children: parseInt(e.target.value) || 0,
+                      });
+                      const error = validateField("children", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        children: error,
+                      });
+                    }}
+                    onBlur={(e) => {
+                      const error = validateField("children", e.target.value);
+                      setReservationErrors({
+                        ...reservationErrors,
+                        children: error,
+                      });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                      reservationErrors.children
+                        ? "border-red-500"
+                        : "border-secondary-300"
+                    }`}
+                  />
+                  {reservationErrors.children && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {reservationErrors.children}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Special Requests
+                </label>
+                <textarea
+                  value={reservationForm.specialRequests}
+                  onChange={(e) =>
+                    setReservationForm({
+                      ...reservationForm,
+                      specialRequests: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Any special requests or notes..."
+                />
+              </div>
+
+              {reservationError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-red-600">{reservationError}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowReservationModal(false)}
+                  className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreatingReservation}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCreatingReservation ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Create Reservation
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Booking Modal (public-like booking separate from reservation) */}
+      {false && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-secondary-900">
+                Book a Room
+              </h2>
+              <button
+                onClick={() => {}}
+                className="p-2 hover:bg-secondary-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                // For now, just close to keep it dummy/UX-only, separate from reservation
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Guest Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={reservationForm.guestName}
+                    onChange={(e) =>
+                      setReservationForm({
+                        ...reservationForm,
+                        guestName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Enter guest name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Phone *
+                  </label>
+                  <input
+                    type="tel"
+                    value={reservationForm.phone}
+                    onChange={(e) =>
+                      setReservationForm({
+                        ...reservationForm,
+                        phone: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="+1 (555) 123-4567"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Check-in *
+                  </label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={reservationForm.checkIn}
+                    onChange={(e) =>
+                      setReservationForm({
+                        ...reservationForm,
+                        checkIn: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Check-out *
+                  </label>
+                  <input
+                    type="date"
+                    min={
+                      reservationForm.checkIn ||
+                      new Date().toISOString().split("T")[0]
+                    }
+                    value={reservationForm.checkOut}
+                    onChange={(e) =>
+                      setReservationForm({
+                        ...reservationForm,
+                        checkOut: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Adults *
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={reservationForm.adults}
+                    onChange={(e) =>
+                      setReservationForm({
+                        ...reservationForm,
+                        adults: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Children
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={reservationForm.children}
+                    onChange={(e) =>
+                      setReservationForm({
+                        ...reservationForm,
+                        children: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {}}
+                  className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Walk-in Modal */}
+      {showWalkInModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-secondary-900">
+                Walk-in Guest
+              </h2>
+              <button
+                onClick={() => setShowWalkInModal(false)}
+                className="p-2 hover:bg-secondary-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleWalkInSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Guest Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={walkInForm.guestName}
+                    onChange={(e) =>
+                      setWalkInForm({
+                        ...walkInForm,
+                        guestName: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Enter guest name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={walkInForm.email}
+                    onChange={(e) =>
+                      setWalkInForm({ ...walkInForm, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="guest@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={walkInForm.phone}
+                    onChange={(e) =>
+                      setWalkInForm({ ...walkInForm, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Select Room *
+                  </label>
+                  {hotelRooms && hotelRooms.length > 0 ? (
+                    <select
+                      required
+                      value={walkInForm.roomType}
+                      onChange={(e) =>
+                        setWalkInForm({
+                          ...walkInForm,
+                          roomType: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="">Select available room</option>
+                      {hotelRooms?.filter(
+                        (room) => room.roomStatus === RoomStatus.Available
+                      ).length > 0 ? (
+                        hotelRooms
+                          ?.filter((room) => room.roomStatus === "available")
+                          .map((room) => (
+                            <option key={room._id} value={room.roomNumber}>
+                              {room.roomNumber} - {room.roomTypeName || "Room"}
+                            </option>
+                          ))
+                      ) : (
+                        <option value="" disabled>
+                          No available rooms
+                        </option>
+                      )}
+                    </select>
+                  ) : (
+                    <div className="w-full">
+                      <button
+                        type="button"
+                        onClick={handleFetchRooms}
+                        disabled={isLoadingRooms}
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {isLoadingRooms ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
+                            Loading rooms...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-4 h-4 mr-2" />
+                            Load Available Rooms
+                          </>
+                        )}
+                      </button>
+                      {fetchRoomsError && (
+                        <p className="mt-1 text-sm text-red-600">
+                          Failed to load rooms. Please try again.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Check-in Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={walkInForm.checkIn}
+                    onChange={(e) =>
+                      setWalkInForm({ ...walkInForm, checkIn: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Check-out Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={walkInForm.checkOut}
+                    onChange={(e) =>
+                      setWalkInForm({ ...walkInForm, checkOut: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Adults
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={walkInForm.adults}
+                    onChange={(e) =>
+                      setWalkInForm({
+                        ...walkInForm,
+                        adults: parseInt(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Children
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={walkInForm.children}
+                    onChange={(e) =>
+                      setWalkInForm({
+                        ...walkInForm,
+                        children: parseInt(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-secondary-700 mb-2">
+                    Payment Method *
+                  </label>
+                  <select
+                    required
+                    value={walkInForm.paymentMethod}
+                    onChange={(e) =>
+                      setWalkInForm({
+                        ...walkInForm,
+                        paymentMethod: e.target.value,
+                      })
+                    }
+                    className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Select payment method</option>
+                    {paymentMethodList.map((method) => (
+                      <option key={method.value} value={method.value}>
+                        {method.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Special Requests
+                </label>
+                <textarea
+                  value={walkInForm.specialRequests}
+                  onChange={(e) =>
+                    setWalkInForm({
+                      ...walkInForm,
+                      specialRequests: e.target.value,
+                    })
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Any special requests or notes..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowWalkInModal(false)}
+                  className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Process Walk-in
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
