@@ -67,13 +67,13 @@ export default function RoomManagementCard({addRoom, addRoomType, addRatePlan} :
                   <Star className="w-4 h-4" />
                   <span>Add Room Type</span>
                 </button>
-                <button 
+                {/* <button 
                   onClick={addRatePlan}
                   className="bg-white text-blue-600 hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
                 >
                   <DollarSign className="w-4 h-4" />
                   <span>Add Rate Plan</span>
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

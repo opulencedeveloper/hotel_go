@@ -1081,7 +1081,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         disabled={isLoadingRooms}
                         className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        {isLoadingRooms ? (
+                        {room.fetchedData && room.hotelRooms.length === 0 ? <>No Available Rooms</> : isLoadingRooms ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
                             Loading rooms...
@@ -1784,7 +1784,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         disabled={isLoadingRooms}
                         className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        {isLoadingRooms ? (
+                        {room.fetchedData && room.hotelRooms.length === 0 ? <>No Available Rooms</> : isLoadingRooms ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
                             Loading rooms...

@@ -2,7 +2,6 @@ export enum PaymentMethod {
   CARD_PAYMENT = "card_payment",
   CASH = "cash",
   BANK_TRANSFER = "bank_transfer",
-  OTHER = "other",
 }
 
 export enum StayStatus {

@@ -38,16 +38,11 @@ class RoomTypeService {
   }
 
   public async findRoomTypeByNameAndHotelId(name: string, hotelId: string) {
-    const roomType = await RoomType.findOne({ name, hotelId });
+    const roomType = await RoomType.findOne({ name: { $regex: `^${name}$`, $options: "" }, hotelId });
 
     return roomType;
   }
 
-  public async findRoomTypeByIdAndHotelId(name: string, _id: Types.ObjectId) {
-    const roomType = await RoomType.findOne({ name, _id });
-
-    return roomType;
-  }
 
   public async findHotelRoomTypeByHotelId(hotelId: Types.ObjectId) {
     const roomTypes = await RoomType.find({ hotelId });

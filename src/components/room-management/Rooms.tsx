@@ -72,6 +72,13 @@ export default function Rooms() {
 
   const updateRoomStatusSuccessRes = (res: any) => {
     const updatedRoom = res?.data?.data.updatedRoom;
+    
+    // Check if updatedRoom exists
+    if (!updatedRoom || !updatedRoom._id) {
+      console.error('Invalid room data received:', updatedRoom);
+      return;
+    }
+    
     // Update Redux state
     dispatch(roomActions.updateRoom(updatedRoom));
   };
@@ -126,6 +133,13 @@ export default function Rooms() {
 
   const updateRoomSuccessRes = (res: any) => {
     const updatedRoom = res?.data?.data.updatedRoom;
+    
+    // Check if updatedRoom exists
+    if (!updatedRoom || !updatedRoom._id) {
+      console.error('Invalid room data received:', updatedRoom);
+      return;
+    }
+    
     // Update Redux state
     dispatch(roomActions.updateRoom(updatedRoom));
     // Close modal
@@ -150,8 +164,8 @@ export default function Rooms() {
 
   const filteredRooms = hotelRooms.filter((room) => {
     const matchesSearch =
-      room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      room.roomTypeName.toLowerCase().includes(searchTerm.toLowerCase());
+      room?.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      room?.roomTypeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || room.roomStatus === statusFilter;
     const matchesType =

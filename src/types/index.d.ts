@@ -267,7 +267,7 @@ export interface Staff {
   lastName: string;
   email: string;
   phone: string;
-  role: 'manager' | 'receptionist' | 'housekeeping' | 'kitchen' | 'maintenance' | 'admin';
+  role: 'manager' | 'receptionist' | 'housekeeping' | 'kitchen' | 'maintenance' | 'admin' | 'accounting' | 'security' | 'guest_services';
   department: string;
   salary: number;
   hireDate: string;
@@ -296,6 +296,7 @@ export interface POSItem {
   price: number;
   description: string;
   available: boolean;
+  prepTime?: number; // Preparation time in minutes
   image?: string;
   modifiers: Modifier[];
   ingredients: Ingredient[];

@@ -34,7 +34,7 @@ class RoomTypeController {
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Room type added successfully!",
       data: { addedRoomType },
     });
@@ -50,7 +50,7 @@ class RoomTypeController {
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Room type added successfully!",
       data: { updatedRoomType },
     });
@@ -67,7 +67,7 @@ class RoomTypeController {
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Room type deleted successfully!",
       data: { deletedRoomType },
     });

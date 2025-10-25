@@ -3,9 +3,14 @@ const databaseUrlAndCode = process.env.MONGODB_URI || "";
 
 const MONGODB_URI = databaseUrlAndCode;
 
+let isConnected = false;
+
 export async function connectDB() {
+  if (isConnected) return;
+
   if (!MONGODB_URI) {
     console.error("Please define MONGODB_URI in .env.local");
+    isConnected = true;
     throw new Error("Please define MONGODB_URI in .env.local");
   }
 

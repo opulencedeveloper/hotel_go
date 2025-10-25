@@ -15,7 +15,8 @@ interface ValidationErrors {
   general?: string;
 }
 
-export default function AddRoomTypeModal({ onClose }: AddRoomTypeModalProps) {
+export default function AddRoomTypeModal({ isOpen, onClose }: AddRoomTypeModalProps) {
+  if (!isOpen) return null;
   const [showAmenitiesManager, setShowAmenitiesManager] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
     {}
@@ -77,6 +78,13 @@ export default function AddRoomTypeModal({ onClose }: AddRoomTypeModalProps) {
   const createRoomTypeSuccessRes = (res: any) => {
     const addedRoomType = res?.data?.data.addedRoomType;
 
+    // Check if addedRoomType exists
+    if (!addedRoomType || !addedRoomType._id) {
+      console.error('Invalid room type data received:', addedRoomType);
+      setValidationErrors({ general: 'Failed to add room type. Please try again.' });
+      return;
+    }
+
     dispatch(roomActions.addRoomType(addedRoomType));
     setValidationErrors({});
     // Reset form
@@ -132,7 +140,7 @@ export default function AddRoomTypeModal({ onClose }: AddRoomTypeModalProps) {
         <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-secondary-900">
-              Add New Room Type
+              Add New Roaom Type
             </h2>
             <button
               onClick={onClose}

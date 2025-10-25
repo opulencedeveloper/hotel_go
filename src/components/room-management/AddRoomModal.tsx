@@ -19,7 +19,8 @@ interface ValidationErrors {
   general?: string;
 }
 
-export default function AddRoomModal({ onClose, addRoomType }: AddRoomModalProps) {
+export default function AddRoomModal({ isOpen, onClose, addRoomType }: AddRoomModalProps) {
+  if (!isOpen) return null;
   const { isLoading, sendHttpRequest: addRoomReq, error } = useHttp();
     const room = useSelector((state: RootState) => state.room);
     const hotel = useSelector((state: RootState) => state.hotel);
@@ -41,11 +42,30 @@ export default function AddRoomModal({ onClose, addRoomType }: AddRoomModalProps
   );
 
   const addRoomReqSuccessResHandler = (res: any) => {
-      const addedRoom = res?.data?.data.addedRoom;
+      const addedRoom = res?.data?.data;
+      
+      // Check if addedRoom exists and has required fields
+      if (!addedRoom || !addedRoom._id) {
+        console.error('Invalid room data received:', addedRoom);
+        setValidationErrors({ general: 'Failed to add room. Please try again.' });
+        return;
+      }
+      
+      // Transform the MongoDB document to match the RoomSliceParams structure
+      const transformedRoom = {
+        _id: addedRoom._id,
+        floor: addedRoom.floor,
+        roomNumber: addedRoom.roomNumber,
+        roomTypeId: addedRoom.roomTypeId,
+        roomTypeName: addedRoom.roomTypeId?.name || '', // This might need to be populated
+        roomStatus: addedRoom.roomStatus,
+        note: addedRoom.note || '',
+        lastCleaned: addedRoom.lastCleaned ? new Date(addedRoom.lastCleaned).toISOString() : ''
+      };
   
-      dispatch(roomActions.addRoom(addedRoom));
-    setValidationErrors({});
-    onClose();
+      dispatch(roomActions.addRoom(transformedRoom));
+      setValidationErrors({});
+      onClose();
   };
 
   const validateForm = (): boolean => {

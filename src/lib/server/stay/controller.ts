@@ -15,7 +15,7 @@ class StayController {
     const hotelId = customReq.hotelId;
 
     const roomNoExist = await roomService.findRoomByRoomIdAndHotellId(
-      body.roomId!,
+      body.roomId!.toString(),
       hotelId!.toString()
     );
 
@@ -101,7 +101,7 @@ class StayController {
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Check in registered successfully!",
       data: null,
     });
@@ -173,7 +173,7 @@ class StayController {
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Stay edited successfully!",
       data: { editedStay },
     });

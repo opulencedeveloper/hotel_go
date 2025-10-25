@@ -11,6 +11,7 @@ class RoomService {
 
     return room;
   }
+  
 
   public async editRoomByIdAndHotelId(input: IEditRoomUserInput, hotelId: Types.ObjectId) {
     const { roomId, ...updateData } = input;
@@ -24,13 +25,17 @@ class RoomService {
     return updatedRoom;
   }
 
-  public async findRoomByRoomNoAndHotelId(roomNumber: string, hotelId: string) {
-    const hotel = await Room.findOne({ roomNumber, hotelId });
+public async findRoomByRoomNoAndHotelId(roomNumber: string, hotelId: string) {
+  const room = await Room.findOne({
+    hotelId,
+    roomNumber: { $regex: `^${roomNumber}$`, $options: "" }, // no 'i' flag → case-sensitive
+  });
 
-    return hotel;
-  }
+  return room;
+}
 
-   public async findRoomByRoomIdAndHotellId(roomId: Types.ObjectId, hotelId: string) {
+
+   public async findRoomByRoomIdAndHotellId(roomId: string, hotelId: string) {
     const hotel = await Room.findOne({ _id: roomId, hotelId });
 
     return hotel;

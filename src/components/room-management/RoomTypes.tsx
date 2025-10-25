@@ -245,6 +245,12 @@ export default function RoomTypes() {
 
   const updateRoomTypeSuccessRes = (res: any) => {
     const updatedRoomType = res?.data?.data.updatedRoomType;
+    
+    // Check if updatedRoomType exists
+    if (!updatedRoomType || !updatedRoomType._id) {
+      console.error('Invalid room type data received:', updatedRoomType);
+      return;
+    }
    
     // Update Redux app-wide state
     dispatch(roomActions.updateRoomType(updatedRoomType));
@@ -254,6 +260,14 @@ export default function RoomTypes() {
 
   const createRoomTypeSuccessRes = (res: any) => {
     const newRoomType = res?.data?.data.addedRoomType;
+    
+    // Check if newRoomType exists
+    if (!newRoomType || !newRoomType._id) {
+      console.error('Invalid room type data received:', newRoomType);
+      setAddValidationErrors({ general: 'Failed to add room type. Please try again.' });
+      return;
+    }
+    
     // Add the new room type to local state
     setAddValidationErrors({});
     setAddForm({
@@ -268,6 +282,13 @@ export default function RoomTypes() {
 
   const deleteRoomTypeSuccessRes = (res: any) => {
     const deletedRoomTypeId = res?.data?.data.deletedRoomType?._id;
+    
+    // Check if deletedRoomTypeId exists
+    if (!deletedRoomTypeId) {
+      console.error('Invalid room type data received:', res?.data?.data);
+      return;
+    }
+    
     // Remove the room type from local state
     // Update Redux app-wide state
     dispatch(roomActions.deleteRoomType(deletedRoomTypeId));
@@ -458,7 +479,7 @@ export default function RoomTypes() {
                 <Edit className="w-3 h-3 inline mr-1" />
                 Edit
               </button>
-              <button 
+              {/* <button 
                 onClick={() => handleDeleteClick(type)}
                 disabled={isDeleting}
                 className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -474,7 +495,7 @@ export default function RoomTypes() {
                     Delete
                   </>
                 )}
-              </button>
+              </button> */}
             </div>
           </div>
         ))}

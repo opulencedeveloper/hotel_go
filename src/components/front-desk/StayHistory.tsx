@@ -167,7 +167,7 @@ export default function StayHistory() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-secondary-900">Stay History</h1>
+          <h1 className="text-2xl font-bold text-secondary-900">Guest History</h1>
           <p className="text-secondary-600">Read-only historical records of all stays</p>
         </div>
         <div className="flex items-center space-x-2 mt-4 sm:mt-0">
@@ -387,7 +387,7 @@ export default function StayHistory() {
       {filteredStays.length === 0 && (
         <div className="text-center py-12">
           <User className="w-12 h-12 text-secondary-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-secondary-900 mb-2">No stays found</h3>
+          <h3 className="text-lg font-medium text-secondary-900 mb-2">No guest(s) found</h3>
           <p className="text-secondary-500">
             {searchTerm || statusFilter !== 'all' || dateFilter !== 'all'
               ? 'Try adjusting your filters to see more results.'

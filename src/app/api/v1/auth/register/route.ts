@@ -10,8 +10,6 @@ async function handler(request: Request) {
 
   const body: IHotelRegistrationUserInput = await request.json();
 
-  console.log(body);
-
   const validationResponse = hotelValidator.registerHotel(body);
   if (!validationResponse.valid) return validationResponse.response!;
 

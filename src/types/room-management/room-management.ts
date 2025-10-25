@@ -1,6 +1,7 @@
 import { RoomStatus } from "./enum";
 
 export interface AddRoomModalProps {
+  isOpen: boolean;
   onClose: () => void;
   addRoomType: () => void;
 }
@@ -23,6 +24,7 @@ export interface RoomStatusListType {
 }
 
 export interface AddRoomTypeModalProps {
+  isOpen: boolean;
   onClose: () => void;
 }
 

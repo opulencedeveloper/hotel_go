@@ -1,5 +1,9 @@
 import { MessageResponse } from "../utils/enum";
-import { IAddHotelAmenities, IAddRoomUserInput, IEditRoomUserInput } from "./interface";
+import {
+  IAddHotelAmenities,
+  IAddRoomUserInput,
+  IEditRoomUserInput,
+} from "./interface";
 import { utils } from "../utils";
 
 import { CustomRequest } from "../utils/interface";
@@ -9,7 +13,6 @@ import { roomTypeService } from "../roomType/service";
 
 class RoomController {
   public async addRoom(body: IAddRoomUserInput, customReq: CustomRequest) {
-   
     const hotelId = customReq.hotelId;
 
     const roomNoExist = await roomService.findRoomByRoomNoAndHotelId(
@@ -19,7 +22,7 @@ class RoomController {
 
     if (roomNoExist) {
       return utils.customResponse({
-        status: 404,
+        status: 400,
         message: MessageResponse.Error,
         description: "Room number exist!",
         data: null,
@@ -38,14 +41,14 @@ class RoomController {
       });
     }
 
-  const addedRoom =  await roomService.createRoom({
+    const addedRoom = await roomService.createRoom({
       ...body,
       hotelId: hotelId!,
     });
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Room added successfully!",
       data: addedRoom,
     });
@@ -58,9 +61,7 @@ class RoomController {
       hotelId!
     );
 
-     const hotelRooms = await roomService.findRoomsByHotelId(
-      hotelId!
-    );
+    const hotelRooms = await roomService.findRoomsByHotelId(hotelId!);
 
     return utils.customResponse({
       status: 200,
@@ -68,26 +69,56 @@ class RoomController {
       description: "Hotel Details successfully!",
       data: {
         hotelRoomTypes,
-        hotelRooms
+        hotelRooms,
       },
     });
   }
 
-    public async editRoom(
-      body: IEditRoomUserInput,
-      customReq: CustomRequest
-    ) {
-      const hotelId = customReq.hotelId;
-  
-      const updatedRoom = await roomService.editRoomByIdAndHotelId(body, hotelId!);
-  
+  public async editRoom(body: IEditRoomUserInput, customReq: CustomRequest) {
+    const hotelId = customReq.hotelId;
+
+    const room = await roomService.findRoomByRoomIdAndHotellId(
+      body.roomId,
+      hotelId!.toString()
+    );
+
+    if (!room) {
       return utils.customResponse({
-        status: 201,
-        message: MessageResponse.VerifyEmail,
-        description: "Room edited successfully!",
-        data: { updatedRoom },
+        status: 404,
+        message: MessageResponse.Error,
+        description: "Room not found or deleted!",
+        data: null,
       });
     }
+
+    if (room.roomNumber.trim().toLowerCase() !== body.roomNumber.trim().toLowerCase()) {
+      const roomNoExist = await roomService.findRoomByRoomNoAndHotelId(
+        body.roomNumber,
+        hotelId!.toString()
+      );
+
+      if (roomNoExist) {
+        return utils.customResponse({
+          status: 400,
+          message: MessageResponse.Error,
+          description: "Room number exist!",
+          data: null,
+        });
+      }
+    }
+
+    const updatedRoom = await roomService.editRoomByIdAndHotelId(
+      body,
+      hotelId!
+    );
+
+    return utils.customResponse({
+      status: 201,
+      message: MessageResponse.Success,
+      description: "Room edited successfully!",
+      data: { updatedRoom },
+    });
+  }
 }
 
 export const roomController = new RoomController();

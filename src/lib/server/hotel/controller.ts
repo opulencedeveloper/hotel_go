@@ -57,7 +57,7 @@ class HotelController {
 
     return utils.customResponse({
       status: 201,
-      message: MessageResponse.VerifyEmail,
+      message: MessageResponse.Success,
       description: "Hotel created successfully, please verify email!",
       data: null,
     });

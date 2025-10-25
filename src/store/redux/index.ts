@@ -9,6 +9,12 @@ import userReducer from "./user-slice";
 import hotelReducer from "./hotel-slice";
 import roomReducer from "./room-slice";
 import stayReducer from "./stay-slice";
+import hotelServiceReducer from "./hotel-services-slice";
+import scheduledServiceReducer from "./scheduled-services-slice";
+import facilitiesReducer from "./facility-slice";
+import menuReducer from "./menu-slice";
+import orderReducer from "./order-slice";
+import staffReducer from "./staff-slice";
 
 // const clientCartPersistConfig = {
 //   key: "token",
@@ -23,7 +29,13 @@ const rootReducer = combineReducers({
   user: userReducer.reducer,
   hotel: hotelReducer.reducer,
   room: roomReducer.reducer,
-  stay: stayReducer.reducer
+  stay: stayReducer.reducer,
+  hotelService: hotelServiceReducer.reducer,
+  scheduledService: scheduledServiceReducer.reducer,
+  facilities: facilitiesReducer.reducer,
+  menu: menuReducer.reducer,
+  order: orderReducer.reducer,
+  staff: staffReducer.reducer
 });
 
 const store = configureStore({
