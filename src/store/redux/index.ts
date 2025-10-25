@@ -15,6 +15,8 @@ import facilitiesReducer from "./facility-slice";
 import menuReducer from "./menu-slice";
 import orderReducer from "./order-slice";
 import staffReducer from "./staff-slice";
+import inventoryReducer from "./inventory-slice";
+import houseKeepingReducer from "./house-keeping-slice";
 
 // const clientCartPersistConfig = {
 //   key: "token",
@@ -35,7 +37,9 @@ const rootReducer = combineReducers({
   facilities: facilitiesReducer.reducer,
   menu: menuReducer.reducer,
   order: orderReducer.reducer,
-  staff: staffReducer.reducer
+  staff: staffReducer.reducer,
+  inventory: inventoryReducer.reducer,
+  houseKeeping: houseKeepingReducer.reducer
 });
 
 const store = configureStore({

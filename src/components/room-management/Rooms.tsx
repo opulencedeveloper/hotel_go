@@ -42,6 +42,8 @@ export default function Rooms() {
         return "✓";
       case RoomStatus.Occupied:
         return "🏠";
+      case RoomStatus.MarkForCleaning:
+        return "🧽";
       case RoomStatus.Maintenance:
         return "🔧";
       case RoomStatus.Cleaning:
@@ -59,6 +61,8 @@ export default function Rooms() {
         return "bg-green-100 text-green-800";
       case RoomStatus.Occupied:
         return "bg-red-100 text-red-800";
+      case RoomStatus.MarkForCleaning:
+        return "bg-orange-100 text-orange-800";
       case RoomStatus.Maintenance:
         return "bg-yellow-100 text-yellow-800";
       case RoomStatus.Cleaning:

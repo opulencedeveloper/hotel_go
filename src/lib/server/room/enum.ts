@@ -3,5 +3,6 @@ export enum RoomStatus {
   Unavailable = "un_available",
   Occupied = "occupied",
   Maintenance = "maintenance",
+  MarkForCleaning = "marked_for_cleaning",
   Cleaning = "cleaning",
 }

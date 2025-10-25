@@ -23,6 +23,8 @@ export default function RoomDetailsModal({
         return "bg-green-100 text-green-800";
       case "occupied":
         return "bg-red-100 text-red-800";
+      case RoomStatus.MarkForCleaning:
+        return "bg-orange-100 text-orange-800";
       case "maintenance":
         return "bg-yellow-100 text-yellow-800";
       case "cleaning":
@@ -38,6 +40,8 @@ export default function RoomDetailsModal({
         return "✓";
       case RoomStatus.Occupied:
         return "🏠";
+      case RoomStatus.MarkForCleaning:
+        return "🧽";
       case RoomStatus.Maintenance:
         return "🔧";
       case RoomStatus.Cleaning:

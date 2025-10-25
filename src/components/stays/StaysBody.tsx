@@ -24,6 +24,7 @@ export default function StaysBody() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [roomStatusFilter, setRoomStatusFilter] = useState("");
   const dispatch = useDispatch();
   const stay = useSelector((state: RootState) => state.stay);
   const { stays } = stay;
@@ -62,6 +63,13 @@ export default function StaysBody() {
       );
     }
 
+    // Filter by room status
+    if (roomStatusFilter) {
+      filtered = filtered.filter(
+        (stay) => (stay.roomId as any)?.roomStatus === roomStatusFilter
+      );
+    }
+
     // Filter by search term
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -75,7 +83,7 @@ export default function StaysBody() {
     }
 
     return filtered;
-  }, [selectedTab, searchTerm, statusFilter, paymentStatusFilter, stays]);
+  }, [selectedTab, searchTerm, statusFilter, paymentStatusFilter, roomStatusFilter, stays]);
 
   const handleCreateStay = () => {
     setEditingStay(null);
@@ -178,11 +186,14 @@ export default function StaysBody() {
         onStatusChange={setStatusFilter}
         paymentStatusFilter={paymentStatusFilter}
         onPaymentStatusChange={setPaymentStatusFilter}
+        roomStatusFilter={roomStatusFilter}
+        onRoomStatusChange={setRoomStatusFilter}
         selectedTab={selectedTab}
         onClearFilters={() => {
           setSearchTerm("");
           setStatusFilter("");
           setPaymentStatusFilter("");
+          setRoomStatusFilter("");
         }}
       />
 
@@ -199,6 +210,7 @@ export default function StaysBody() {
         searchTerm={searchTerm}
         statusFilter={statusFilter}
         paymentStatusFilter={paymentStatusFilter}
+        roomStatusFilter={roomStatusFilter}
         onViewStay={handleViewStay}
         onEditStay={handleEditStay}
         onDeleteStay={handleDeleteStay}

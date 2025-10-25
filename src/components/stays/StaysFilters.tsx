@@ -2,6 +2,7 @@
 
 import { Search } from "lucide-react";
 import { StayType, StayStatus, PaymentStatus } from "@/utils/enum";
+import { RoomStatus } from "@/types/room-management/enum";
 
 interface StaysFiltersProps {
   searchTerm: string;
@@ -10,6 +11,8 @@ interface StaysFiltersProps {
   onStatusChange: (status: string) => void;
   paymentStatusFilter: string;
   onPaymentStatusChange: (status: string) => void;
+  roomStatusFilter: string;
+  onRoomStatusChange: (status: string) => void;
   selectedTab: StayType;
   onClearFilters: () => void;
 }
@@ -21,6 +24,8 @@ export default function StaysFilters({
   onStatusChange,
   paymentStatusFilter,
   onPaymentStatusChange,
+  roomStatusFilter,
+  onRoomStatusChange,
   selectedTab,
   onClearFilters,
 }: StaysFiltersProps) {
@@ -40,9 +45,19 @@ export default function StaysFilters({
     { value: PaymentStatus.CANCELLED, label: "Cancelled" },
   ];
 
+  const roomStatusOptions = [
+    { value: "", label: "All Room Status" },
+    { value: RoomStatus.Available, label: "Available" },
+    { value: RoomStatus.Occupied, label: "Occupied" },
+    { value: RoomStatus.MarkForCleaning, label: "Marked for Cleaning" },
+    { value: RoomStatus.Cleaning, label: "Cleaning" },
+    { value: RoomStatus.Maintenance, label: "Maintenance" },
+    { value: RoomStatus.Unavailable, label: "Unavailable" },
+  ];
+
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Search
@@ -95,6 +110,23 @@ export default function StaysFilters({
           </div>
         )}
 
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Room Status
+          </label>
+          <select
+            value={roomStatusFilter}
+            onChange={(e) => onRoomStatusChange(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          >
+            {roomStatusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex items-end">
           <button
             onClick={onClearFilters}
@@ -107,6 +139,8 @@ export default function StaysFilters({
     </div>
   );
 }
+
+
 
 
 

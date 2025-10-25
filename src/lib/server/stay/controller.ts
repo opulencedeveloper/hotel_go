@@ -167,7 +167,7 @@ class StayController {
       await roomService.updateRoomStatusByIdAndHotelId(
         editedStay.roomId,
         hotelId!,
-        RoomStatus.Available
+        RoomStatus.MarkForCleaning
       );
     }
 

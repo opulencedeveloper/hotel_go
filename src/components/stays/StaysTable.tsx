@@ -9,9 +9,11 @@ import {
   Trash2,
   CheckCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Home
 } from "lucide-react";
 import { StayType, StayStatus, PaymentStatus } from "@/utils/enum";
+import { RoomStatus } from "@/types/room-management/enum";
 
 interface StaysTableProps {
   filteredStays: any[];
@@ -19,6 +21,7 @@ interface StaysTableProps {
   searchTerm: string;
   statusFilter: string;
   paymentStatusFilter: string;
+  roomStatusFilter: string;
   onViewStay: (stay: any) => void;
   onEditStay: (stay: any) => void;
   onDeleteStay: (stay: any) => void;
@@ -31,6 +34,7 @@ export default function StaysTable({
   searchTerm,
   statusFilter,
   paymentStatusFilter,
+  roomStatusFilter,
   onViewStay,
   onEditStay,
   onDeleteStay,
@@ -77,6 +81,44 @@ export default function StaysTable({
         return <User className="w-4 h-4 text-purple-500" />;
       default:
         return <Calendar className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getRoomStatusIcon = (status: string) => {
+    switch (status) {
+      case RoomStatus.Available:
+        return "✓";
+      case RoomStatus.Occupied:
+        return "🏠";
+      case RoomStatus.MarkForCleaning:
+        return "🧽";
+      case RoomStatus.Maintenance:
+        return "🔧";
+      case RoomStatus.Cleaning:
+        return "🧹";
+      case RoomStatus.Unavailable:
+        return "x";
+      default:
+        return "❓";
+    }
+  };
+
+  const getRoomStatusColor = (status: string) => {
+    switch (status) {
+      case RoomStatus.Available:
+        return "bg-green-100 text-green-800";
+      case RoomStatus.Occupied:
+        return "bg-red-100 text-red-800";
+      case RoomStatus.MarkForCleaning:
+        return "bg-orange-100 text-orange-800";
+      case RoomStatus.Maintenance:
+        return "bg-yellow-100 text-yellow-800";
+      case RoomStatus.Cleaning:
+        return "bg-blue-100 text-blue-800";
+      case RoomStatus.Unavailable:
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -147,6 +189,13 @@ export default function StaysTable({
                     <div className="text-sm text-gray-500">
                       {stay.roomId.roomTypeId.name}
                     </div>
+                    {(stay.roomId as any)?.roomStatus && (
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoomStatusColor((stay.roomId as any).roomStatus)}`}>
+                          {getRoomStatusIcon((stay.roomId as any).roomStatus)} {(stay.roomId as any).roomStatus}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -237,6 +286,8 @@ export default function StaysTable({
     </div>
   );
 }
+
+
 
 
 

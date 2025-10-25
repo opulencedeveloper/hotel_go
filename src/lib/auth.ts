@@ -40,7 +40,7 @@ export const getNavigationItems = (userRole: UserRole) => {
     { name: 'Dashboard', href: '/dashboard', icon: 'Home', description: 'Property overview & KPIs' },
     { name: 'Stay Management', href: '/stays', icon: 'Calendar', description: 'Reservations, bookings & walk-ins' },
     { name: 'Front Desk', href: '/front-desk', icon: 'UserCheck', description: 'Check-in/out operations' },
-    { name: 'Stay History', href: '/front-desk/history', icon: 'Clock', description: 'Complete stay history & records' },
+    //{ name: 'Stay History', href: '/front-desk/history', icon: 'Clock', description: 'Complete stay history & records' },
     { name: 'Room Management', href: '/room-management', icon: 'Bed', description: 'Rooms, types & rates' },
     { name: 'Services', href: '/services', icon: 'Star', description: 'Spa, events & amenities' },
     { name: 'Facilities', href: '/facilities', icon: 'Building', description: 'Hotel amenities & infrastructure' },

@@ -112,3 +112,40 @@ export enum StaffStatus {
   SUSPENDED = "suspended",     // Temporarily suspended due to disciplinary action
   PENDING = "pending",         // Newly added staff awaiting approval/setup
 }
+
+
+export enum InventoryUnit {
+  PIECES = 'pieces',
+  KG = 'kg',
+  LITERS = 'liters',
+  BOXES = 'boxes',
+  ROLLS = 'rolls',
+  BOTTLES = 'bottles',
+  CANS = 'cans',
+  PACKS = 'packs',
+}
+
+export enum InventoryCategory {
+  AMENITIES = 'amenities',
+  LINEN = 'linen',
+  FOOD = 'food',
+  BEVERAGE = 'beverage',
+  CLEANING = 'cleaning',
+  KITCHEN = 'kitchen',
+  OFFICE = 'office',
+  MAINTENANCE = 'maintenance',
+}
+
+
+
+export enum InventoryDestination {
+  RESTAURANT = "restaurant",
+  HOTEL_GUEST = "hotel_guest",
+  WALK_IN = "walk_in",
+}
+
+export enum HouseKeepingStatus {
+  IN_PROGRESS = "in_progress",
+  COMPLETED = "completed",
+  CANCELLED = "cancelled",
+}

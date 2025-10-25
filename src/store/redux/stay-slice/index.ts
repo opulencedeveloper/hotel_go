@@ -10,6 +10,7 @@ export interface StayRoom {
   _id: string;
   roomNumber: string;
   roomTypeId: StayRoomType;
+  roomStatus?: string;
 }
 
 export interface StaySliceParams {

@@ -7,6 +7,7 @@ export interface HotelSliceParams {
   currency: string;
   totalRoomsInMaintenance: number;
   amenities: string[];
+  createdAt: string;
 }
 
 

@@ -2,6 +2,7 @@ import { Document } from "mongoose";
 import { Types } from "mongoose";
 
 export interface IRoom extends Document {
+  _id: Types.ObjectId;
   floor: number;
   roomNumber: string;
   roomTypeId: string;

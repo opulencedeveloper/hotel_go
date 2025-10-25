@@ -135,7 +135,7 @@ export interface Room {
   property_id: string;
   room_number: string;
   room_type_id: string;
-  status: 'available' | 'occupied' | 'maintenance' | 'cleaning' | 'out_of_order';
+  status: 'available' | 'occupied' | 'maintenance' | 'cleaning' | 'marked_for_cleaning' | 'out_of_order';
   floor: number;
   last_cleaned?: string;
   last_maintenance?: string;

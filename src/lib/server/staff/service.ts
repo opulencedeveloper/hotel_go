@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { ICreateStaffInput, ICreateStaffPasswordUserInput, IEditStaffUserInput } from "./interface";
 import Staff from "./entity";
 import { hashPassCode } from "../utils/auth";
+import { StaffRole } from "./enum";
 
 class StaffService {
   public async createStaff(input: ICreateStaffInput) {
@@ -19,6 +20,17 @@ class StaffService {
 
     return staffs;
   }
+
+ public async findStaffByIdsAndRole(staffIds: Types.ObjectId[], userRole: StaffRole) {
+  // Query all staff that match the given IDs AND have the given role
+  const staffs = await Staff.find({
+    _id: { $in: staffIds },
+    userRole,
+  });
+
+  return staffs;
+}
+
 
   public async findStaffById(id: string) {
     const staff = await Staff.findById(id);

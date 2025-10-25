@@ -71,3 +71,5 @@ export default function SuperAdminDashboard({ hotels, occupancyPercentage }: Sup
 
 
 
+
+

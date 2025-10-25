@@ -1,17 +1,7 @@
-import { hotelServiceController } from "@/lib/server/hotelService/controller";
-import { ICreateHotelServiceUserInput } from "@/lib/server/hotelService/interface";
-import { hotelServiceValidator } from "@/lib/server/hotelService/valdator";
 import { menuController } from "@/lib/server/menu/controller";
 import { ICreateMenuUserInput } from "@/lib/server/menu/interface";
 import { menuValidator } from "@/lib/server/menu/validator";
 import GeneralMiddleware from "@/lib/server/middleware";
-import { roomController } from "@/lib/server/room/controller";
-import { IAddRoomUserInput } from "@/lib/server/room/interface";
-import { roomValidator } from "@/lib/server/room/validator";
-import { stayController } from "@/lib/server/stay/controller";
-import { IAddStayUserInput } from "@/lib/server/stay/interface";
-import { stayValidator } from "@/lib/server/stay/validator";
-import { userController } from "@/lib/server/user/controller";
 import { utils } from "@/lib/server/utils";
 import { connectDB } from "@/lib/server/utils/db";
 
