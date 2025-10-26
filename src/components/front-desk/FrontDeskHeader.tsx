@@ -29,7 +29,7 @@ export default function FrontDeskHeader({
           <span>{isOffline ? 'Offline Mode' : 'Online'}</span>
         </div>
         
-        <div className="flex space-x-2">
+        {/* <div className="flex space-x-2">
           <Link 
             href="/stays"
             className="btn-secondary"
@@ -51,7 +51,7 @@ export default function FrontDeskHeader({
             <Plus className="w-4 h-4 mr-2" />
             New Reservation
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );
