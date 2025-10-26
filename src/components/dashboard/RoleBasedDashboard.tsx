@@ -20,12 +20,16 @@ interface RoleBasedDashboardProps {
 }
 export default function RoleBasedDashboard({ userRole }: RoleBasedDashboardProps) {
  const hotel = useSelector((state: RootState) => state.hotel);
+ const room = useSelector((state: RootState) => state.room);
 
  const hotels = hotel.hotels;
    const selectedHotelId = hotel.selectedHotelId;
   const selectedHotel = hotel?.hotels?.find((h) => h._id === selectedHotelId);
-    const occupancyPercentage =
-    (selectedHotel!.totalRoomsOccupied! / selectedHotel!.totalRooms!) * 100;
+  
+  // Calculate occupancy from room data
+  const totalRooms = room.hotelRooms.length;
+  const occupiedRooms = room.hotelRooms.filter(r => r.roomStatus === 'occupied').length;
+  const occupancyPercentage = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
  
   const stats = mockDashboardStats;;
   

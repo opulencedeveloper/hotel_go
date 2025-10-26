@@ -112,8 +112,12 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const selectedHotelId = hotel.selectedHotelId;
   const selectedHotel = hotel?.hotels?.find((h) => h._id === selectedHotelId);
   const selectedHotelName = selectedHotel?.hotelName || "No hotel selected";
-  const occupancyPercentage =
-    (selectedHotel!.totalRoomsOccupied! / selectedHotel!.totalRooms!) * 100;
+  
+  // Calculate occupancy from room data
+  const totalRooms = room.hotelRooms.length;
+  const occupiedRooms = room.hotelRooms.filter(r => r.roomStatus === 'occupied').length;
+  const occupancyPercentage = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
+  
   const { hotelRooms } = room;
 
   // HTTP hook for fetching rooms

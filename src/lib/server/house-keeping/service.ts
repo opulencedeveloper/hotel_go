@@ -1,8 +1,8 @@
 import mongoose, { Types } from "mongoose";
 import { ICreateHouseKeepingInput } from "./interface";
 import HouseKeeping from "./entity";
-import "../entities/room";
-import "../entities/staff";
+import "../room/entity";
+import "../staff/entity";
 import { HouseKeepingStatus } from "./enum";
 
 class HouseKeepingService {

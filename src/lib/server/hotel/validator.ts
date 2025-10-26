@@ -70,12 +70,6 @@ class HotelValidator {
           "any.required": "Currency is required",
         }),
 
-      totalRooms: Joi.number().integer().min(1).required().messages({
-        "number.base": "Total rooms must be a number",
-        "number.min": "Total rooms must be at least 1",
-        "any.required": "Total rooms is required",
-      }),
-
       password: Joi.string()
         .min(8)
         .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)

@@ -2,7 +2,6 @@ export interface HotelRegistrationFormData {
   firstName: string;
   lastName: string;
   hotelName: string;
-  totalRooms: string;
   email: string;
   country: string;
   countryCode: string;
@@ -21,7 +20,6 @@ export interface HotelRegistrationFormErrors {
   firstName?: string;
   lastName?: string;
   hotelName?: string;
-  totalRooms?: string;
   email?: string;
   country?: string;
   countryCode?: string;

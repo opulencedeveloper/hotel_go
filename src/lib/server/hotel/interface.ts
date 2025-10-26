@@ -3,9 +3,6 @@ import { Document, Types } from "mongoose";
 
 export interface IHotel extends Document {
   _id: Types.ObjectId;
-  totalRooms: number;
-  totalRoomsOccupied: number;
-  totalRoomsInMaintenance: number;
   firstName: string;
   lastName: string;
   hotelName: string;
@@ -28,7 +25,6 @@ export interface IHotel extends Document {
 }
 
 export interface IHotelRegistrationUserInput {
-  totalRooms: number;
   hotelName: string;
   email: string;
   firstName: string;
@@ -52,7 +48,6 @@ export interface IHotelRegistrationInput {
   country: string;
   state: string;
   city: string;
-  totalRooms: number;
   phone: string;
   address: string;
   currency: string;

@@ -1,4 +1,5 @@
-import Staff, { IStaff } from "../entities/staff";
+import Staff from "../staff/entity";
+import { IStaff } from "../staff/interface";
 import { connectDB } from "../utils/db";
 
 export class StaffService {

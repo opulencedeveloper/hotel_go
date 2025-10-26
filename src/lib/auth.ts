@@ -49,14 +49,14 @@ export const getNavigationItems = (userRole: UserRole) => {
     { name: 'Kitchen & Restaurant', href: '/kitchen', icon: 'ChefHat', description: 'Kitchen operations' },
     { name: 'Housekeeping', href: '/housekeeping', icon: 'Wrench', description: 'Room maintenance' },
     { name: 'Staff & Payroll', href: '/staff', icon: 'Users', description: 'Employee management' },
-    { name: 'Yield & Rate Management', href: '/yield', icon: 'TrendingUp', description: 'Dynamic pricing' },
+  //  { name: 'Yield & Rate Management', href: '/yield', icon: 'TrendingUp', description: 'Dynamic pricing' },
     { name: 'Accounting & Finance', href: '/accounting', icon: 'Calculator', description: 'Financial management' },
    // { name: 'CRM & Loyalty', href: '/crm', icon: 'Heart', description: 'Guest relationships' },
     { name: 'Procurement & Inventory', href: '/procurement', icon: 'Truck', description: 'Supply management' },
-    { name: 'Business Analytics', href: '/analytics', icon: 'PieChart', description: 'Data insights' },
-    { name: 'Reports & Dashboards', href: '/reports', icon: 'Download', description: 'Report generation' },
+  //  { name: 'Business Analytics', href: '/analytics', icon: 'PieChart', description: 'Data insights' },
+   // { name: 'Reports & Dashboards', href: '/reports', icon: 'Download', description: 'Report generation' },
     { name: 'Security & Access Control', href: '/security', icon: 'Lock', description: 'User permissions' },
-    { name: 'Backup & Data Recovery', href: '/backup', icon: 'Archive', description: 'Data protection' },
+   // { name: 'Backup & Data Recovery', href: '/backup', icon: 'Archive', description: 'Data protection' },
     { name: 'Property Settings', href: '/settings', icon: 'Settings', description: 'System configuration' },
   ];
 };

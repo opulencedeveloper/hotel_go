@@ -31,6 +31,8 @@ export interface StaySliceParams {
   specialRequests?: string;
   status: string;
   type: string;
+  totalAmount?: number;
+  paidAmount?: number;
   createdAt: string;
   updatedAt: string;
 }

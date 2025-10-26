@@ -1,4 +1,5 @@
-import Room, { IRoom } from "../entities/room";
+import Room from "../room/entity";
+import { IRoom } from "../room/interface";
 import { connectDB } from "../utils/db";
 
 export class RoomService {
@@ -118,12 +119,12 @@ export class RoomService {
   }
 
   // Update room status
-  static async updateRoomStatus(roomId: string, status: IRoom['status']): Promise<IRoom | null> {
+  static async updateRoomStatus(roomId: string, status: IRoom['roomStatus']): Promise<IRoom | null> {
     await connectDB();
     
     return await Room.findOneAndUpdate(
       { _id: roomId, isActive: true },
-      { status, updatedAt: new Date() },
+      { roomStatus: status, updatedAt: new Date() },
       { new: true }
     );
   }

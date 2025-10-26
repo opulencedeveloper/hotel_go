@@ -1,6 +1,9 @@
-import Guest, { IGuest } from "../entities/guest";
+// import Guest, { IGuest } from "../entities/guest";
+// TODO: Create guest entity or use existing user entity
 import { connectDB } from "../utils/db";
 
+// Commented out due to missing IGuest interface
+/*
 export class GuestService {
   // Create a new guest
   static async createGuest(guestData: Partial<IGuest>): Promise<IGuest> {
@@ -170,6 +173,7 @@ export class GuestService {
     }).limit(20);
   }
 }
+*/
 
 
 

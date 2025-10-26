@@ -17,6 +17,7 @@ import orderReducer from "./order-slice";
 import staffReducer from "./staff-slice";
 import inventoryReducer from "./inventory-slice";
 import houseKeepingReducer from "./house-keeping-slice";
+import dashboardSummaryReducer from "./dashboard-summary-slice";
 
 // const clientCartPersistConfig = {
 //   key: "token",
@@ -39,7 +40,8 @@ const rootReducer = combineReducers({
   order: orderReducer.reducer,
   staff: staffReducer.reducer,
   inventory: inventoryReducer.reducer,
-  houseKeeping: houseKeepingReducer.reducer
+  houseKeeping: houseKeepingReducer.reducer,
+  dashboardSummary: dashboardSummaryReducer.reducer
 });
 
 const store = configureStore({

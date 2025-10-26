@@ -2,6 +2,8 @@ import { Types } from "mongoose";
 import { Order } from "./entity";
 import { ICreateOrderInput, IUpdateOrderStatus } from "./interface";
 import { OrderStatus } from "./enum";
+import "../menu/entity";
+
 
 class OrderService {
   public async createOrder(input: ICreateOrderInput) {

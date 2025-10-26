@@ -277,7 +277,7 @@ class AuthController {
 
     const match = await comparePassCode(password, userExists.password);
 
-    console.log(password, userExists.password);
+    console.log("Values:",password, userExists);
 
     if (!match) {
       return utils.customResponse({

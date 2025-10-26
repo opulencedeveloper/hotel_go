@@ -76,27 +76,7 @@ export default function HotelInfoSettings({ settings, isReadOnly = true }: Hotel
         </div>
       </div>
 
-      {/* Room Statistics */}
-      <div className="bg-gray-50 rounded-lg p-6">
-        <h4 className="text-md font-semibold text-secondary-900 mb-4 flex items-center">
-          <Home className="w-5 h-5 mr-2" />
-          Room Statistics
-        </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <div className="text-2xl font-bold text-blue-600">{settings.totalRooms}</div>
-            <div className="text-sm text-gray-600">Total Rooms</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border">
-            <div className="text-2xl font-bold text-green-600">{settings.totalRoomsOccupied}</div>
-            <div className="text-sm text-gray-600">Occupied Rooms</div>
-          </div>
-          <div className="bg-white rounded-lg p-4 border">
-            <div className="text-2xl font-bold text-orange-600">{settings.totalRoomsInMaintenance}</div>
-            <div className="text-sm text-gray-600">Maintenance Rooms</div>
-          </div>
-        </div>
-      </div>
+   
 
       {/* Amenities */}
       <div>

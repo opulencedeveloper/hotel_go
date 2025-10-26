@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { Cog, Building, Clock, Bell, Shield, Palette, Info } from 'lucide-react';
-import { RootState } from '@/store/redux';
+import { RootState } from '@/store';
 import SettingsHeader from './SettingsHeader';
 import GeneralSettings from './GeneralSettings';
 import ContactSettings from './ContactSettings';
@@ -17,12 +17,18 @@ export default function SettingsBody() {
   const [isClient, setIsClient] = useState(false);
   const [activeTab, setActiveTab] = useState('hotel-info');
   
-  // Get hotel data from Redux state
+  // Get hotel and room data from Redux state
   const hotel = useSelector((state: RootState) => state.hotel);
+  const room = useSelector((state: RootState) => state.room);
   const { hotels, selectedHotelId } = hotel;
   
   // Get the selected hotel data
   const selectedHotel = hotels.find(hotel => hotel._id === selectedHotelId) || hotels[0];
+  
+  // Calculate room metrics from room state
+  const totalRooms = room.hotelRooms.length;
+  const totalRoomsOccupied = room.hotelRooms.filter(r => r.roomStatus === 'occupied').length;
+  const totalRoomsInMaintenance = room.hotelRooms.filter(r => r.roomStatus === 'maintenance').length;
   
   // Create settings object from Redux state only (read-only)
   const settings = {
@@ -69,9 +75,9 @@ export default function SettingsBody() {
     compactMode: false,
     
     // Additional Redux data
-    totalRooms: selectedHotel?.totalRooms || 0,
-    totalRoomsOccupied: selectedHotel?.totalRoomsOccupied || 0,
-    totalRoomsInMaintenance: selectedHotel?.totalRoomsInMaintenance || 0,
+    totalRooms: totalRooms,
+    totalRoomsOccupied: totalRoomsOccupied,
+    totalRoomsInMaintenance: totalRoomsInMaintenance,
     amenities: selectedHotel?.amenities || [],
     createdAt: selectedHotel?.createdAt || 'N/A'
   };
@@ -95,12 +101,12 @@ export default function SettingsBody() {
 
   const tabs = [
     { id: 'hotel-info', name: 'Hotel Info', icon: Info },
-    { id: 'general', name: 'General', icon: Cog },
+   // { id: 'general', name: 'General', icon: Cog },
     { id: 'contact', name: 'Contact', icon: Building },
-    { id: 'business', name: 'Business', icon: Clock },
-    { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'security', name: 'Security', icon: Shield },
-    { id: 'appearance', name: 'Appearance', icon: Palette }
+    // { id: 'business', name: 'Business', icon: Clock },
+    // { id: 'notifications', name: 'Notifications', icon: Bell },
+    // { id: 'security', name: 'Security', icon: Shield },
+    // { id: 'appearance', name: 'Appearance', icon: Palette }
   ];
 
   return (

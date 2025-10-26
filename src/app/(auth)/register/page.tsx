@@ -19,7 +19,6 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     hotelName: '',
-    totalRooms: '',
     email: '',
     country: '',
     countryCode: '+1',
@@ -60,11 +59,6 @@ export default function RegisterPage() {
       newErrors.hotelName = 'Hotel name is required';
     }
 
-    if (!formData.totalRooms.trim()) {
-      newErrors.totalRooms = 'Total rooms is required';
-    } else if (!/^\d+$/.test(formData.totalRooms) || parseInt(formData.totalRooms) <= 0) {
-      newErrors.totalRooms = 'Please enter a valid number of rooms (must be greater than 0)';
-    }
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
@@ -138,7 +132,6 @@ export default function RegisterPage() {
           firstName: formData.firstName,
           lastName: formData.lastName,
           hotelName: formData.hotelName,
-          totalRooms: parseInt(formData.totalRooms),
           email: formData.email,
           country: formData.country,
           phone: `${formData.countryCode}${formData.phone}`,
@@ -324,29 +317,6 @@ export default function RegisterPage() {
                     />
                     {errors.hotelName && (
                       <p className="mt-1 text-sm text-red-300">{errors.hotelName}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="total-rooms"
-                      className="block text-sm font-medium text-blue-100 mb-2"
-                    >
-                      Total Rooms
-                    </label>
-                    <input
-                      id="total-rooms"
-                      name="totalRooms"
-                      type="number"
-                      min="1"
-                      value={formData.totalRooms}
-                      onChange={handleInputChange}
-                      className={`w-full px-4 py-3 bg-white/10 border ${
-                        errors.totalRooms ? 'border-red-400' : 'border-white/20'
-                      } rounded-lg text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:border-transparent transition-all`}
-                      placeholder="Enter total number of rooms"
-                    />
-                    {errors.totalRooms && (
-                      <p className="mt-1 text-sm text-red-300">{errors.totalRooms}</p>
                     )}
                   </div>
                 </div>

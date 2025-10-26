@@ -39,7 +39,7 @@ export default function SettingsHeader({ onSave, onReset }: SettingsHeaderProps)
           </div>
         </div>
         
-        <div className="mt-8 lg:mt-0 lg:ml-8">
+        {/* <div className="mt-8 lg:mt-0 lg:ml-8">
           <div className="flex flex-col gap-3">
             <button 
               onClick={onSave}
@@ -60,7 +60,7 @@ export default function SettingsHeader({ onSave, onReset }: SettingsHeaderProps)
               <span>Export Config</span>
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

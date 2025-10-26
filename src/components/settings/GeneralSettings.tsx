@@ -32,7 +32,7 @@ export default function GeneralSettings({ settings, onSettingChange, isReadOnly 
           />
         </div>
         
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-secondary-700 mb-2">
             Property Type
           </label>
@@ -47,9 +47,9 @@ export default function GeneralSettings({ settings, onSettingChange, isReadOnly 
             <option value="motel">Motel</option>
             <option value="boutique">Boutique Hotel</option>
           </select>
-        </div>
+        </div> */}
         
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-secondary-700 mb-2">
             Timezone
           </label>
@@ -67,9 +67,9 @@ export default function GeneralSettings({ settings, onSettingChange, isReadOnly 
             <option value="Europe/Paris">Paris (CET)</option>
             <option value="Asia/Tokyo">Tokyo (JST)</option>
           </select>
-        </div>
+        </div> */}
         
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-secondary-700 mb-2">
             Currency
           </label>
@@ -85,7 +85,7 @@ export default function GeneralSettings({ settings, onSettingChange, isReadOnly 
             <option value="JPY">JPY (¥)</option>
             <option value="CAD">CAD (C$)</option>
           </select>
-        </div>
+        </div> */}
         
         <div>
           <label className="block text-sm font-medium text-secondary-700 mb-2">

@@ -15,6 +15,9 @@ export interface CustomRequest {
   userId?: Types.ObjectId;
   hotelId?: Types.ObjectId;
   userRole?: UserRole;
+  query?: Record<string, any>;
+  params?: Record<string, any>;
+  user?: any;
 }
 
 export interface CustomHttpResponse {

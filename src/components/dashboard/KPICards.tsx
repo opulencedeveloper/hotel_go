@@ -1,5 +1,8 @@
 'use client';
 
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+
 interface KPICardsProps {
   occupancyRate: number;
   totalRevenue: number;
@@ -15,12 +18,28 @@ export default function KPICards({
   selectedHotel, 
   stats 
 }: KPICardsProps) {
+  // Get additional Redux state for enhanced calculations
+  const houseKeeping = useSelector((state: RootState) => state.houseKeeping);
+  const room = useSelector((state: RootState) => state.room);
+  const stay = useSelector((state: RootState) => state.stay);
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
   };
+  
+  // Calculate additional metrics from Redux state
+  const totalRooms = room.hotelRooms.length;
+  const availableRooms = room.hotelRooms.filter(r => r.roomStatus === 'available').length;
+  const maintenanceRooms = room.hotelRooms.filter(r => r.roomStatus === 'maintenance').length;
+  const activeHousekeepingTasks = houseKeeping.houseKeepings.filter(task => task.status === 'in_progress').length;
+  const completedHousekeepingTasks = houseKeeping.houseKeepings.filter(task => task.status === 'completed').length;
+  
+  // Calculate task completion rate
+  const totalTasks = houseKeeping.houseKeepings.length;
+  const taskCompletionRate = totalTasks > 0 ? Math.round((completedHousekeepingTasks / totalTasks) * 100) : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

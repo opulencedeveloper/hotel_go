@@ -66,7 +66,7 @@ public async findStaysByHotelId(hotelId: Types.ObjectId) {
       select: "roomNumber roomTypeId",
       populate: {
         path: "roomTypeId",  
-        select: "name",      
+        select: "name price",      
       },
     });
 

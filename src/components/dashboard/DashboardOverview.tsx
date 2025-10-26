@@ -2,6 +2,7 @@
 
 import { RootState } from "@/store";
 import { useSelector } from "react-redux";
+import { HouseKeepingStatus } from "@/utils/enum";
 
 // Import individual dashboard components
 import DashboardHeader from './DashboardHeader';
@@ -14,26 +15,70 @@ import SystemStatus from './SystemStatus';
 
 
 export const DashboardOverview = () => {
-    const hotel = useSelector((state: RootState) => state.hotel);
+  // Redux state selectors
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const houseKeeping = useSelector((state: RootState) => state.houseKeeping);
+  const stay = useSelector((state: RootState) => state.stay);
+  const room = useSelector((state: RootState) => state.room);
+  const staff = useSelector((state: RootState) => state.staff);
+  
   const selectedHotelId = hotel.selectedHotelId;
   const selectedHotel = hotel?.hotels?.find((h) => h._id === selectedHotelId);
-  // Hardcoded dashboard data
+  
+  // Calculate real-time data from Redux state
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calculate arrivals and departures for today
+  const todaysArrivals = stay.stays.filter(stay => 
+    stay.checkInDate === today && stay.status === 'confirmed'
+  ).length;
+  
+  const todaysDepartures = stay.stays.filter(stay => 
+    stay.checkOutDate === today && stay.status === 'checked-in'
+  ).length;
+  
+  // Calculate housekeeping tasks
+  const activeHousekeepingTasks = houseKeeping.houseKeepings.filter(task => 
+    task.status === HouseKeepingStatus.IN_PROGRESS
+  ).length;
+  
+  const completedHousekeepingTasks = houseKeeping.houseKeepings.filter(task => 
+    task.status === HouseKeepingStatus.COMPLETED
+  ).length;
+  
+  // Calculate room status from room state
+  const availableRooms = room.hotelRooms.filter(room => room.roomStatus === 'available').length;
+  const occupiedRooms = room.hotelRooms.filter(room => room.roomStatus === 'occupied').length;
+  const maintenanceRooms = room.hotelRooms.filter(room => room.roomStatus === 'maintenance').length;
+  
+  // Calculate occupancy rate
+  const totalRooms = room.hotelRooms.length;
+  const calculatedOccupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100) : 0;
+  
+  // Calculate revenue (mock calculation)
+  const baseRevenuePerRoom = 150; // Base revenue per occupied room
+  const calculatedTotalRevenue = occupiedRooms * baseRevenuePerRoom;
+  
+  // Calculate active alerts
+  const activeAlerts = Math.max(0, maintenanceRooms + (activeHousekeepingTasks > 10 ? 1 : 0));
+  
+  // Dynamic stats based on Redux state
   const stats = {
     occupancy: {
-      rate: 78,
-      change_percent: 5.2
+      rate: calculatedOccupancyRate,
+      change_percent: 5.2 // This could be calculated from historical data
     },
     revenue_by_outlet: {
-      rooms: 125000,
-      f_and_b: 45000,
-      other: 15000
+      rooms: Math.round(calculatedTotalRevenue * 0.7),
+      f_and_b: Math.round(calculatedTotalRevenue * 0.2),
+      other: Math.round(calculatedTotalRevenue * 0.1)
     },
-    arrivals_today: 12,
-    departures_today: 8,
-    housekeeping_tasks: 15,
-    maintenance_tasks: 3,
-    guest_requests: 7,
-    overbook_risk: 2,
+    arrivals_today: todaysArrivals,
+    departures_today: todaysDepartures,
+    housekeeping_tasks: activeHousekeepingTasks,
+    maintenance_tasks: maintenanceRooms,
+    guest_requests: Math.floor(Math.random() * 10) + 1, // Mock guest requests
+    overbook_risk: Math.max(0, todaysArrivals - availableRooms),
     online_status: true,
     last_sync: '2 minutes ago',
     pending_sync_items: 0
@@ -41,12 +86,11 @@ export const DashboardOverview = () => {
 
   const occupancyRate = stats.occupancy.rate;
   const totalRevenue = stats.revenue_by_outlet.rooms + stats.revenue_by_outlet.f_and_b + stats.revenue_by_outlet.other;
-  const activeAlerts = 3;
   const systemHealth = 'healthy';
   const roomStatusCounts = {
-    available: 45,
-    occupied: 78,
-    maintenance: 7
+    available: availableRooms,
+    occupied: occupiedRooms,
+    maintenance: maintenanceRooms
   };
   const realTimeEnabled = true;
 

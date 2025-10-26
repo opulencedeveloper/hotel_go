@@ -18,6 +18,8 @@ export interface IStay extends Document {
   status: StayStatus;
   type: StayType;
   paymentStatus: PaymentStatus;
+  totalAmount?: number;
+  paidAmount?: number;
 }
 
 
