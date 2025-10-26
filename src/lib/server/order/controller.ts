@@ -70,7 +70,7 @@ class OrderController {
       status: 201,
       message: MessageResponse.VerifyEmail,
       description: "Menu created successfully!",
-      data: order,
+      data: {order},
     });
   }
 

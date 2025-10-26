@@ -2,6 +2,9 @@
 
 import { RoomTypeSliceParams } from "@/types/room-management/room-management";
 import { X, Plus } from "lucide-react";
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface NewReservationModalProps {
   isOpen: boolean;
@@ -30,6 +33,9 @@ export default function NewReservationModal({
   onFormChange, 
   onSubmit 
 }: NewReservationModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   if (!isOpen) return null;
 
   return (
@@ -99,7 +105,7 @@ export default function NewReservationModal({
                 <option value="">Select room type</option>
                 {roomTypes.map(type => (
                   <option key={type._id} value={type._id}>
-                    {type.name} - ${type.price}
+                    {type.name} - {formatPrice(type.price, selectedHotel?.currency)}
                   </option>
                 ))}
               </select>

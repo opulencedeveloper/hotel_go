@@ -1,12 +1,18 @@
 'use client';
 
 import { Staff } from '@/types';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface StaffStatsProps {
   staff: Staff[];
 }
 
 export default function StaffStats({ staff }: StaffStatsProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   const staffStats = {
     total: staff.length,
     active: staff.filter(s => s.status === 'active').length,
@@ -34,7 +40,7 @@ export default function StaffStats({ staff }: StaffStatsProps) {
       </div>
       <div className="card text-center">
         <div className="text-2xl font-bold text-primary-600">
-          ${staff.reduce((sum, emp) => sum + emp.salary, 0).toLocaleString()}
+          {formatPrice(staff.reduce((sum, emp) => sum + emp.salary, 0), selectedHotel?.currency)}
         </div>
         <div className="text-sm text-secondary-600">Total Payroll</div>
       </div>

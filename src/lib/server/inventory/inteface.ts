@@ -2,6 +2,7 @@ import { Document, Types } from "mongoose";
 import { InventoryCategory, InventoryUnit } from "./enum";
 
 export interface IInventory extends Document {
+  _id: Types.ObjectId;
   hotelId: Types.ObjectId;
   itemName: string; // e.g., "Bath Towel", "Coffee", "Soap"
   category: InventoryCategory; // e.g., InventoryCategory.AMENITIES

@@ -6,6 +6,7 @@ import PageLoadingSpinner from "@/components/ui/PageLoadingSpinner";
 import { useHttp } from "@/hooks/useHttp";
 import { RootState } from "@/store";
 import { menuActions } from "@/store/redux/menu-slice";
+import { orderActions } from "@/store/redux/order-slice";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -28,10 +29,12 @@ export default function POSPage() {
     const onFetchUserAndHotelInfoReq = (res: any) => {
       const resData = res?.data?.data;
       const menus = resData?.menus;
+       const orders = resData?.orders;
 
       console.log("menus", menus);
 
       dispatch(menuActions.setMenus(menus));
+       dispatch(orderActions.setOrders(orders));
     };
 
     fetchUserAndHotelInfoReq({
@@ -54,9 +57,11 @@ export default function POSPage() {
       const onFetchUserAndHotelInfoReq = (res: any) => {
         const resData = res?.data?.data;
         const menus = resData?.menus;
+        const orders = resData?.orders;
 
         console.log("menus", menus);
 
+        dispatch(orderActions.setOrders(orders))
         dispatch(menuActions.setMenus(menus));
       };
 

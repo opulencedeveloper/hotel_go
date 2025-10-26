@@ -6,6 +6,8 @@ import { countries } from '@/resources/auth';
 import { staffRoleOptions } from '@/resources/staff';
 import { StaffShift, StaffRole } from '@/utils/enum';
 import { useHttp } from '@/hooks/useHttp';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface NewStaffModalProps {
   isOpen: boolean;
@@ -31,6 +33,8 @@ interface StaffFormData {
 
 export default function NewStaffModal({ isOpen, onClose }: NewStaffModalProps) {
   const { isLoading, sendHttpRequest: createStaffRequest, error } = useHttp();
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
   
   const [formData, setFormData] = useState<StaffFormData>({
     firstName: '',
@@ -414,7 +418,7 @@ export default function NewStaffModal({ isOpen, onClose }: NewStaffModalProps) {
             </div>
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Salary
+                Salary ({selectedHotel?.currency || 'USD'})
               </label>
               <input 
                 type="text" 

@@ -10,10 +10,13 @@ import InventoryLogs from '@/components/procurement/InventoryLogs';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { InventoryItem } from '@/store/redux/inventory-slice';
+import { formatPrice } from '@/helper';
 
 export default function ProcurementBody() {
   const inventory = useSelector((state: RootState) => state.inventory);
+  const hotel = useSelector((state: RootState) => state.hotel);
   const { inventories, inventoryLogs } = inventory;
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
   
   // Modal state
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -114,7 +117,7 @@ export default function ProcurementBody() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-secondary-600">Available Value</p>
-              <p className="text-2xl font-bold text-secondary-900">${availableValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-secondary-900">{formatPrice(availableValue, selectedHotel?.currency)}</p>
               <p className="text-sm text-green-600">Value of stocked items</p>
             </div>
             <div className="p-3 bg-green-100 rounded-full">

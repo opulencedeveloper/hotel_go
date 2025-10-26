@@ -8,6 +8,9 @@ import {
   UserX
 } from 'lucide-react';
 import { Staff } from '@/types';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface StaffTableProps {
   staff: Staff[];
@@ -22,6 +25,9 @@ export default function StaffTable({
   onEditStaff, 
   onToggleStatus 
 }: StaffTableProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'manager': return 'bg-purple-100 text-purple-800';
@@ -112,7 +118,7 @@ export default function StaffTable({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
-                  ${employee.salary.toLocaleString()}
+                  {formatPrice(employee.salary, selectedHotel?.currency)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(employee.status)}`}>

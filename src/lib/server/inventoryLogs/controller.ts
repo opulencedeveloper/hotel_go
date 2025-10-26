@@ -39,8 +39,8 @@ class InventoryLogsController {
       roomId = roomExist._id;
     }
 
-  const { missingIds, insufficientInventories } =
-  await inventoryService.findMissingInventoryIds(body.inventories);
+  const { missingIds, insufficientInventories, savedInventory } =
+  await inventoryService.findMissingInventoryIdsAndUpdateInventoryQuantityIfFound(body.inventories);
 
 if (missingIds.length > 0) {
   return utils.customResponse({
@@ -68,13 +68,15 @@ if (insufficientInventories.length > 0) {
 
     if (roomId) payload.roomId = roomId;
 
-    const newMenu = await inventoryLogsService.createInventoryLogs(payload);
+    const inventoryLog = await inventoryLogsService.createInventoryLogs(payload);
+
+    console.log("savedInventorysavedInventory",savedInventory);
 
     return utils.customResponse({
       status: 201,
       message: MessageResponse.Success,
       description: "Inventory log created successfully!",
-      data: newMenu,
+      data: {inventoryLog, savedInventory},
     });
   }
 

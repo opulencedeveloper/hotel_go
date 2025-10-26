@@ -140,7 +140,7 @@ export default function AddRoomTypeModal({ isOpen, onClose }: AddRoomTypeModalPr
         <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-secondary-900">
-              Add New Roaom Type
+              Add New Room Type
             </h2>
             <button
               onClick={onClose}

@@ -74,45 +74,44 @@ export default function () {
         totalRevenue={posStats.totalRevenue}
       />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Menu Items */}
-        <div className="lg:col-span-2">
-          <MenuItems
-            items={filteredItems}
-            searchTerm={searchTerm}
-            categoryFilter={categoryFilter}
-            onSearchChange={setSearchTerm}
-            onCategoryFilterChange={setCategoryFilter}
-            onAddToCart={addToCart}
-            onViewDetails={handleViewItemDetails}
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+          {/* Menu Items - Takes up 2 columns on large screens */}
+          <div className="lg:col-span-2">
+            <MenuItems
+              items={filteredItems}
+              searchTerm={searchTerm}
+              categoryFilter={categoryFilter}
+              onSearchChange={setSearchTerm}
+              onCategoryFilterChange={setCategoryFilter}
+              onAddToCart={addToCart}
+              onViewDetails={handleViewItemDetails}
+            />
           </div>
 
-          {/* Cart & Order Management */}
-          <div className="space-y-4">
-          <OrderCart
-            cart={cart}
-            tableNumber={tableNumber}
-            roomNumber={roomNumber}
-            customerType={customerType}
-            onTableNumberChange={setTableNumber}
-            onRoomNumberChange={setRoomNumber}
-            onCustomerTypeChange={setCustomerType}
-            onUpdateQuantity={updateQuantity}
-            onRemoveFromCart={removeFromCart}
-            onProcessOrder={createOrder}
-            getTotal={getTotal}
-            isCreatingOrder={isCreatingOrder}
-            createOrderError={createOrderError || undefined}
-          />
+          {/* Right Sidebar - Cart and Orders */}
+          <div className="lg:col-span-1 space-y-4">
+            <OrderCart
+              cart={cart}
+              tableNumber={tableNumber}
+              roomNumber={roomNumber}
+              customerType={customerType}
+              onTableNumberChange={setTableNumber}
+              onRoomNumberChange={setRoomNumber}
+              onCustomerTypeChange={setCustomerType}
+              onUpdateQuantity={updateQuantity}
+              onRemoveFromCart={removeFromCart}
+              onProcessOrder={createOrder}
+              getTotal={getTotal}
+              isCreatingOrder={isCreatingOrder}
+              createOrderError={createOrderError || undefined}
+            />
 
-          <RecentOrders
-            orders={orders}
-            onViewOrder={setSelectedOrder}
-            onUpdateOrderStatus={updateOrderStatus}
-                  />
-                </div>
-              </div>
+            <RecentOrders
+              onViewOrder={setSelectedOrder}
+              onUpdateOrderStatus={updateOrderStatus}
+            />
+          </div>
+        </div>
 
       {/* Modals */}
       <OrderDetailsModal

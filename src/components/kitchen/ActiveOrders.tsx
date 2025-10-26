@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Clock, Flame, CheckCircle, Utensils, X } from "lucide-react";
 import { OrderStatus, OrderType } from "@/utils/enum";
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface Order {
   id: string;
@@ -30,6 +33,9 @@ export default function ActiveOrders({
   onOrderAction,
   onViewOrderDetails,
 }: ActiveOrdersProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   const [activeTab, setActiveTab] = useState("all");
 
   // Filter orders based on active tab
@@ -253,7 +259,7 @@ export default function ActiveOrders({
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-secondary-600">Total:</span>
                       <span className="text-lg font-bold text-primary-600">
-                        ${order.total.toFixed(2)}
+                        {formatPrice(order.total, selectedHotel?.currency)}
                       </span>
                     </div>
                     <div className="text-sm text-secondary-500">

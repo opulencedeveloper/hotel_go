@@ -3,6 +3,9 @@
 import { X, UserCheck, UserX, MapPin, Calendar, DollarSign, Building, Phone, Mail } from 'lucide-react';
 import { Staff as ReduxStaff } from '@/store/redux/staff-slice';
 import { StaffStatus } from '@/utils/enum';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface StaffDetailsModalProps {
   isOpen: boolean;
@@ -17,6 +20,9 @@ export default function StaffDetailsModal({
   onClose, 
   onEdit 
 }: StaffDetailsModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   if (!isOpen || !staff) return null;
 
   const getStatusColor = (status: StaffStatus) => {
@@ -136,7 +142,7 @@ export default function StaffDetailsModal({
             <div>
               <label className="text-xs font-medium text-secondary-500 uppercase tracking-wide">Annual Salary</label>
               <p className="text-lg font-semibold text-secondary-900">
-                ${staff.salary.toLocaleString()}/year
+                {formatPrice(staff.salary, selectedHotel?.currency)}/year
               </p>
             </div>
           </div>

@@ -2,6 +2,9 @@
 
 import { RoomTypeSliceParams } from "@/types/room-management/room-management";
 import { X } from "lucide-react";
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface WalkInModalProps {
   isOpen: boolean;
@@ -10,6 +13,9 @@ interface WalkInModalProps {
 }
 
 export default function WalkInModal({ isOpen, onClose, roomTypes }: WalkInModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   if (!isOpen) return null;
 
   return (
@@ -86,7 +92,7 @@ export default function WalkInModal({ isOpen, onClose, roomTypes }: WalkInModalP
                   <option value="">Select room type</option>
                   {roomTypes.map(type => (
                     <option key={type._id} value={type._id}>
-                      {type.name} - ${type.price}/night
+                      {type.name} - {formatPrice(type.price, selectedHotel?.currency)}/night
                     </option>
                   ))}
                 </select>

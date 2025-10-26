@@ -2,6 +2,9 @@
 
 import { X, Printer } from "lucide-react";
 import { StayStatus } from '@/utils/enum';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface CheckOutModalProps {
   isOpen: boolean;
@@ -18,6 +21,8 @@ export default function CheckOutModal({
   onCompleteCheckOut, 
   onPrintReceipt 
 }: CheckOutModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
   if (!isOpen || !selectedGuest) return null;
 
   return (
@@ -115,15 +120,15 @@ export default function CheckOutModal({
                   </div>
                   <div className="flex justify-between">
                     <span>Room Service:</span>
-                    <span>$45.00</span>
+                    <span>{formatPrice(45.00, selectedHotel?.currency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Mini Bar:</span>
-                    <span>$23.50</span>
+                    <span>{formatPrice(23.50, selectedHotel?.currency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Taxes & Fees:</span>
-                    <span>$12.75</span>
+                    <span>{formatPrice(12.75, selectedHotel?.currency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Payment Status:</span>
@@ -131,7 +136,7 @@ export default function CheckOutModal({
                   </div>
                   <div className="flex justify-between font-medium border-t border-secondary-200 pt-2">
                     <span>Balance Due:</span>
-                    <span>$81.25</span>
+                    <span>{formatPrice(81.25, selectedHotel?.currency)}</span>
                   </div>
                 </div>
               </div>
@@ -171,6 +176,7 @@ export default function CheckOutModal({
     </div>
   );
 }
+
 
 
 

@@ -14,10 +14,11 @@ import {
   AlertTriangle,
   Search,
 } from "lucide-react";
-import { InventoryItem } from "@/store/redux/inventory-slice";
+import { inventoryActions, InventoryItem } from "@/store/redux/inventory-slice";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { useHttp } from "@/hooks/useHttp";
+import { formatPrice } from "@/helper";
 import { staffActions } from "@/store/redux/staff-slice";
 import { InventoryDestination } from "@/utils/enum";
 
@@ -71,10 +72,12 @@ export default function InventoryCollection({
 
   // Get staff from Redux
   const staffState = useSelector((state: RootState) => state.staff);
+  const hotel = useSelector((state: RootState) => state.hotel);
   const { staffs: allStaff, fetchedData: staffFetchedData } = staffState || {
     staffs: [],
     fetchedData: false,
   };
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
 
   // Filter for active staff
   const staff =
@@ -115,21 +118,19 @@ export default function InventoryCollection({
 
   const handleAddItem = (item: InventoryItem) => {
     const existingItem = collectionItems.find((ci) => ci.item._id === item._id);
-    
+
     // Calculate available stock (original stock minus already collected)
     const alreadyCollected = existingItem ? existingItem.quantity : 0;
     const availableStock = item.currentStock - alreadyCollected;
-    
+
     if (availableStock <= 0) {
       return; // No more items available
     }
-    
+
     if (existingItem) {
       setCollectionItems((prev) =>
         prev.map((ci) =>
-          ci.item._id === item._id
-            ? { ...ci, quantity: ci.quantity + 1 }
-            : ci
+          ci.item._id === item._id ? { ...ci, quantity: ci.quantity + 1 } : ci
         )
       );
     } else {
@@ -148,14 +149,16 @@ export default function InventoryCollection({
       const existingItem = collectionItems.find((ci) => ci.item._id === itemId);
       const alreadyCollected = existingItem ? existingItem.quantity : 0;
       const availableStock = item.currentStock - alreadyCollected;
-      
+
       // Ensure quantity doesn't exceed available stock
       const maxQuantity = item.currentStock;
       const newQuantity = Math.min(Math.max(quantity, 0), maxQuantity);
 
       // If quantity is 0, remove the item from collection
       if (newQuantity === 0) {
-        setCollectionItems((prev) => prev.filter((ci) => ci.item._id !== itemId));
+        setCollectionItems((prev) =>
+          prev.filter((ci) => ci.item._id !== itemId)
+        );
       } else {
         setCollectionItems((prev) =>
           prev.map((ci) =>
@@ -188,26 +191,47 @@ export default function InventoryCollection({
     const payload = {
       staffId: selectedStaff.id,
       destination: guestType,
-      tableNumber: guestType === InventoryDestination.RESTAURANT ? tableNumber : undefined,
-      roomNumber: guestType === InventoryDestination.HOTEL_GUEST ? roomNumber : (guestType === InventoryDestination.WALK_IN ? '' : ''),
-      guestName: guestType === InventoryDestination.WALK_IN ? roomNumber : undefined,
-      inventories: collectionItems.map(item => ({
+      tableNumber:
+        guestType === InventoryDestination.RESTAURANT ? tableNumber : undefined,
+      roomNumber:
+        guestType === InventoryDestination.HOTEL_GUEST
+          ? roomNumber
+          : guestType === InventoryDestination.WALK_IN
+          ? ""
+          : "",
+      guestName:
+        guestType === InventoryDestination.WALK_IN ? roomNumber : undefined,
+      inventories: collectionItems.map((item) => ({
         inventoryId: item.item._id,
-        quantity: item.quantity
+        quantity: item.quantity,
       })),
-      notes: notes || undefined
+      notes: notes || undefined,
     };
 
     // Success handler
     const successHandler = (res: any) => {
-      console.log('Collection submitted successfully:', res.data);
-      
+      console.log("Collection submitted successfully:", res.data);
+      const resData = res?.data?.data;
+
+      const inventoryLog = resData.inventoryLog;
+
+      console.log("collectionItems", collectionItems);
+
+      const inventoryToUpdate = collectionItems.map((entry) => ({
+        inventoryId: entry.item._id,
+        quantity: entry.quantity,
+      }));
+      dispatch(inventoryActions.reduceInventoryQuantity(inventoryToUpdate));
+      dispatch(inventoryActions.addInventoryLog(inventoryLog));
+
       // Call the callback for local state management
       const collection = {
         staff: selectedStaff,
         items: collectionItems,
-        roomNumber: guestType === InventoryDestination.HOTEL_GUEST ? roomNumber : null,
-        tableNumber: guestType === InventoryDestination.RESTAURANT ? tableNumber : null,
+        roomNumber:
+          guestType === InventoryDestination.HOTEL_GUEST ? roomNumber : null,
+        tableNumber:
+          guestType === InventoryDestination.RESTAURANT ? tableNumber : null,
         guestType,
         notes,
         timestamp: new Date().toISOString(),
@@ -227,11 +251,11 @@ export default function InventoryCollection({
     submitCollectionRequest({
       successRes: successHandler,
       requestConfig: {
-        url: '/hotel/add-inventory-logs',
-        method: 'POST',
+        url: "/hotel/add-inventory-logs",
+        method: "POST",
         body: payload,
-        successMessage: 'Collection submitted successfully'
-      }
+        successMessage: "Collection submitted successfully",
+      },
     });
   };
 
@@ -295,9 +319,13 @@ export default function InventoryCollection({
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="flex items-center space-x-2">
                     <X className="w-4 h-4 text-red-600" />
-                    <span className="text-red-600 text-sm font-medium">Error</span>
+                    <span className="text-red-600 text-sm font-medium">
+                      Error
+                    </span>
                   </div>
-                  <p className="text-red-600 text-sm mt-1">{submitCollectionError}</p>
+                  <p className="text-red-600 text-sm mt-1">
+                    {submitCollectionError}
+                  </p>
                 </div>
               )}
 
@@ -314,25 +342,26 @@ export default function InventoryCollection({
                     <select
                       required
                       value={selectedStaff?.id || ""}
-                        onChange={(e) => {
-                          const member = staff.find(
-                            (m: any) => m._id === e.target.value
-                          );
-                          if (member) {
-                            setSelectedStaff({
-                              id: member._id,
-                              name: `${member.firstName} ${member.lastName}`,
-                              role: member.userRole,
-                              email: member.email,
-                            });
-                          }
-                        }}
+                      onChange={(e) => {
+                        const member = staff.find(
+                          (m: any) => m._id === e.target.value
+                        );
+                        if (member) {
+                          setSelectedStaff({
+                            id: member._id,
+                            name: `${member.firstName} ${member.lastName}`,
+                            role: member.userRole,
+                            email: member.email,
+                          });
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     >
                       <option value="">Select a staff member...</option>
                       {staff.map((member: any) => (
                         <option key={member._id} value={member._id}>
-                          {member.firstName} {member.lastName} - {member.userRole} ({member.email})
+                          {member.firstName} {member.lastName} -{" "}
+                          {member.userRole} ({member.email})
                         </option>
                       ))}
                     </select>
@@ -396,7 +425,9 @@ export default function InventoryCollection({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     type="button"
-                    onClick={() => setGuestType(InventoryDestination.HOTEL_GUEST)}
+                    onClick={() =>
+                      setGuestType(InventoryDestination.HOTEL_GUEST)
+                    }
                     className={`p-4 border rounded-lg text-left transition-colors ${
                       guestType === InventoryDestination.HOTEL_GUEST
                         ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -436,7 +467,9 @@ export default function InventoryCollection({
 
                   <button
                     type="button"
-                    onClick={() => setGuestType(InventoryDestination.RESTAURANT)}
+                    onClick={() =>
+                      setGuestType(InventoryDestination.RESTAURANT)
+                    }
                     className={`p-4 border rounded-lg text-left transition-colors ${
                       guestType === InventoryDestination.RESTAURANT
                         ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -537,18 +570,22 @@ export default function InventoryCollection({
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto">
                   {filteredItems.map((item) => {
                     // Calculate available stock for this item
-                    const existingItem = collectionItems.find((ci) => ci.item._id === item._id);
-                    const alreadyCollected = existingItem ? existingItem.quantity : 0;
+                    const existingItem = collectionItems.find(
+                      (ci) => ci.item._id === item._id
+                    );
+                    const alreadyCollected = existingItem
+                      ? existingItem.quantity
+                      : 0;
                     const availableStock = item.currentStock - alreadyCollected;
                     const canAddMore = availableStock > 0;
-                    
+
                     return (
                       <div
                         key={item._id}
                         className={`border rounded-lg p-4 ${
-                          canAddMore 
-                            ? 'border-secondary-200' 
-                            : 'border-red-200 bg-red-50'
+                          canAddMore
+                            ? "border-secondary-200"
+                            : "border-red-200 bg-red-50"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
@@ -571,7 +608,7 @@ export default function InventoryCollection({
                         </p>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-green-600">
-                            ${item.costPerUnit.toFixed(2)}/{item.unit}
+                            {formatPrice(item.costPerUnit, selectedHotel?.currency)}/{item.unit}
                           </span>
                           <button
                             type="button"
@@ -579,12 +616,12 @@ export default function InventoryCollection({
                             disabled={!canAddMore}
                             className={`px-3 py-1 rounded text-sm transition-colors flex items-center space-x-1 ${
                               canAddMore
-                                ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                ? "bg-orange-600 text-white hover:bg-orange-700"
+                                : "bg-gray-300 text-gray-500 cursor-not-allowed"
                             }`}
                           >
                             <Plus className="w-3 h-3" />
-                            <span>{canAddMore ? 'Add' : 'No Stock'}</span>
+                            <span>{canAddMore ? "Add" : "No Stock"}</span>
                           </button>
                         </div>
                       </div>
@@ -603,9 +640,10 @@ export default function InventoryCollection({
                     {collectionItems.map((collectionItem) => {
                       // Calculate available stock for this item
                       const alreadyCollected = collectionItem.quantity;
-                      const availableStock = collectionItem.item.currentStock - alreadyCollected;
+                      const availableStock =
+                        collectionItem.item.currentStock - alreadyCollected;
                       const canAddMore = availableStock > 0;
-                      
+
                       return (
                         <div
                           key={collectionItem.item._id}
@@ -652,8 +690,8 @@ export default function InventoryCollection({
                                 disabled={!canAddMore}
                                 className={`p-1 rounded transition-colors ${
                                   canAddMore
-                                    ? 'hover:bg-secondary-200'
-                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    ? "hover:bg-secondary-200"
+                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
                                 }`}
                               >
                                 <Plus className="w-4 h-4" />
@@ -682,7 +720,7 @@ export default function InventoryCollection({
                           Collection Summary
                         </p>
                         <p className="text-sm text-orange-700">
-                          {totalItems} items • ${totalValue.toFixed(2)} value
+                          {totalItems} items • {formatPrice(totalValue, selectedHotel?.currency)} value
                         </p>
                       </div>
                       <div className="flex items-center space-x-2 text-orange-600">
@@ -721,7 +759,11 @@ export default function InventoryCollection({
                 </button>
                 <button
                   type="submit"
-                  disabled={!selectedStaff || collectionItems.length === 0 || isSubmittingCollection}
+                  disabled={
+                    !selectedStaff ||
+                    collectionItems.length === 0 ||
+                    isSubmittingCollection
+                  }
                   className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingCollection ? (

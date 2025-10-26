@@ -16,6 +16,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { dashboardSummaryActions } from "@/store/redux/dashboard-summary-slice";
+import { formatPrice } from '@/helper';
 
 
 export default function ProductionDashboard() {
@@ -25,7 +26,9 @@ export default function ProductionDashboard() {
   const [isLoadingDetailed, setIsLoadingDetailed] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const dashSummary = useSelector((state: RootState) => state.dashboardSummary);
+  const hotel = useSelector((state: RootState) => state.hotel);
   const { fetchedDashboardSummary, fetchedQuickSummary, dashboardSummary, quickSummary } = dashSummary;
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
   const dispatch = useDispatch();
   const {
     isLoading,
@@ -432,19 +435,19 @@ export default function ProductionDashboard() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Today's Revenue</span>
-                <span className="font-medium text-green-600">${dashboardSummary.revenue?.today || 0}</span>
+                <span className="font-medium text-green-600">{formatPrice(dashboardSummary.revenue?.today || 0, selectedHotel?.currency)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">This Week</span>
-                <span className="font-medium text-blue-600">${dashboardSummary.revenue?.thisWeek || 0}</span>
+                <span className="font-medium text-blue-600">{formatPrice(dashboardSummary.revenue?.thisWeek || 0, selectedHotel?.currency)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">This Month</span>
-                <span className="font-medium text-purple-600">${dashboardSummary.revenue?.thisMonth || 0}</span>
+                <span className="font-medium text-purple-600">{formatPrice(dashboardSummary.revenue?.thisMonth || 0, selectedHotel?.currency)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">This Year</span>
-                <span className="font-medium text-gray-900">${dashboardSummary.revenue?.thisYear || 0}</span>
+                <span className="font-medium text-gray-900">{formatPrice(dashboardSummary.revenue?.thisYear || 0, selectedHotel?.currency)}</span>
               </div>
             </div>
           </div>

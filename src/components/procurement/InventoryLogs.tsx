@@ -16,12 +16,18 @@ import {
 } from "lucide-react";
 import { InventoryDestination } from "@/utils/enum";
 import { InventoryLog } from "@/store/redux/inventory-slice";
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface InventoryLogsProps {
   logs: InventoryLog[];
 }
 
 export default function InventoryLogs({ logs }: InventoryLogsProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDestination, setFilterDestination] = useState<string>("all");
   const [selectedLog, setSelectedLog] = useState<InventoryLog | null>(null);
@@ -211,7 +217,7 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-secondary-900">
-                          {log.inventories.length} items • ${log.inventories.reduce((sum, item) => sum + (item.quantity * item.inventoryInfo.costPerUnit), 0).toFixed(2)} value
+                          {log.inventories.length} items • {formatPrice(log.inventories.reduce((sum, item) => sum + (item.quantity * item.inventoryInfo.costPerUnit), 0), selectedHotel?.currency)} value
                         </p>
                         <p className="text-xs text-secondary-500">
                           {log.inventories.map(item => 
@@ -309,12 +315,12 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
                           {item.quantity} {item.inventoryInfo.unit}
                         </p>
                         <p className="text-xs text-secondary-500">
-                          ${item.inventoryInfo.costPerUnit.toFixed(2)} per {item.inventoryInfo.unit}
+                          {formatPrice(item.inventoryInfo.costPerUnit, selectedHotel?.currency)} per {item.inventoryInfo.unit}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-secondary-900">
-                          ${(item.quantity * item.inventoryInfo.costPerUnit).toFixed(2)}
+                          {formatPrice(item.quantity * item.inventoryInfo.costPerUnit, selectedHotel?.currency)}
                         </p>
                       </div>
                     </div>
@@ -324,7 +330,7 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-green-900">Total Value</span>
                     <span className="text-lg font-bold text-green-600">
-                      ${selectedLog.inventories.reduce((sum, item) => sum + (item.quantity * item.inventoryInfo.costPerUnit), 0).toFixed(2)}
+                      {formatPrice(selectedLog.inventories.reduce((sum, item) => sum + (item.quantity * item.inventoryInfo.costPerUnit), 0), selectedHotel?.currency)}
                     </span>
                   </div>
                 </div>

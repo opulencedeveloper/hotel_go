@@ -43,7 +43,7 @@ export interface RoomSliceParams {
   roomNumber: string;
   roomTypeId: string;
   roomTypeName: string;
-  roomStatus: string;
+  roomStatus: RoomStatus;
   note: string;
   lastCleaned: string;
 }
@@ -62,5 +62,5 @@ export interface RoomManagementCardProps {
 
 export interface RoomStatusUpdate {
   roomId: string;
-  status: string;
+  status: RoomStatus;
 }

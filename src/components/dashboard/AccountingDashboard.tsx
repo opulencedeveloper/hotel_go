@@ -1,10 +1,16 @@
 'use client';
 
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+
 interface AccountingDashboardProps {
   stats: any;
 }
 
 export default function AccountingDashboard({ stats }: AccountingDashboardProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -13,11 +19,11 @@ export default function AccountingDashboard({ stats }: AccountingDashboardProps)
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-secondary-600">Today's Revenue</span>
-              <span className="font-semibold text-green-600">${stats?.revenue_by_outlet?.rooms || 8450}</span>
+              <span className="font-semibold text-green-600">{formatPrice(stats?.revenue_by_outlet?.rooms || 8450, selectedHotel?.currency)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-secondary-600">F&B Revenue</span>
-              <span className="font-semibold text-green-600">${stats?.revenue_by_outlet?.f_and_b || 2340}</span>
+              <span className="font-semibold text-green-600">{formatPrice(stats?.revenue_by_outlet?.f_and_b || 2340, selectedHotel?.currency)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-secondary-600">Pending Payments</span>
@@ -47,6 +53,7 @@ export default function AccountingDashboard({ stats }: AccountingDashboardProps)
     </div>
   );
 }
+
 
 
 

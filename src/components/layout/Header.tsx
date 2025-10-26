@@ -430,7 +430,14 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       successRes: (res) => {
         console.log("Reservation created successfully:", res.data);
 
-        return;
+        // Only update room status to occupied if check-in is today
+        // const today = new Date();
+        // const checkInDate = new Date(reservationForm.checkIn);
+        // const isCheckInToday = checkInDate.toDateString() === today.toDateString();
+        
+        if (stayType === StayType.WALK_IN) {
+          dispatch(roomActions.updateRoomStatus({roomId: selectedRoom._id, status: RoomStatus.Occupied }))
+        }
 
         // if (stayType === StayType.WALK_IN) {
         //   dispatch(
@@ -1512,7 +1519,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      Create Reservation
+                      {stayType === StayType.RESERVED
+                  ? "New Reservation"
+                  : stayType === StayType.BOOKED
+                  ? "New Booking"
+                  : "Walk-in"}
                     </>
                   )}
                 </button>

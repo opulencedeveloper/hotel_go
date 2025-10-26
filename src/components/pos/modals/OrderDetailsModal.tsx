@@ -1,10 +1,15 @@
 'use client';
 
 import { X, Printer, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import { POSOrder, POSItem } from '@/types';
+import { Order } from '@/store/redux/order-slice';
+import { OrderStatus } from '@/lib/server/order/enum';
+import { POSItem } from '@/types';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface OrderDetailsModalProps {
-  order: POSOrder | null;
+  order: Order | null;
   items: POSItem[];
   onClose: () => void;
 }
@@ -14,14 +19,17 @@ export default function OrderDetailsModal({
   items,
   onClose
 }: OrderDetailsModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   if (!order) return null;
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'preparing': return 'bg-blue-100 text-blue-800';
       case 'ready': return 'bg-green-100 text-green-800';
-      case 'served': return 'bg-gray-100 text-gray-800';
+      case 'paid': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -29,9 +37,9 @@ export default function OrderDetailsModal({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
-      case 'preparing': return <AlertCircle className="w-4 h-4" />;
       case 'ready': return <CheckCircle className="w-4 h-4" />;
-      case 'served': return <CheckCircle className="w-4 h-4" />;
+      case 'paid': return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
     }
   };
@@ -53,7 +61,7 @@ export default function OrderDetailsModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <h4 className="font-medium text-secondary-900">Order Information</h4>
-              <p className="text-sm text-secondary-600">Order #: {order.order_id}</p>
+              <p className="text-sm text-secondary-600">Order #: {order._id}</p>
               <p className="text-sm text-secondary-600">
                 Status: <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
                   {getStatusIcon(order.status)}
@@ -61,18 +69,18 @@ export default function OrderDetailsModal({
                 </span>
               </p>
               <p className="text-sm text-secondary-600">
-                Created: {new Date(order.created_at).toLocaleString()}
+                Created: {new Date(order.createdAt).toLocaleString()}
               </p>
             </div>
             <div>
               <h4 className="font-medium text-secondary-900">Location</h4>
-              {order.table_number && (
-                <p className="text-sm text-secondary-600">Table: {order.table_number}</p>
+              {order.tableNumber && (
+                <p className="text-sm text-secondary-600">Table: {order.tableNumber}</p>
               )}
-              {order.room_number && (
-                <p className="text-sm text-secondary-600">Room: {order.room_number}</p>
+              {order.roomId && (
+                <p className="text-sm text-secondary-600">Room: {order.roomId}</p>
               )}
-              {!order.table_number && !order.room_number && (
+              {!order.tableNumber && !order.roomId && (
                 <p className="text-sm text-secondary-600">Takeout Order</p>
               )}
             </div>
@@ -82,19 +90,19 @@ export default function OrderDetailsModal({
             <h4 className="font-medium text-secondary-900">Items</h4>
             <div className="space-y-2 mt-2">
               {order.items.map((item, index) => {
-                const menuItem = items.find(i => i.item_id === item.item_id);
+                const menuItem = items.find(i => i.item_id === item.menuId._id);
                 return (
                   <div key={index} className="flex justify-between items-center p-2 bg-secondary-50 rounded">
                     <div>
                       <p className="text-sm font-medium text-secondary-900">
-                        {menuItem?.name || 'Unknown Item'}
+                        {menuItem?.name || item.menuId.itemName}
                       </p>
                       <p className="text-xs text-secondary-600">
-                        Qty: {item.quantity} × ${item.price}
+                        Qty: {item.quantity} × {formatPrice(item.priceWhenOrdered, selectedHotel?.currency)}
                       </p>
                     </div>
                     <p className="text-sm font-medium text-secondary-900">
-                      ${(item.quantity * item.price).toFixed(2)}
+                      {formatPrice(item.quantity * item.priceWhenOrdered, selectedHotel?.currency)}
                     </p>
                   </div>
                 );
@@ -105,7 +113,9 @@ export default function OrderDetailsModal({
           <div className="border-t border-secondary-200 pt-4">
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold text-secondary-900">Total</span>
-              <span className="text-lg font-bold text-primary-600">${order.total.toFixed(2)}</span>
+              <span className="text-lg font-bold text-primary-600">
+                {formatPrice(order.items.reduce((sum, item) => sum + (item.priceWhenOrdered * item.quantity), 0), selectedHotel?.currency)}
+              </span>
             </div>
           </div>
         </div>

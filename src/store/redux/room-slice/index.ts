@@ -72,6 +72,8 @@ const roomSlice = createSlice({
         }, []);
     },
 
+
+
     updateRoom: (state, action: PayloadAction<RoomSliceParams>) => {
       const updatedRoom = action.payload;
 
@@ -82,16 +84,14 @@ const roomSlice = createSlice({
       );
     },
 
-     updateRoomStatus: (
-      state,
-      action: PayloadAction<RoomStatusUpdate>
-    ) => {
-      const { roomId, status } = action.payload;
+   updateRoomStatus: (state, action: PayloadAction<RoomStatusUpdate>) => {
+  const { roomId, status } = action.payload;
 
-      state.hotelRooms = state.hotelRooms.map((room) =>
-        room._id === roomId ? { ...room, status } : room
-      );
-    },
+  state.hotelRooms = state.hotelRooms.map((room) =>
+    room._id === roomId ? { ...room, roomStatus: status } : room
+  );
+},
+
   },
 });
 

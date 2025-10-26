@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { mockPOSOrders } from '@/data/mockData';
-import { POSItem, POSOrder } from '@/types';
+import { Order, orderActions } from '@/store/redux/order-slice';
+import { OrderStatus } from '@/lib/server/order/enum';
 import { RootState } from '@/store';
 import { menuActions } from '@/store/redux/menu-slice';
 import { OrderType } from '@/utils/enum';
 import { useHttp } from '@/hooks/useHttp';
+import { POSItem } from '@/types';
 
 interface CartItem {
   item: POSItem;
@@ -44,11 +45,13 @@ export function usePOSState() {
     })) : []
   })) || [];
 
-  const [orders, setOrders] = useState<POSOrder[]>(mockPOSOrders);
+  // Get orders from Redux state
+  const orderState = useSelector((state: RootState) => state.order);
+  const { orders } = orderState;
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState<POSOrder | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [tableNumber, setTableNumber] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
@@ -125,26 +128,12 @@ export function usePOSState() {
 
     const onSuccessHandler = (res: any) => {
       console.log('Order created successfully:', res.data);
-      
-      // Create local order for UI display
-      const newOrder: POSOrder = {
-        order_id: res.data?.orderId || `order_${Date.now()}`,
-        outlet_id: 'outlet_001',
-        items: cart.map(cartItem => ({
-          item_id: cartItem.item.item_id,
-          quantity: cartItem.quantity,
-          price: cartItem.item.price,
-          modifiers: []
-        })),
-        total: getTotal(),
-        status: 'pending',
-        table_number: tableNumber || undefined,
-        room_number: roomNumber || undefined,
-        created_at: new Date().toISOString(),
-        staff_id: '1' // This would come from authentication
-      };
 
-      setOrders(prev => [newOrder, ...prev]);
+      const order = res?.data?.data?.order;
+
+      dispatch(orderActions.addOrder(order));
+      
+      // Orders are now managed by Redux, no need to update local state
       setCart([]);
       setTableNumber('');
       setRoomNumber('');
@@ -161,10 +150,9 @@ export function usePOSState() {
     });
   };
 
-  const updateOrderStatus = (orderId: string, status: POSOrder['status']) => {
-    setOrders(prev => prev.map(order =>
-      order.order_id === orderId ? { ...order, status } : order
-    ));
+  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
+    // This would typically update via API call
+    console.log('Updating order status:', orderId, status);
   };
 
   const handleNewOrderSubmit = (e: React.FormEvent) => {
@@ -195,10 +183,12 @@ export function usePOSState() {
 
   const posStats = {
     totalOrders: orders.length,
-    pendingOrders: orders.filter(o => o.status === 'pending').length,
-    preparingOrders: orders.filter(o => o.status === 'preparing').length,
-    readyOrders: orders.filter(o => o.status === 'ready').length,
-    totalRevenue: orders.reduce((sum, order) => sum + order.total, 0)
+    pendingOrders: orders.filter(o => o.status === OrderStatus.PENDING).length,
+    preparingOrders: 0, // This status doesn't exist in OrderStatus enum
+    readyOrders: orders.filter(o => o.status === OrderStatus.READY).length,
+    totalRevenue: orders.reduce((sum, order) => 
+      sum + order.items.reduce((itemSum, item) => 
+        itemSum + (item.priceWhenOrdered * item.quantity), 0), 0)
   };
 
   // Function to refresh menu items (useful when new items are added)

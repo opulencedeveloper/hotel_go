@@ -33,10 +33,7 @@ export default function POSStats({
         <div className="text-2xl font-bold text-green-600">{readyOrders}</div>
         <div className="text-sm text-secondary-600">Ready</div>
       </div>
-      <div className="card text-center">
-        <div className="text-2xl font-bold text-primary-600">${totalRevenue.toFixed(2)}</div>
-        <div className="text-sm text-secondary-600">Total Revenue</div>
-      </div>
+    
     </div>
   );
 }

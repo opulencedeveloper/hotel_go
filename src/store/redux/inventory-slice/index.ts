@@ -103,6 +103,27 @@ const inventorySlice = createSlice({
       );
     },
 
+    reduceInventoryQuantity: (
+      state,
+      action: PayloadAction<{ inventoryId: string; quantity: number }[]>
+    ) => {
+      const updates = action.payload;
+
+      updates.forEach(({ inventoryId, quantity }) => {
+        const inventory = state.inventories.find(
+          (inv) => inv._id === inventoryId
+        );
+
+        if (inventory) {
+          // Prevent negative stock
+          inventory.currentStock = Math.max(
+            inventory.currentStock - quantity,
+            0
+          );
+        }
+      });
+    },
+
     // Delete inventory
     deleteInventoryItem: (state, action: PayloadAction<string>) => {
       state.inventories = state.inventories.filter(
@@ -136,7 +157,6 @@ const inventorySlice = createSlice({
 // --------------------
 export const inventoryActions = inventorySlice.actions;
 export default inventorySlice;
-
 
 // import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
@@ -179,7 +199,6 @@ export default inventorySlice;
 // addInventoryItem: (state, action: PayloadAction<InventoryItem[]>) => {
 //   state.inventories.unshift(...action.payload);
 // },
-
 
 //     // Update an existing inventory item
 //     updateInventoryItem: (state, action: PayloadAction<InventoryItem>) => {

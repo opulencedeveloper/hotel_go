@@ -4,6 +4,7 @@ import { X, Clock, AlertTriangle, CheckCircle, Utensils } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { OrderStatus, OrderType } from '@/utils/enum';
+import { formatPrice } from '@/helper';
 
 interface ViewOrdersModalProps {
   isOpen: boolean;
@@ -13,7 +14,9 @@ interface ViewOrdersModalProps {
 export default function ViewOrdersModal({ isOpen, onClose }: ViewOrdersModalProps) {
   // Get orders from Redux state
   const order = useSelector((state: RootState) => state.order);
+  const hotel = useSelector((state: RootState) => state.hotel);
   const { orders: reduxOrders } = order;
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
 
   // Transform Redux orders to display format
   const orders = reduxOrders?.map((reduxOrder: any) => ({
@@ -145,7 +148,7 @@ export default function ViewOrdersModal({ isOpen, onClose }: ViewOrdersModalProp
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-secondary-900">${order.total.toFixed(2)}</p>
+                      <p className="text-sm font-medium text-secondary-900">{formatPrice(order.total, selectedHotel?.currency)}</p>
                       <p className="text-xs text-secondary-600">{order.orderTime}</p>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+import { orderService } from "../order/service";
 import { utils } from "../utils";
 import { MessageResponse } from "../utils/enum";
 import { CustomRequest } from "../utils/interface";
@@ -34,7 +35,7 @@ class MenuController {
       status: 201,
       message: MessageResponse.Success,
       description: "Menu created successfully!",
-      data: newMenu,
+      data: { newMenu },
     });
   }
 
@@ -43,19 +44,22 @@ class MenuController {
 
     const menus = await menuService.findMenusByHotelId(hotelId!);
 
+    const orders = await orderService.findOrdersByHotelId(hotelId!)
+
     return utils.customResponse({
       status: 200,
       message: MessageResponse.Success,
       description: "Menus fetched successfully!",
       data: {
         menus,
+        orders
       },
     });
   }
 
   public async updateMenu(body: IEditMenuUserInput, customReq: CustomRequest) {
     const hotelId = customReq.hotelId;
-    console.log(body.menuId)
+    console.log(body.menuId);
     const menu = await menuService.findMenuById(body.menuId!);
 
     if (!menu) {
@@ -67,7 +71,10 @@ class MenuController {
       });
     }
 
-    if (body.itemName.toLowerCase().toString() !== menu.itemName.toLowerCase().toString()) {
+    if (
+      body.itemName.toLowerCase().toString() !==
+      menu.itemName.toLowerCase().toString()
+    ) {
       const nameExist = await menuService.findMenuyByNameAndHotelId(
         body.itemName,
         hotelId!

@@ -16,6 +16,9 @@ import {
   X
 } from 'lucide-react';
 import { InventoryItem } from '@/store/redux/inventory-slice';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface InventoryListProps {
   inventories: InventoryItem[];
@@ -30,6 +33,9 @@ export default function InventoryList({
   onDelete, 
   onView 
 }: InventoryListProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
@@ -103,7 +109,7 @@ export default function InventoryList({
       <div className="p-6 border-b border-secondary-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-secondary-900">Inventory aItems</h2>
+            <h2 className="text-xl font-semibold text-secondary-900">Inventory Items</h2>
             <p className="text-secondary-600 text-sm">
               {filteredInventories.length} of {inventories.length} items
             </p>
@@ -258,7 +264,7 @@ export default function InventoryList({
                     
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-secondary-900">
-                        ${item.costPerUnit.toFixed(2)}
+                        {formatPrice(item.costPerUnit, selectedHotel?.currency)}
                       </div>
                       <div className="text-xs text-secondary-500">
                         per {item.unit}
@@ -340,7 +346,7 @@ export default function InventoryList({
               <DollarSign className="w-4 h-4 text-blue-600" />
               <span className="text-secondary-600">Total Value:</span>
               <span className="font-medium">
-                ${filteredInventories.reduce((sum, item) => sum + (item.currentStock * item.costPerUnit), 0).toFixed(2)}
+                {formatPrice(filteredInventories.reduce((sum, item) => sum + (item.currentStock * item.costPerUnit), 0), selectedHotel?.currency)}
               </span>
             </div>
           </div>

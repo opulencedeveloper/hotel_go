@@ -3,6 +3,9 @@
 import { X, Bed } from "lucide-react";
 import { StayStatus } from '@/utils/enum';
 import { RoomSliceParams, RoomTypeSliceParams } from "@/types/room-management/room-management";
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface RoomAssignmentModalProps {
   isOpen: boolean;
@@ -21,6 +24,8 @@ export default function RoomAssignmentModal({
   roomTypes, 
   onCompleteCheckIn 
 }: RoomAssignmentModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
   if (!isOpen || !selectedGuest) return null;
 
   return (
@@ -89,7 +94,7 @@ export default function RoomAssignmentModal({
                           {roomType?.name} • Floor {room.floor}
                         </p>
                         <p className="text-sm text-secondary-500">
-                          ${roomType?.price}/night
+                          {formatPrice(roomType?.price || 0, selectedHotel?.currency)}/night
                         </p>
                       </div>
                     </div>

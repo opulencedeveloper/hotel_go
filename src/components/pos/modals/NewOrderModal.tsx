@@ -2,6 +2,9 @@
 
 import { X, ShoppingCart, Minus, Plus, Receipt, Utensils, Coffee, Settings } from 'lucide-react';
 import { POSItem } from '@/types';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface CartItem {
   item: POSItem;
@@ -39,6 +42,9 @@ export default function NewOrderModal({
   onSubmit,
   getTotal
 }: NewOrderModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   if (!isOpen) return null;
 
   const getCategoryIcon = (category: string) => {
@@ -117,7 +123,7 @@ export default function NewOrderModal({
                 <div className="border-t border-secondary-200 pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold text-secondary-900">Total</span>
-                    <span className="text-lg font-bold text-primary-600">${getTotal().toFixed(2)}</span>
+                    <span className="text-lg font-bold text-primary-600">{formatPrice(getTotal(), selectedHotel?.currency)}</span>
                   </div>
                 </div>
               </div>

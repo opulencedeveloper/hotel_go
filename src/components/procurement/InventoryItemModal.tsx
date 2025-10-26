@@ -2,6 +2,9 @@
 
 import { X, Package, MapPin, DollarSign, Calendar, User, AlertTriangle, CheckCircle, Clock, Hash } from 'lucide-react';
 import { InventoryItem } from '@/store/redux/inventory-slice';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface InventoryItemModalProps {
   item: InventoryItem | null;
@@ -10,6 +13,9 @@ interface InventoryItemModalProps {
 }
 
 export default function InventoryItemModal({ item, isOpen, onClose }: InventoryItemModalProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
   if (!item) return null;
 
   const getStockStatus = (stock: number) => {
@@ -149,7 +155,7 @@ export default function InventoryItemModal({ item, isOpen, onClose }: InventoryI
                   <DollarSign className="w-4 h-4 text-secondary-400" />
                   <div>
                     <p className="text-sm text-secondary-600">Cost per Unit</p>
-                    <p className="font-medium text-secondary-900">${item.costPerUnit.toFixed(2)}</p>
+                    <p className="font-medium text-secondary-900">{formatPrice(item.costPerUnit, selectedHotel?.currency)}</p>
                   </div>
                 </div>
 
@@ -157,7 +163,7 @@ export default function InventoryItemModal({ item, isOpen, onClose }: InventoryI
                   <DollarSign className="w-4 h-4 text-green-600" />
                   <div>
                     <p className="text-sm text-secondary-600">Total Value</p>
-                    <p className="font-medium text-green-600">${totalValue.toFixed(2)}</p>
+                    <p className="font-medium text-green-600">{formatPrice(totalValue, selectedHotel?.currency)}</p>
                   </div>
                 </div>
               </div>
@@ -227,7 +233,7 @@ export default function InventoryItemModal({ item, isOpen, onClose }: InventoryI
                   <DollarSign className="w-4 h-4 text-green-600" />
                   <span className="text-sm font-medium text-green-600">Unit Cost</span>
                 </div>
-                <p className="text-2xl font-bold text-green-900">${item.costPerUnit.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-green-900">{formatPrice(item.costPerUnit, selectedHotel?.currency)}</p>
                 <p className="text-sm text-green-600">per {item.unit}</p>
               </div>
 
@@ -236,7 +242,7 @@ export default function InventoryItemModal({ item, isOpen, onClose }: InventoryI
                   <DollarSign className="w-4 h-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-600">Total Value</span>
                 </div>
-                <p className="text-2xl font-bold text-purple-900">${totalValue.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-purple-900">{formatPrice(totalValue, selectedHotel?.currency)}</p>
                 <p className="text-sm text-purple-600">inventory value</p>
               </div>
             </div>
