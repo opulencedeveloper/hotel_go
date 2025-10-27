@@ -51,7 +51,6 @@ export default function RoomAssignmentModal({
                 <p><span className="font-medium">Email:</span> {selectedGuest.emailAddress || 'No email'}</p>
                 <p><span className="font-medium">Phone:</span> {selectedGuest.phoneNumber || 'No phone'}</p>
                 <p><span className="font-medium">Stay ID:</span> {selectedGuest._id}</p>
-                <p><span className="font-medium">Hotel ID:</span> {selectedGuest.hotelId}</p>
                 <p><span className="font-medium">Check-in:</span> {new Date(selectedGuest.checkInDate).toLocaleDateString()}</p>
                 <p><span className="font-medium">Check-out:</span> {new Date(selectedGuest.checkOutDate).toLocaleDateString()}</p>
                 <p><span className="font-medium">Adults:</span> {selectedGuest.adults}</p>

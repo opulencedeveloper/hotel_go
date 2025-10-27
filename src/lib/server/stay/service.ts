@@ -18,33 +18,38 @@ class StayService {
   }
 
 
- public async findConflictingReservations(
+public async findConflictingReservations(
   roomId: Types.ObjectId,
   checkInDate: Date,
   checkOutDate: Date
 ) {
   return await Stay.findOne({
     roomId,
-    type: { $in: [StayType.RESERVED, StayType.BOOKED] },
+    type: { $in: [StayType.RESERVED, StayType.BOOKED, StayType.WALK_IN] },
     status: { $in: [StayStatus.CONFIRMED, StayStatus.CHECKED_IN] },
 
-    // Only consider reservations that are still valid (not expired)
+    // Only consider valid, non-expired stays
     $or: [
-      // For RESERVED: payment date hasn't expired yet OR payment is already made
+      // For RESERVED: still valid if payment date hasn't expired or it's already paid
       {
         type: StayType.RESERVED,
         $or: [
-          { paymentDate: { $gte: new Date() } }, // Payment date is in the future
-          { paymentStatus: PaymentStatus.PAID }  // Payment already made
-        ]
+          { paymentDate: { $gte: new Date() } },
+          { paymentStatus: PaymentStatus.PAID },
+        ],
       },
-      // For BOOKED: always valid (they're already paid)
+      // For BOOKED: always valid (already paid)
       {
-        type: StayType.BOOKED
-      }
+        type: StayType.BOOKED,
+      },
+      // For WALK_IN: valid if still checked in (not checked out yet)
+      {
+        type: StayType.WALK_IN,
+        status: StayStatus.CHECKED_IN,
+      },
     ],
 
-    // overlapping reservation logic
+    // Overlapping reservation logic
     $and: [
       {
         $or: [
@@ -53,10 +58,11 @@ class StayService {
             checkOutDate: { $gt: checkInDate },
           },
         ],
-      }
-    ]
+      },
+    ],
   });
 }
+
 
 
 public async findStaysByHotelId(hotelId: Types.ObjectId) {
@@ -64,10 +70,10 @@ public async findStaysByHotelId(hotelId: Types.ObjectId) {
     .populate({
       path: "roomId",        
       select: "roomNumber roomTypeId",
-      populate: {
-        path: "roomTypeId",  
-        select: "name price",      
-      },
+      // populate: {
+      //   path: "roomTypeId",  
+      //   select: "name price",      
+      // },
     });
 
   return stays;

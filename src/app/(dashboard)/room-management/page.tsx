@@ -22,12 +22,12 @@ export default function RoomManagementPage() {
     sendHttpRequest: fetchUserAndHotelInfoReq,
   } = useHttp();
   const room = useSelector((state: RootState) => state.room);
-  const { fetchedData } = room;
+  const { fetchedRoomType, fetchedRooms } = room;
 
   useEffect(() => {
     setMounted(true);
 
-    if (fetchedData) return;
+    if (fetchedRoomType && fetchedRooms) return;
 
     const onFetchUserAndHotelInfoReq = (res: any) => {
       const resData = res?.data?.data;
@@ -54,7 +54,7 @@ export default function RoomManagementPage() {
         method: "GET",
       },
     });
-  }, [dispatch, fetchedData]);
+  }, [dispatch, fetchedRoomType, fetchedRooms]);
 
   if (isLoading || !mounted) {
     return <PageLoadingSpinner />;
@@ -62,7 +62,7 @@ export default function RoomManagementPage() {
 
   if (error) {
     const handleRetry = () => {
-      if (room.fetchedData) return;
+  if (fetchedRoomType && fetchedRooms) return;
 
       const onFetchUserAndHotelInfoReq = (res: any) => {
         const resData = res?.data?.data;

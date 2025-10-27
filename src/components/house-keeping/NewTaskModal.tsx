@@ -68,7 +68,7 @@ export default function NewTaskModal({
 
   // Get rooms from Redux state
   const roomState = useSelector((state: RootState) => state.room);
-  const { hotelRooms, fetchedData: roomsFetchedData } = roomState;
+  const { hotelRooms, fetchedRooms: roomsFetchedData } = roomState;
 
   // Filter rooms to only show marked for cleaning status
   const markedForCleaningRooms =

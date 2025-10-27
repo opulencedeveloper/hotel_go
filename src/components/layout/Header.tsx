@@ -57,6 +57,7 @@ import { roomActions } from "@/store/redux/room-slice";
 import { RoomStatus } from "@/types/room-management/enum";
 import { PaymentMethod } from "@/lib/server/stay/enum";
 import { paymentMethodList } from "@/resources";
+import { stayActions } from "@/store/redux/stay-slice";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -326,6 +327,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const [reservationForm, setReservationForm] = useState({
     guestName: "",
     email: "",
+    countryCode: "+1",
     phone: "",
     address: "",
     checkIn: "",
@@ -404,7 +406,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     const reservationData = {
       guestName: reservationForm.guestName,
       emailAddress: reservationForm.email || undefined,
-      phoneNumber: reservationForm.phone,
+      phoneNumber: `${reservationForm.countryCode}${reservationForm.phone}`,
       address: reservationForm.address,
       roomId: selectedRoom._id,
       checkInDate: reservationForm.checkIn,
@@ -430,6 +432,10 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       successRes: (res) => {
         console.log("Reservation created successfully:", res.data);
 
+        const stay = res?.data?.data?.stay;
+
+        dispatch(stayActions.addStay(stay));
+
         // Only update room status to occupied if check-in is today
         // const today = new Date();
         // const checkInDate = new Date(reservationForm.checkIn);
@@ -452,6 +458,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         setReservationForm({
           guestName: "",
           email: "",
+          countryCode: "+1",
           phone: "",
           address: "",
           checkIn: "",
@@ -846,6 +853,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                   setReservationForm({
                     guestName: "",
                     email: "",
+                    countryCode: "+1",
                     phone: "",
                     address: "",
                     checkIn: "",
@@ -962,34 +970,54 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                   <label className="block text-sm font-medium text-secondary-700 mb-2">
                     Phone *
                   </label>
-                  <input
-                    type="tel"
-                    value={reservationForm.phone}
-                    onChange={(e) => {
-                      setReservationForm({
-                        ...reservationForm,
-                        phone: e.target.value,
-                      });
-                      const error = validateField("phone", e.target.value);
-                      setReservationErrors({
-                        ...reservationErrors,
-                        phone: error,
-                      });
-                    }}
-                    onBlur={(e) => {
-                      const error = validateField("phone", e.target.value);
-                      setReservationErrors({
-                        ...reservationErrors,
-                        phone: error,
-                      });
-                    }}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                      reservationErrors.phone
-                        ? "border-red-500"
-                        : "border-secondary-300"
-                    }`}
-                    placeholder="+1 (555) 123-4567"
-                  />
+                  <div className="flex rounded-lg overflow-hidden">
+                    <select
+                      value={reservationForm.countryCode}
+                      onChange={(e) => {
+                        setReservationForm({
+                          ...reservationForm,
+                          countryCode: e.target.value,
+                        });
+                      }}
+                      className={`w-24 flex-shrink-0 px-3 py-2 border ${
+                        reservationErrors.phone ? "border-red-500" : "border-secondary-300"
+                      } text-secondary-700 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white`}
+                    >
+                      {countries.map((country) => (
+                        <option key={country.code} value={country.phoneCode}>
+                          {country.flag} {country.phoneCode}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      value={reservationForm.phone}
+                      onChange={(e) => {
+                        setReservationForm({
+                          ...reservationForm,
+                          phone: e.target.value,
+                        });
+                        const error = validateField("phone", e.target.value);
+                        setReservationErrors({
+                          ...reservationErrors,
+                          phone: error,
+                        });
+                      }}
+                      onBlur={(e) => {
+                        const error = validateField("phone", e.target.value);
+                        setReservationErrors({
+                          ...reservationErrors,
+                          phone: error,
+                        });
+                      }}
+                      className={`flex-1 px-3 py-2 border ${
+                        reservationErrors.phone
+                          ? "border-red-500"
+                          : "border-secondary-300"
+                      } border-l-0 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                      placeholder="123-4567"
+                    />
+                  </div>
                   {reservationErrors.phone && (
                     <p className="mt-1 text-sm text-red-600">
                       {reservationErrors.phone}
@@ -1092,7 +1120,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         disabled={isLoadingRooms}
                         className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        {room.fetchedData && room.hotelRooms.length === 0 ? <>No Available Rooms</> : isLoadingRooms ? (
+                        {room.fetchedRooms && room.hotelRooms.length === 0 ? <>No Available Rooms</> : isLoadingRooms ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
                             Loading rooms...
@@ -1100,7 +1128,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         ) : (
                           <>
                             <Search className="w-4 h-4 mr-2" />
-                            Load Available Rooms
+                            Load Available Roomsa
                           </>
                         )}
                       </button>
@@ -1799,7 +1827,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         disabled={isLoadingRooms}
                         className="w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        {room.fetchedData && room.hotelRooms.length === 0 ? <>No Available Rooms</> : isLoadingRooms ? (
+                        {room.fetchedRooms && room.hotelRooms.length === 0 ? <>No Available Rooms</> : isLoadingRooms ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mr-2"></div>
                             Loading rooms...
@@ -1807,7 +1835,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                         ) : (
                           <>
                             <Search className="w-4 h-4 mr-2" />
-                            Load Available Rooms
+                            Load Available Roomsx
                           </>
                         )}
                       </button>

@@ -18,6 +18,7 @@ import staffReducer from "./staff-slice";
 import inventoryReducer from "./inventory-slice";
 import houseKeepingReducer from "./house-keeping-slice";
 import dashboardSummaryReducer from "./dashboard-summary-slice";
+import analyticsReducer from "./analytics-slice";
 
 // const clientCartPersistConfig = {
 //   key: "token",
@@ -41,7 +42,8 @@ const rootReducer = combineReducers({
   staff: staffReducer.reducer,
   inventory: inventoryReducer.reducer,
   houseKeeping: houseKeepingReducer.reducer,
-  dashboardSummary: dashboardSummaryReducer.reducer
+  dashboardSummary: dashboardSummaryReducer.reducer,
+  analytics: analyticsReducer.reducer
 });
 
 const store = configureStore({

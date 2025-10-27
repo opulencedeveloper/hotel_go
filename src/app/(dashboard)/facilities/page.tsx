@@ -17,8 +17,8 @@ export default function FacilitiesPage() {
     error,
     sendHttpRequest: fetchUserAndHotelInfoReq,
   } = useHttp();
-  const room = useSelector((state: RootState) => state.room);
-  const { fetchedData } = room;
+  const facility = useSelector((state: RootState) => state.facilities);
+  const { fetchedData } = facility;
 
   useEffect(() => {
     setMounted(true);
@@ -47,7 +47,7 @@ export default function FacilitiesPage() {
 
   if (error) {
     const handleRetry = () => {
-      if (room.fetchedData) return;
+      if (facility.fetchedData) return;
 
       const onFetchUserAndHotelInfoReq = (res: any) => {
         const resData = res?.data?.data;

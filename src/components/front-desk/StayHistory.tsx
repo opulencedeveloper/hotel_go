@@ -156,7 +156,7 @@ export default function StayHistory() {
           {statusText}
         </span>
         <span className="text-xs text-secondary-500">
-          {new Date(stay.updatedAt).toLocaleDateString()}
+          {new Date(stay.checkInDate).toLocaleDateString()}
         </span>
       </div>
     );

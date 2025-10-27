@@ -77,9 +77,13 @@ class StayController {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    await stayService.createStay({
+    const stay = await stayService.createStay({
       ...body,
       hotelId: hotelId!,
+      ...(body.type === StayType.WALK_IN && {
+        totalAmount: (roomNoExist.roomTypeId as any)?.price,
+        paidAmount: (roomNoExist.roomTypeId as any)?.price,
+      }),
       paymentDate: body.type !== StayType.RESERVED ? today : body.paymentDate,
       paymentStatus:
         body.type === StayType.RESERVED
@@ -102,8 +106,8 @@ class StayController {
     return utils.customResponse({
       status: 201,
       message: MessageResponse.Success,
-      description: "Check in registered successfully!",
-      data: null,
+      description: "Stay registered successfully!",
+      data: { stay },
     });
   }
 

@@ -49,8 +49,7 @@ export default function CheckInModal({
                 <p><span className="font-medium">Phone:</span> {selectedGuest.phoneNumber || 'No phone'}</p>
                 <p><span className="font-medium">Address:</span> {selectedGuest.address || 'No address'}</p>
                 <p><span className="font-medium">Stay ID:</span> {selectedGuest._id}</p>
-                <p><span className="font-medium">Hotel ID:</span> {selectedGuest.hotelId}</p>
-                <p><span className="font-medium">Room:</span> {selectedGuest.roomId?.roomNumber || 'TBD'} ({selectedGuest.roomId?.roomTypeId?.name || 'Unknown Type'})</p>
+                <p><span className="font-medium">Room:</span> {selectedGuest.roomId?.roomNumber || 'TBD'} ({selectedGuest.roomId?.roomTypeId || 'Unknown Type'})</p>
                 <p><span className="font-medium">Check-in Date:</span> {new Date(selectedGuest.checkInDate).toLocaleDateString()}</p>
                 <p><span className="font-medium">Check-out Date:</span> {new Date(selectedGuest.checkOutDate).toLocaleDateString()}</p>
                 <p><span className="font-medium">Adults:</span> {selectedGuest.adults}</p>

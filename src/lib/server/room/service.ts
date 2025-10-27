@@ -60,9 +60,14 @@ class RoomService {
   // }
 
   public async findRoomByRoomIdAndHotellId(roomId: string, hotelId: string) {
-    const hotel = await Room.findOne({ _id: roomId, hotelId });
+     const room = await Room.findOne({ _id: roomId, hotelId })
+      .populate({
+        path: "roomTypeId",
+        select: "name price capacity", // pull only what’s needed
+      })
+      .lean(); 
 
-    return hotel;
+      return room;
   }
 
   public async findRoomsByHotelId(hotelId: Types.ObjectId) {

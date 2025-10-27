@@ -8,7 +8,8 @@ import {
 import { RoomType } from "@/types";
 
 const initialState: RoomState = {
-  fetchedData: false,
+  fetchedRooms: false,
+  fetchedRoomType: false,
   hotelRooms: [],
   hotelRoomTypes: [],
 };
@@ -19,7 +20,7 @@ const roomSlice = createSlice({
   reducers: {
     // Replace all room types
     setRoomTypes: (state, action: PayloadAction<RoomTypeSliceParams[]>) => {
-      state.fetchedData = true;
+      state.fetchedRooms = true;
 
       state.hotelRoomTypes = action.payload;
     },
@@ -27,7 +28,7 @@ const roomSlice = createSlice({
     // ✅ Add a single room type, merging it safely with existing ones
     addRoomType: (state, action: PayloadAction<RoomTypeSliceParams>) => {
       const newRoomType = action.payload;
-
+      state.fetchedRoomType = true;
       // Use reduce to rebuild array while avoiding duplicates by _id
       state.hotelRoomTypes = state.hotelRoomTypes
         .concat(newRoomType)
@@ -72,8 +73,6 @@ const roomSlice = createSlice({
         }, []);
     },
 
-
-
     updateRoom: (state, action: PayloadAction<RoomSliceParams>) => {
       const updatedRoom = action.payload;
 
@@ -84,14 +83,13 @@ const roomSlice = createSlice({
       );
     },
 
-   updateRoomStatus: (state, action: PayloadAction<RoomStatusUpdate>) => {
-  const { roomId, status } = action.payload;
+    updateRoomStatus: (state, action: PayloadAction<RoomStatusUpdate>) => {
+      const { roomId, status } = action.payload;
 
-  state.hotelRooms = state.hotelRooms.map((room) =>
-    room._id === roomId ? { ...room, roomStatus: status } : room
-  );
-},
-
+      state.hotelRooms = state.hotelRooms.map((room) =>
+        room._id === roomId ? { ...room, roomStatus: status } : room
+      );
+    },
   },
 });
 

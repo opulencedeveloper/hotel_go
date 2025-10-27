@@ -88,7 +88,7 @@ export default function PaymentOverview({ stays, orders }: PaymentOverviewProps)
                     {stay.roomId?.roomNumber || 'N/A'} - {stay.guestName}
                   </div>
                   <div className="text-sm text-secondary-600">
-                    {stay.paymentMethod} • {new Date(stay.updatedAt).toLocaleString()}
+                    {stay.paymentMethod} • {new Date(stay.checkInDate).toLocaleString()}
                   </div>
                 </div>
               </div>

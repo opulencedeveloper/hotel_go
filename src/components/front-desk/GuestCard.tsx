@@ -247,7 +247,7 @@ export default function GuestCard({
             <Eye className="w-4 h-4" />
           </button>
           {/* Status-based next step buttons - exactly 2 buttons */}
-          {booking.status === StayStatus.CONFIRMED && (
+          {/* {booking.status === StayStatus.CONFIRMED && (
             <>
               <button
                 onClick={() => handleStatusUpdate(StayStatus.CHECKED_IN)}
@@ -295,7 +295,7 @@ export default function GuestCard({
             <span className="text-red-500 text-sm px-3 py-1 bg-red-100 rounded">
               Cancelled
             </span>
-          )}
+          )} */}
         </div>
       </div>
     </div>
@@ -324,7 +324,6 @@ export default function GuestCard({
                 <p><span className="font-medium">Phone:</span> {booking.phoneNumber || 'No phone'}</p>
                 <p><span className="font-medium">Address:</span> {booking.address || 'No address'}</p>
                 <p><span className="font-medium">Stay ID:</span> {booking._id}</p>
-                <p><span className="font-medium">Hotel ID:</span> {booking.hotelId}</p>
               </div>
             </div>
 
@@ -333,9 +332,8 @@ export default function GuestCard({
               <h4 className="font-medium text-secondary-900 mb-3">Room Information</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <p><span className="font-medium">Room Number:</span> {booking.roomId?.roomNumber || 'TBD'}</p>
-                <p><span className="font-medium">Room Type:</span> {booking.roomId?.roomTypeId?.name || 'Unknown'}</p>
+                <p><span className="font-medium">Room Type ID:</span> {booking.roomId?.roomTypeId || 'Unknown'}</p>
                 <p><span className="font-medium">Room ID:</span> {booking.roomId?._id || 'TBD'}</p>
-                <p><span className="font-medium">Room Type ID:</span> {booking.roomId?.roomTypeId?._id || 'TBD'}</p>
               </div>
             </div>
 
@@ -398,7 +396,7 @@ export default function GuestCard({
               >
                 Close
               </button>
-              {onEdit && (
+              {/* {onEdit && (
                 <button
                   onClick={() => {
                     onEdit(booking);
@@ -408,7 +406,7 @@ export default function GuestCard({
                 >
                   Edit
                 </button>
-              )}
+              )} */}
             </div>
           </div>
         </div>

@@ -1,21 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-// Define types for room type and room inside a stay
-export interface StayRoomType {
-  _id: string;
-  name: string;
-}
 
+// Room inside a stay
 export interface StayRoom {
   _id: string;
   roomNumber: string;
-  roomTypeId: StayRoomType;
-  roomStatus?: string;
+  roomTypeId: string;
 }
 
+// Full stay object
 export interface StaySliceParams {
   _id: string;
-  hotelId: string;
   roomId: StayRoom;
   guestName: string;
   emailAddress?: string;
@@ -33,38 +28,50 @@ export interface StaySliceParams {
   type: string;
   totalAmount?: number;
   paidAmount?: number;
-  createdAt: string;
-  updatedAt: string;
+  discount?: number | null;
+  serviceCharge?: number | null;
+  tax?: number | null;
 }
 
+// Redux state shape
 export interface StayState {
-  stays: StaySliceParams[]; // updated to array
+  stays: StaySliceParams[];
   fetchedData: boolean;
 }
 
+// Initial state
 const initialState: StayState = {
   stays: [],
   fetchedData: false,
 };
 
+// Slice
 const staySlice = createSlice({
   name: "stay",
   initialState,
   reducers: {
+    // Sets the entire stays array (e.g., from backend fetch)
     setStays: (state, action: PayloadAction<StaySliceParams[]>) => {
       state.fetchedData = true;
       state.stays = action.payload;
+
+      console.log("state.stays", state.stays)
     },
+
+    // Adds a new stay
     addStay: (state, action: PayloadAction<StaySliceParams>) => {
       state.stays.push(action.payload);
     },
+
+    // Updates a stay if it exists
     updateStay: (state, action: PayloadAction<StaySliceParams>) => {
       const updatedStay = action.payload;
-      state.stays = state.stays.map((stay) => {
-        console.log(stay._id === updatedStay._id);
-       return stay._id === updatedStay._id ? { ...stay, ...updatedStay } : stay }
+      state.stays = state.stays.map((stay) =>
+        stay._id === updatedStay._id ? { ...stay, ...updatedStay } : stay
       );
     },
+
+    // Deletes a stay by ID
     deleteStay: (state, action: PayloadAction<string>) => {
       state.stays = state.stays.filter((stay) => stay._id !== action.payload);
     },

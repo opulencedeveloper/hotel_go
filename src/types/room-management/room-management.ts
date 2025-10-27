@@ -49,7 +49,8 @@ export interface RoomSliceParams {
 }
 
 export interface RoomState {
-  fetchedData: boolean;
+  fetchedRooms: boolean;
+  fetchedRoomType: boolean;
   hotelRoomTypes: RoomTypeSliceParams[];
   hotelRooms: RoomSliceParams[];
 }

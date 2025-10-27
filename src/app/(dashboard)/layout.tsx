@@ -17,6 +17,7 @@ import Header from "@/components/layout/Header";
 import Navigation from "@/components/layout/Navigation";
 import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import { LayoutProps } from "@/types";
+import { useRouter } from "next/navigation";
 
 export default function Layout({ children }: LayoutProps) {
   const [mounted, setMounted] = useState(false);
@@ -29,6 +30,11 @@ export default function Layout({ children }: LayoutProps) {
   } = useHttp();
   const user = useSelector((state: RootState) => state.user);
   const hotel = useSelector((state: RootState) => state.hotel);
+  const dashboardSummary = useSelector(
+    (state: RootState) => state.dashboardSummary
+  );
+  const { fetchedDashboardSummary, fetchedQuickSummary } = dashboardSummary;
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
@@ -42,6 +48,7 @@ export default function Layout({ children }: LayoutProps) {
       dispatch(userAccountActions.setCurrentUser(fetchedUserData));
 
       dispatch(hotelActions.setHotels(fetchedHotelData));
+    
     };
 
     fetchUserAndHotelInfoReq({
@@ -99,10 +106,10 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-secondary-50">
       <Navigation sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-     
+
       <div className="lg:pl-64">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        
+
         <main className="p-6">{children}</main>
       </div>
     </div>

@@ -40,7 +40,7 @@ export default function FolioBody() {
       totalPayments: paidAmount,
       balance: balance,
       status: stay.status,
-      lastActivity: new Date(stay.updatedAt).toLocaleString(),
+      lastActivity: stay.checkInDate || stay.checkOutDate ? new Date(stay.checkInDate || stay.checkOutDate).toLocaleString() : 'N/A',
       paymentStatus: stay.paymentStatus,
       paymentMethod: stay.paymentMethod,
       email: stay.emailAddress,

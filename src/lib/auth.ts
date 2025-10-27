@@ -53,7 +53,7 @@ export const getNavigationItems = (userRole: UserRole) => {
     { name: 'Accounting & Finance', href: '/accounting', icon: 'Calculator', description: 'Financial management' },
    // { name: 'CRM & Loyalty', href: '/crm', icon: 'Heart', description: 'Guest relationships' },
     { name: 'Procurement & Inventory', href: '/procurement', icon: 'Truck', description: 'Supply management' },
-  //  { name: 'Business Analytics', href: '/analytics', icon: 'PieChart', description: 'Data insights' },
+   { name: 'Business Analytics', href: '/analytics', icon: 'PieChart', description: 'Data insights' },
    // { name: 'Reports & Dashboards', href: '/reports', icon: 'Download', description: 'Report generation' },
     { name: 'Security & Access Control', href: '/security', icon: 'Lock', description: 'User permissions' },
    // { name: 'Backup & Data Recovery', href: '/backup', icon: 'Archive', description: 'Data protection' },

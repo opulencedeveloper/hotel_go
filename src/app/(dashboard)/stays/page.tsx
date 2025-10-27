@@ -71,7 +71,7 @@ export default function StaysPage() {
       fetchUserAndHotelInfoReq({
         successRes: onFetchUserAndHotelInfoReq,
         requestConfig: {
-          url: "/hotel/room-info",
+          url: "/hotel/stays-info",
           method: "GET",
         },
       });

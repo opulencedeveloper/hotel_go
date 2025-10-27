@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import { StayType, StayStatus, PaymentStatus } from "@/utils/enum";
 import { RoomStatus } from "@/types/room-management/enum";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { formatPrice } from '@/helper';
 
 interface StaysTableProps {
   filteredStays: any[];
@@ -40,6 +43,11 @@ export default function StaysTable({
   onDeleteStay,
   isDeleting,
 }: StaysTableProps) {
+  const room = useSelector((state: RootState) => state.room);
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  const { hotelRoomTypes, hotelRooms } = room;
+  
   const getStatusIcon = (status: string) => {
     switch (status) {
       case StayStatus.CONFIRMED:
@@ -122,6 +130,18 @@ export default function StaysTable({
     }
   };
 
+  // Helper function to get room details
+  const getRoomDetails = (roomId: string) => {
+    const room = hotelRooms.find((r: any) => r._id === roomId);
+    return room;
+  };
+
+  // Helper function to get room type details
+  const getRoomTypeDetails = (roomTypeId: string) => {
+    const roomType = hotelRoomTypes.find((rt: any) => rt._id === roomTypeId);
+    return roomType;
+  };
+
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
@@ -142,6 +162,9 @@ export default function StaysTable({
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Payment
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Amount
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
@@ -186,16 +209,24 @@ export default function StaysTable({
                     <div className="text-sm font-medium text-gray-900">
                       Room {stay.roomId.roomNumber}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {stay.roomId.roomTypeId.name}
-                    </div>
-                    {(stay.roomId as any)?.roomStatus && (
-                      <div className="mt-1">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoomStatusColor((stay.roomId as any).roomStatus)}`}>
-                          {getRoomStatusIcon((stay.roomId as any).roomStatus)} {(stay.roomId as any).roomStatus}
-                        </span>
-                      </div>
-                    )}
+                    {(() => {
+                      const roomDetails = getRoomDetails(stay.roomId._id);
+                      const roomTypeDetails = getRoomTypeDetails(roomDetails?.roomTypeId || stay.roomId.roomTypeId);
+                      return (
+                        <>
+                          <div className="text-sm text-gray-500">
+                            {roomTypeDetails?.name || 'N/A'}
+                          </div>
+                          {roomDetails?.roomStatus && (
+                            <div className="mt-1">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRoomStatusColor(roomDetails.roomStatus)}`}>
+                                {getRoomStatusIcon(roomDetails.roomStatus)} {roomDetails.roomStatus}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -226,6 +257,25 @@ export default function StaysTable({
                     {stay.paymentDate && (
                       <div className="text-xs text-gray-500 mt-1">
                         Due: {new Date(stay.paymentDate).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    {stay.totalAmount && (
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatPrice(stay.totalAmount, selectedHotel?.currency)}
+                      </div>
+                    )}
+                    {stay.paidAmount && (
+                      <div className="text-sm text-gray-500">
+                        Paid: {formatPrice(stay.paidAmount, selectedHotel?.currency)}
+                      </div>
+                    )}
+                    {stay.totalAmount && stay.paidAmount && (
+                      <div className="text-xs text-gray-500">
+                        Balance: {formatPrice(stay.totalAmount - (stay.paidAmount || 0), selectedHotel?.currency)}
                       </div>
                     )}
                   </div>

@@ -99,6 +99,21 @@ const staySchema = new Schema<IStay>(
       default: 0,
       min: 0,
     },
+     tax: {
+      type: Number,
+      default: null,
+      trim: true,
+    },
+    serviceCharge: {
+      type: Number,
+      default: null,
+      trim: true,
+    },
+    discount: {
+      type: Number,
+      default: null,
+      trim: true,
+    },
     paidAmount: {
       type: Number,
       default: 0,
@@ -115,6 +130,9 @@ staySchema.index({ hotelId: 1, status: 1, checkInDate: -1 });
 staySchema.index({ hotelId: 1, paymentStatus: 1 });
 staySchema.index({ phoneNumber: 1, hotelId: 1 });
 staySchema.index({ guestName: "text", emailAddress: "text" }); // 🔹 Enables text search
+
+// 🔹 Date range queries for analytics (efficient date filtering)
+staySchema.index({ hotelId: 1, createdAt: -1 }); // For date range queries
 
 // 🔹 Performance tweaks
 staySchema.set("versionKey", false);

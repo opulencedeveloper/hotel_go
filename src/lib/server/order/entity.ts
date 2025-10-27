@@ -110,10 +110,13 @@ OrderSchema.index({ hotelId: 1, paymentMethod: 1 });
 // 5️⃣ Recent orders (sorted by updatedAt)
 OrderSchema.index({ hotelId: 1, updatedAt: -1 });
 
-// 6️⃣ Room-service filtering
+// 6️⃣ Date range queries for analytics (efficient date filtering)
+OrderSchema.index({ hotelId: 1, createdAt: -1 });
+
+// 7️⃣ Room-service filtering
 OrderSchema.index({ hotelId: 1, roomId: 1, status: 1 });
 
-// 7️⃣ Table-based restaurant orders
+// 8️⃣ Table-based restaurant orders
 OrderSchema.index({ hotelId: 1, tableNumber: 1, status: 1 });
 
 export const Order =

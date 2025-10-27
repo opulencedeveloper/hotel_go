@@ -48,11 +48,10 @@ export default function CheckOutModal({
                 <p><span className="font-medium">Email:</span> {selectedGuest.emailAddress || 'No email'}</p>
                 <p><span className="font-medium">Phone:</span> {selectedGuest.phoneNumber || 'No phone'}</p>
                 <p><span className="font-medium">Address:</span> {selectedGuest.address || 'No address'}</p>
-                <p><span className="font-medium">Room:</span> {selectedGuest.roomId?.roomNumber || 'TBD'} ({selectedGuest.roomId?.roomTypeId?.name || 'Unknown Type'})</p>
+                <p><span className="font-medium">Room:</span> {selectedGuest.roomId?.roomNumber || 'TBD'} ({selectedGuest.roomId?.roomTypeId || 'Unknown Type'})</p>
                 <p><span className="font-medium">Check-in:</span> {new Date(selectedGuest.checkInDate).toLocaleDateString()}</p>
                 <p><span className="font-medium">Check-out:</span> {new Date(selectedGuest.checkOutDate).toLocaleDateString()}</p>
                 <p><span className="font-medium">Stay ID:</span> {selectedGuest._id}</p>
-                <p><span className="font-medium">Hotel ID:</span> {selectedGuest.hotelId}</p>
                 <p><span className="font-medium">Adults:</span> {selectedGuest.adults}</p>
                 <p><span className="font-medium">Children:</span> {selectedGuest.children}</p>
                 <p><span className="font-medium">Party Size:</span> {selectedGuest.adults + selectedGuest.children} guests</p>

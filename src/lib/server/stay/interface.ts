@@ -5,6 +5,9 @@ export interface IStay extends Document {
   roomId: Types.ObjectId;
   hotelId: Types.ObjectId;
   paymentDate: Date;
+  tax?: number;
+  discount?: number;
+  serviceCharge?: number;
   guestName: string;
   phoneNumber: string;
   emailAddress?: string;
@@ -22,7 +25,6 @@ export interface IStay extends Document {
   paidAmount?: number;
 }
 
-
 export interface IAddStayInput {
   roomId: Types.ObjectId;
   hotelId: Types.ObjectId;
@@ -32,6 +34,8 @@ export interface IAddStayInput {
   emailAddress?: string;
   address: string;
   paymentMethod: PaymentMethod;
+  totalAmount?: number;
+  paidAmount?: number;
   checkInDate: Date;
   checkOutDate: Date;
   adults: number;
@@ -39,11 +43,12 @@ export interface IAddStayInput {
   specialRequests?: string;
   status: StayStatus;
   type: StayType;
-  paymentStatus: PaymentStatus;     
+  paymentStatus: PaymentStatus;
+  
 }
 
 export interface IAddStayUserInput {
-   roomId: Types.ObjectId;
+  roomId: Types.ObjectId;
   paymentDate: Date;
   guestName: string;
   phoneNumber: string;
@@ -55,11 +60,11 @@ export interface IAddStayUserInput {
   adults: number;
   children: number;
   specialRequests?: string;
-  type: StayType;       
+  type: StayType;
 }
 
 export interface IEditStayUserInput {
-  stayId: string,
+  stayId: string;
   guestName: string;
   paymentStatus?: PaymentStatus;
   phoneNumber: string;
