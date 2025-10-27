@@ -2,6 +2,9 @@
 
 import { X, Clock, Tag, ChefHat, Utensils, Coffee, Settings } from 'lucide-react';
 import { POSItem } from '@/types';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface ItemDetailsModalProps {
   isOpen: boolean;
@@ -11,6 +14,9 @@ interface ItemDetailsModalProps {
 
 export default function ItemDetailsModal({ isOpen, onClose, item }: ItemDetailsModalProps) {
   if (!isOpen || !item) return null;
+
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -96,7 +102,7 @@ export default function ItemDetailsModal({ isOpen, onClose, item }: ItemDetailsM
             <div className="space-y-4">
               <div className="bg-primary-50 p-4 rounded-lg">
                 <span className="text-sm text-primary-600">Price</span>
-                <p className="text-3xl font-bold text-primary-700">${item.price}</p>
+                <p className="text-3xl font-bold text-primary-700">{formatPrice(item.price, selectedHotel?.currency)}</p>
               </div>
 
             </div>

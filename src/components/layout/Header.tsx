@@ -512,10 +512,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   // Update current time to prevent hydration mismatch
   useEffect(() => {
     const updateTime = () => {
-      const time = new Date().toLocaleString("en-US", {
-        timeZone: currentProperty.timezone,
+      const now = new Date();
+      const time = now.toLocaleString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
         hour12: true,
       });
       setCurrentTime(time);
@@ -524,11 +525,11 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     // Set initial time
     updateTime();
 
-    // Update every minute
-    const interval = setInterval(updateTime, 60000);
+    // Update every second for real-time display
+    const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [currentProperty.timezone]);
+  }, []);
 
   // Keyboard shortcuts for front-desk operations
   useEffect(() => {
@@ -592,16 +593,16 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                 <Globe className="w-4 h-4" />
                 <span>{selectedHotel!.currency}</span>
               </div>
-              <div className="hidden lg:flex items-center space-x-2">
+              {/* <div className="hidden lg:flex items-center space-x-2">
                 <Bed className="w-4 h-4" />
                 <span>{stats.occupancy.today}% Occupancy</span>
-              </div>
+              </div> */}
             </div>
             <div className="flex items-center space-x-2">
               {stats.online_status ? (
                 <>
                   <Wifi className="w-4 h-4" />
-                  <span className="hidden sm:inline">Online - {stats.last_sync}</span>
+                  <span className="hidden sm:inline">Online</span>
                   <span className="sm:hidden">Online</span>
                 </>
               ) : (
@@ -651,12 +652,12 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             </div>
 
             {/* Notifications */}
-            <button className="p-2 text-secondary-400 hover:text-secondary-600 relative flex-shrink-0">
+            {/* <button className="p-2 text-secondary-400 hover:text-secondary-600 relative flex-shrink-0">
               <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
                 3
               </span>
-            </button>
+            </button> */}
 
             {/* User profile */}
             <div className="flex items-center space-x-2 min-w-0">

@@ -90,7 +90,7 @@ export default function NewOrderModal({
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-secondary-900">{cartItem.item.name}</p>
-                        <p className="text-xs text-secondary-600">${cartItem.item.price} each</p>
+                        <p className="text-xs text-secondary-600">{formatPrice(cartItem.item.price, selectedHotel?.currency)} each</p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">

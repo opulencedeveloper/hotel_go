@@ -66,7 +66,7 @@ export default function AccountingHeader({
             </div>
           </div>
 
-          {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
             <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
               <Receipt className="w-4 h-4" />
               <span className="text-green-100">Real-time Accounting</span>
@@ -79,7 +79,7 @@ export default function AccountingHeader({
               <span className="text-green-200">Last Reconciliation:</span>
               <span className="font-medium">Today</span>
             </div>
-          </div> */}
+          </div>
         </div>
         
         <div className="mt-8 lg:mt-0 lg:ml-8">
@@ -91,7 +91,7 @@ export default function AccountingHeader({
               <Receipt className="w-4 h-4" />
               <span>View Transactions</span>
             </button>
-            {/* <button 
+            <button 
               onClick={onFinancialReports}
               className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
             >
@@ -104,7 +104,7 @@ export default function AccountingHeader({
             >
               <FileText className="w-4 h-4" />
               <span>Generate Invoice</span>
-            </button> */}
+            </button>
           </div>
         </div>
       </div>

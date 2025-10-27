@@ -3,6 +3,9 @@
 import { Minus, Plus, X, CreditCard, Users, Home, ShoppingBag } from 'lucide-react';
 import { POSItem } from '@/types';
 import { OrderType } from '@/utils/enum';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface CartItem {
   item: POSItem;
@@ -40,6 +43,9 @@ export default function OrderCart({
   isCreatingOrder = false,
   createOrderError
 }: OrderCartProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+
   return (
     <div className="card">
       <h3 className="text-lg font-semibold text-secondary-900 mb-4">Current Order</h3>
@@ -154,7 +160,7 @@ export default function OrderCart({
             <div key={cartItem.item.item_id} className="flex items-center justify-between p-2 bg-secondary-50 rounded">
               <div className="flex-1">
                 <p className="text-sm font-medium text-secondary-900">{cartItem.item.name}</p>
-                <p className="text-xs text-secondary-600">${cartItem.item.price} each</p>
+                <p className="text-xs text-secondary-600">{formatPrice(cartItem.item.price, selectedHotel?.currency)} each</p>
               </div>
               <div className="flex items-center space-x-2">
                 <button
@@ -195,7 +201,7 @@ export default function OrderCart({
       <div className="border-t border-secondary-200 pt-4">
         <div className="flex justify-between items-center mb-4">
           <span className="text-lg font-semibold text-secondary-900">Total</span>
-          <span className="text-lg font-bold text-primary-600">${getTotal().toFixed(2)}</span>
+          <span className="text-lg font-bold text-primary-600">{formatPrice(getTotal(), selectedHotel?.currency)}</span>
         </div>
         <button
           onClick={onProcessOrder}

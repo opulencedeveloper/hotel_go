@@ -2,6 +2,9 @@
 
 import { Search, Filter, Plus, Utensils, Coffee, Settings, Eye } from 'lucide-react';
 import { POSItem } from '@/types';
+import { formatPrice } from '@/helper';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface MenuItemsProps {
   items: POSItem[];
@@ -22,6 +25,9 @@ export default function MenuItems({
   onAddToCart,
   onViewDetails
 }: MenuItemsProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'food': return <Utensils className="w-4 h-4" />;
@@ -83,7 +89,7 @@ export default function MenuItems({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-lg font-bold text-primary-600">${item.price}</div>
+                <div className="text-lg font-bold text-primary-600">{formatPrice(item.price, selectedHotel?.currency)}</div>
                 <div className={`text-xs mt-1 ${
                   item.available ? 'text-green-600' : 'text-red-600'
                 }`}>
