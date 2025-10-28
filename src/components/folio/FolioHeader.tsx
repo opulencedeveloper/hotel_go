@@ -15,7 +15,7 @@ export default function FolioHeader({ onAddCharge, onProcessPayment }: FolioHead
         <p className="text-secondary-600">Centralized payment processing for all hotel services</p>
       </div>
       <div className="flex space-x-2 mt-4 sm:mt-0">
-        <button 
+        {/* <button 
           onClick={onAddCharge}
           className="btn-secondary"
         >
@@ -28,7 +28,7 @@ export default function FolioHeader({ onAddCharge, onProcessPayment }: FolioHead
         >
           <Plus className="w-4 h-4 mr-2" />
           Process Payment
-        </button>
+        </button> */}
       </div>
     </div>
   );

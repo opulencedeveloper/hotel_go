@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import TimeDisplay from "./TimeDisplay";
 import { mockProperties, mockDashboardStats } from "@/data/mockData";
 import { getRoleDisplayName } from "@/lib/auth";
+import { formatPrice } from "@/helper";
 import {
   Home,
   Calendar,
@@ -94,7 +96,6 @@ interface HeaderProps {
 
 export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const [propertySelectorOpen, setPropertySelectorOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState("");
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [stayType, setStayType] = useState<StayType>(StayType.RESERVED);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
@@ -110,17 +111,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const hotel = useSelector((state: RootState) => state.hotel);
   const room = useSelector((state: RootState) => state.room);
   const dispatch = useDispatch();
-  const selectedHotelId = hotel.selectedHotelId;
-  const selectedHotel = hotel?.hotels?.find((h) => h._id === selectedHotelId);
-  const selectedHotelName = selectedHotel?.hotelName || "No hotel selected";
-  
-  // Calculate occupancy from room data
-  const totalRooms = room.hotelRooms.length;
-  const occupiedRooms = room.hotelRooms.filter(r => r.roomStatus === 'occupied').length;
-  const occupancyPercentage = totalRooms > 0 ? (occupiedRooms / totalRooms) * 100 : 0;
-  
-  const { hotelRooms } = room;
-
   // HTTP hook for fetching rooms
   const {
     isLoading: isLoadingRooms,
@@ -134,37 +124,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     sendHttpRequest: createReservationRequest,
     error: reservationError,
   } = useHttp();
-
-  // Function to fetch rooms
-  const handleFetchRooms = () => {
-    if (selectedHotelId) {
-      fetchRoomsReq({
-        requestConfig: {
-          url: "/hotel/room-info",
-          method: "GET",
-        },
-        successRes: (res) => {
-          const resData = res?.data?.data;
-          const fetchedRoomTypes: RoomTypeSliceParams[] =
-            resData?.hotelRoomTypes;
-          const fetchedRooms: RoomSliceParams[] =
-            resData?.hotelRooms?.map((room: any) => ({
-              _id: room._id,
-              floor: room.floor,
-              roomNumber: room.roomNumber,
-              roomTypeId: room.roomTypeId?._id ?? "", // ensure it's a string
-              roomTypeName: room.roomTypeId?.name ?? "", // populate field from roomType
-              roomStatus: room.roomStatus,
-              note: room.note,
-              lastCleaned: room?.lastCleaned,
-            })) ?? [];
-
-          dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
-          dispatch(roomActions.setRooms(fetchedRooms));
-        },
-      });
-    }
-  };
 
   // Validation functions
   const validateField = (fieldName: string, value: string): string => {
@@ -320,8 +279,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     return !Object.values(errors).some((error) => error !== "");
   };
 
-  console.log("selectedHotel", selectedHotel);
-
   const isAdmin = user?.userRole === UserRole.SuperAdmin;
 
   const [reservationForm, setReservationForm] = useState({
@@ -382,6 +339,67 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     paymentMethod: "",
   });
 
+  // Memoize expensive calculations to prevent infinite re-renders
+  const selectedHotelId = useMemo(() => hotel.selectedHotelId, [hotel.selectedHotelId]);
+  const selectedHotel = useMemo(() => 
+    hotel?.hotels?.find((h) => h._id === selectedHotelId), 
+    [hotel.hotels, selectedHotelId]
+  );
+  const selectedHotelName = useMemo(() => 
+    selectedHotel?.hotelName || "No hotel selected", 
+    [selectedHotel?.hotelName]
+  );
+  const currency = useMemo(() => 
+    selectedHotel?.currency || "USD", 
+    [selectedHotel?.currency]
+  );
+  
+  // Memoize room calculations
+  const { hotelRooms, totalRooms, occupiedRooms, occupancyPercentage } = useMemo(() => {
+    const rooms = room.hotelRooms;
+    const total = rooms.length;
+    const occupied = rooms.filter(r => r.roomStatus === 'occupied').length;
+    const percentage = total > 0 ? (occupied / total) * 100 : 0;
+    
+    return {
+      hotelRooms: rooms,
+      totalRooms: total,
+      occupiedRooms: occupied,
+      occupancyPercentage: percentage
+    };
+  }, [room.hotelRooms]);
+
+  // Function to fetch rooms - memoized to prevent recreation
+  const handleFetchRooms = useMemo(() => () => {
+    if (selectedHotelId) {
+      fetchRoomsReq({
+        requestConfig: {
+          url: "/hotel/room-info",
+          method: "GET",
+        },
+        successRes: (res) => {
+          const resData = res?.data?.data;
+          const fetchedRoomTypes: RoomTypeSliceParams[] =
+            resData?.hotelRoomTypes;
+          const fetchedRooms: RoomSliceParams[] =
+            resData?.hotelRooms?.map((room: any) => ({
+              _id: room._id,
+              floor: room.floor,
+              roomNumber: room.roomNumber,
+              roomTypeId: room.roomTypeId?._id ?? "", // ensure it's a string
+              roomTypeName: room.roomTypeId?.name ?? "", // populate field from roomType
+              roomStatus: room.roomStatus,
+              note: room.note,
+              lastCleaned: room?.lastCleaned,
+            })) ?? [];
+
+          dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
+          dispatch(roomActions.setRooms(fetchedRooms));
+        },
+      });
+    }
+  }, [selectedHotelId, fetchRoomsReq, dispatch]);
+
   // Form submission handlers
   const handleReservationSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,8 +448,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         successMessage: "Created successfully!",
       },
       successRes: (res) => {
-        console.log("Reservation created successfully:", res.data);
-
         const stay = res?.data?.data?.stay;
 
         dispatch(stayActions.addStay(stay));
@@ -454,7 +470,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         //   );
         // }
 
-        setShowReservationModal(false);
+        // Clear all reservation form state
         setReservationForm({
           guestName: "",
           email: "",
@@ -470,6 +486,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           paymentDate: "",
           paymentMethod: "",
         });
+        // Clear all reservation errors
         setReservationErrors({
           guestName: "",
           phone: "",
@@ -483,14 +500,18 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           paymentDate: "",
           paymentMethod: "",
         });
+        // Reset stay type to default
+        setStayType(StayType.RESERVED);
+        // Close modal
+        setShowReservationModal(false);
       },
     });
   };
 
   const handleWalkInSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Processing walk-in:", walkInForm);
-    setShowWalkInModal(false);
+    
+    // Clear walk-in form state
     setWalkInForm({
       guestName: "",
       email: "",
@@ -503,33 +524,14 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       paymentMethod: "",
       specialRequests: "",
     });
+    // Close modal
+    setShowWalkInModal(false);
   };
 
   // Mock data for property selector and context ribbon
   const currentProperty = mockProperties[0];
   const stats = mockDashboardStats;
 
-  // Update current time to prevent hydration mismatch
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const time = now.toLocaleString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      });
-      setCurrentTime(time);
-    };
-
-    // Set initial time
-    updateTime();
-
-    // Update every second for real-time display
-    const interval = setInterval(updateTime, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Keyboard shortcuts for front-desk operations
   useEffect(() => {
@@ -573,8 +575,9 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isAdmin, user]);
+  }, [isAdmin, user, setSidebarOpen]);
 
+  console.log("HEADER")
   return (
     <header>
       {
@@ -585,10 +588,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                 <Building className="w-4 h-4 flex-shrink-0" />
                 <span className="font-medium truncate">{selectedHotelName}</span>
               </div>
-              <div className="hidden sm:flex items-center space-x-2">
-                <Clock className="w-4 h-4" />
-                <span>{currentTime || "--:-- --"}</span>
-              </div>
+              <TimeDisplay />
               <div className="hidden md:flex items-center space-x-2">
                 <Globe className="w-4 h-4" />
                 <span>{selectedHotel!.currency}</span>
@@ -851,6 +851,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
               </h2>
               <button
                 onClick={() => {
+                  // Clear all reservation form state
                   setReservationForm({
                     guestName: "",
                     email: "",
@@ -866,6 +867,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                     paymentDate: "",
                     paymentMethod: "",
                   });
+                  // Clear all reservation errors
                   setReservationErrors({
                     guestName: "",
                     phone: "",
@@ -879,6 +881,9 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                     paymentDate: "",
                     paymentMethod: "",
                   });
+                  // Reset stay type to default
+                  setStayType(StayType.RESERVED);
+                  // Close modal
                   setShowReservationModal(false);
                 }}
                 className="p-2 hover:bg-secondary-100 rounded-lg"
@@ -1104,7 +1109,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                           ?.filter((room) => room.roomStatus === "available")
                           .map((room) => (
                             <option key={room._id} value={room.roomNumber}>
-                              {room.roomNumber} - {room.roomTypeName || "Room"}
+                              {room.roomNumber} - {(room.roomTypeId?.name || room.roomTypeName || "Room").substring(0, 20)}{(room.roomTypeId?.name || room.roomTypeName || "Room").length > 20 ? "..." : ""} ({formatPrice(room.roomTypeId?.price || 0, currency)})
                             </option>
                           ))
                       ) : (
@@ -1254,7 +1259,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                       value={reservationForm.paymentDate}
                       onChange={(e) => {
                         const newValue = e.target.value;
-                        console.log("Payment date changed:", newValue);
                         setReservationForm((prev) => ({
                           ...prev,
                           paymentDate: newValue,
@@ -1530,7 +1534,42 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowReservationModal(false)}
+                  onClick={() => {
+                    // Clear all reservation form state
+                    setReservationForm({
+                      guestName: "",
+                      email: "",
+                      countryCode: "+1",
+                      phone: "",
+                      address: "",
+                      checkIn: "",
+                      checkOut: "",
+                      adults: 2,
+                      children: 0,
+                      roomType: "",
+                      specialRequests: "",
+                      paymentDate: "",
+                      paymentMethod: "",
+                    });
+                    // Clear all reservation errors
+                    setReservationErrors({
+                      guestName: "",
+                      phone: "",
+                      email: "",
+                      address: "",
+                      roomType: "",
+                      checkIn: "",
+                      checkOut: "",
+                      adults: "",
+                      children: "",
+                      paymentDate: "",
+                      paymentMethod: "",
+                    });
+                    // Reset stay type to default
+                    setStayType(StayType.RESERVED);
+                    // Close modal
+                    setShowReservationModal(false);
+                  }}
                   className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
                 >
                   Cancel
@@ -1729,7 +1768,23 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                 Walk-in Guest
               </h2>
               <button
-                onClick={() => setShowWalkInModal(false)}
+                onClick={() => {
+                  // Clear walk-in form state
+                  setWalkInForm({
+                    guestName: "",
+                    email: "",
+                    phone: "",
+                    checkIn: "",
+                    checkOut: "",
+                    adults: 2,
+                    children: 0,
+                    roomType: "",
+                    paymentMethod: "",
+                    specialRequests: "",
+                  });
+                  // Close modal
+                  setShowWalkInModal(false);
+                }}
                 className="p-2 hover:bg-secondary-100 rounded-lg"
               >
                 <X className="w-5 h-5" />
@@ -1811,7 +1866,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                           ?.filter((room) => room.roomStatus === "available")
                           .map((room) => (
                             <option key={room._id} value={room.roomNumber}>
-                              {room.roomNumber} - {room.roomTypeName || "Room"}
+                              {room.roomNumber} - {(room.roomTypeId?.name || room.roomTypeName || "Room").substring(0, 20)}{(room.roomTypeId?.name || room.roomTypeName || "Room").length > 20 ? "..." : ""} ({formatPrice(room.roomTypeId?.price || 0, currency)})
                             </option>
                           ))
                       ) : (
@@ -1961,7 +2016,23 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowWalkInModal(false)}
+                  onClick={() => {
+                    // Clear walk-in form state
+                    setWalkInForm({
+                      guestName: "",
+                      email: "",
+                      phone: "",
+                      checkIn: "",
+                      checkOut: "",
+                      adults: 2,
+                      children: 0,
+                      roomType: "",
+                      paymentMethod: "",
+                      specialRequests: "",
+                    });
+                    // Close modal
+                    setShowWalkInModal(false);
+                  }}
                   className="px-4 py-2 text-secondary-600 hover:text-secondary-800"
                 >
                   Cancel

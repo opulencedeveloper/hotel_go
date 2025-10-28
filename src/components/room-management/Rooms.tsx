@@ -173,7 +173,7 @@ export default function Rooms() {
     const matchesStatus =
       statusFilter === "all" || room.roomStatus === statusFilter;
     const matchesType =
-      typeFilter === "all" || room.roomTypeId === typeFilter;
+      typeFilter === "all" || room.roomTypeName === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
 

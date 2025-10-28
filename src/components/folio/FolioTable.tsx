@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, Bed, Printer, Mail, Eye, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { formatPrice } from '@/helper';
 
 interface Folio {
   id: string;
@@ -19,9 +20,10 @@ interface Folio {
 interface FolioTableProps {
   folios: Folio[];
   onViewFolio: (folio: Folio) => void;
+  currency: string;
 }
 
-export default function FolioTable({ folios, onViewFolio }: FolioTableProps) {
+export default function FolioTable({ folios, onViewFolio, currency }: FolioTableProps) {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -109,16 +111,16 @@ export default function FolioTable({ folios, onViewFolio }: FolioTableProps) {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
-                  ${folio.totalCharges.toFixed(2)}
+                  {formatPrice(folio.totalCharges, currency)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
-                  ${folio.totalPayments.toFixed(2)}
+                  {formatPrice(folio.totalPayments, currency)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`text-sm font-medium ${
                     folio.balance > 0 ? 'text-red-600' : 'text-green-600'
                   }`}>
-                    ${folio.balance.toFixed(2)}
+                    {formatPrice(folio.balance, currency)}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

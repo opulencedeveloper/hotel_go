@@ -19,7 +19,7 @@ export default function RoomManagementPage() {
   const {
     isLoading,
     error,
-    sendHttpRequest: fetchUserAndHotelInfoReq,
+    sendHttpRequest: fetchRoomInfoReq,
   } = useHttp();
   const room = useSelector((state: RootState) => state.room);
   const { fetchedRoomType, fetchedRooms } = room;
@@ -29,7 +29,7 @@ export default function RoomManagementPage() {
 
     if (fetchedRoomType && fetchedRooms) return;
 
-    const onFetchUserAndHotelInfoReq = (res: any) => {
+    const onFetchRoomInfoReq = (res: any) => {
       const resData = res?.data?.data;
       const fetchedRoomTypes: RoomTypeSliceParams[] = resData?.hotelRoomTypes;
       const fetchedRooms: RoomSliceParams[] =
@@ -47,8 +47,8 @@ export default function RoomManagementPage() {
       dispatch(roomActions.setRooms(fetchedRooms));
     };
 
-    fetchUserAndHotelInfoReq({
-      successRes: onFetchUserAndHotelInfoReq,
+    fetchRoomInfoReq({
+      successRes: onFetchRoomInfoReq,
       requestConfig: {
         url: "/hotel/room-info",
         method: "GET",
@@ -64,7 +64,7 @@ export default function RoomManagementPage() {
     const handleRetry = () => {
   if (fetchedRoomType && fetchedRooms) return;
 
-      const onFetchUserAndHotelInfoReq = (res: any) => {
+      const onFetchRoomInfoReq = (res: any) => {
         const resData = res?.data?.data;
         const fetchedRoomTypes: RoomTypeSliceParams[] = resData?.hotelRoomTypes;
         const fetchedRooms: RoomSliceParams[] =
@@ -83,8 +83,8 @@ export default function RoomManagementPage() {
         dispatch(roomActions.setRooms(fetchedRooms));
       };
 
-      fetchUserAndHotelInfoReq({
-        successRes: onFetchUserAndHotelInfoReq,
+      fetchRoomInfoReq({
+        successRes: onFetchRoomInfoReq,
         requestConfig: {
           url: "/hotel/room-info",
           method: "GET",

@@ -48,7 +48,6 @@ const houseKeepingSlice = createSlice({
     // Set all housekeeping records
     setHouseKeepings: (state, action: PayloadAction<HouseKeeping[]>) => {
       state.fetchedData = true;
-      console.log("action.payloadaction.payload", action.payload)
       state.houseKeepings = action.payload;
     },
 

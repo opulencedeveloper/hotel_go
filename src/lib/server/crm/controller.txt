@@ -1,0 +1,25 @@
+import { MessageResponse } from "../utils/enum";
+import { utils } from "../utils";
+
+import { CustomRequest } from "../utils/interface";
+import { crmService } from "./service";
+
+class StayController {
+
+  public async fetchAllStays(req: CustomRequest) {
+    const { hotelId } = req;
+
+    const stays = await crmService.findStaysByHotelId(hotelId!);
+
+    return utils.customResponse({
+      status: 200,
+      message: MessageResponse.Success,
+      description: "Stays fetched successfully!",
+      data: {
+        stays,
+      },
+    });
+  }
+}
+
+export const stayController = new StayController();

@@ -1,6 +1,7 @@
 'use client';
 
 import { X, TrendingUp, Receipt, DollarSign, Calculator } from 'lucide-react';
+import { formatPrice } from '@/helper';
 
 interface Transaction {
   id: string;
@@ -18,6 +19,7 @@ interface ViewTransactionsModalProps {
   totalRevenue: number;
   totalOutstanding: number;
   transactions?: Transaction[];
+  currency: string;
 }
 
 export default function ViewTransactionsModal({ 
@@ -25,7 +27,8 @@ export default function ViewTransactionsModal({
   onClose, 
   totalRevenue, 
   totalOutstanding,
-  transactions = []
+  transactions = [],
+  currency
 }: ViewTransactionsModalProps) {
   if (!isOpen) return null;
   
@@ -52,7 +55,7 @@ export default function ViewTransactionsModal({
                 <TrendingUp className="w-5 h-5 text-green-600" />
                 <span className="font-medium text-green-800">Total Revenue</span>
               </div>
-              <p className="text-2xl font-bold text-green-900">${totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-green-900">{formatPrice(totalRevenue, currency)}</p>
             </div>
             
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -68,7 +71,7 @@ export default function ViewTransactionsModal({
                 <DollarSign className="w-5 h-5 text-yellow-600" />
                 <span className="font-medium text-yellow-800">Outstanding</span>
               </div>
-              <p className="text-2xl font-bold text-yellow-900">${totalOutstanding.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-yellow-900">{formatPrice(totalOutstanding, currency)}</p>
             </div>
             
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
@@ -76,7 +79,7 @@ export default function ViewTransactionsModal({
                 <Calculator className="w-5 h-5 text-purple-600" />
                 <span className="font-medium text-purple-800">Avg. Transaction</span>
               </div>
-              <p className="text-2xl font-bold text-purple-900">${averageTransaction.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-purple-900">{formatPrice(averageTransaction, currency)}</p>
             </div>
           </div>
           
@@ -103,7 +106,7 @@ export default function ViewTransactionsModal({
                         <td className="py-3 px-4 text-sm text-secondary-900">{transaction.type}</td>
                         <td className="py-3 px-4 text-sm text-secondary-900">{transaction.description}</td>
                         <td className={`py-3 px-4 text-sm font-medium ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          ${Math.abs(transaction.amount).toFixed(2)}
+                          {formatPrice(Math.abs(transaction.amount), currency)}
                         </td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${

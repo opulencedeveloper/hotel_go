@@ -41,7 +41,11 @@ export interface RoomSliceParams {
   _id: string;
   floor: number;
   roomNumber: string;
-  roomTypeId: string;
+   roomTypeId: {
+    name: string;
+    price: number;
+    capacity: number;
+  };
   roomTypeName: string;
   roomStatus: RoomStatus;
   note: string;

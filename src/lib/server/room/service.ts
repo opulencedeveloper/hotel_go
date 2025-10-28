@@ -78,7 +78,7 @@ class RoomService {
       })
       .populate({
         path: "roomTypeId",
-        select: "name", // fields from RoomType
+        select: "name price capacity", // fields from RoomType
       });
 
     return rooms;

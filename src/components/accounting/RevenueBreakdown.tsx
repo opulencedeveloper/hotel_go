@@ -1,10 +1,13 @@
 'use client';
 
+import { formatPrice } from '@/helper';
+
 interface RevenueBreakdownProps {
   roomsRevenue: number;
   fAndBRevenue: number;
   otherRevenue: number;
   totalRevenue: number;
+  currency: string;
 }
 
 export default function RevenueBreakdown({
@@ -12,6 +15,7 @@ export default function RevenueBreakdown({
   fAndBRevenue,
   otherRevenue,
   totalRevenue,
+  currency,
 }: RevenueBreakdownProps) {
   const roomsPercentage = totalRevenue > 0 ? ((roomsRevenue / totalRevenue) * 100).toFixed(0) : '0';
   const fAndBPercentage = totalRevenue > 0 ? ((fAndBRevenue / totalRevenue) * 100).toFixed(0) : '0';
@@ -30,7 +34,7 @@ export default function RevenueBreakdown({
               <span className="font-medium text-secondary-900">Rooms</span>
             </div>
             <div className="text-right">
-              <p className="font-semibold text-secondary-900">${roomsRevenue.toLocaleString()}</p>
+              <p className="font-semibold text-secondary-900">{formatPrice(roomsRevenue, currency)}</p>
               <p className="text-sm text-secondary-500">{roomsPercentage}%</p>
             </div>
           </div>
@@ -44,7 +48,7 @@ export default function RevenueBreakdown({
               <span className="font-medium text-secondary-900">Food & Beverage</span>
             </div>
             <div className="text-right">
-              <p className="font-semibold text-secondary-900">${fAndBRevenue.toLocaleString()}</p>
+              <p className="font-semibold text-secondary-900">{formatPrice(fAndBRevenue, currency)}</p>
               <p className="text-sm text-secondary-500">{fAndBPercentage}%</p>
             </div>
           </div>
@@ -58,7 +62,7 @@ export default function RevenueBreakdown({
               <span className="font-medium text-secondary-900">Other Services</span>
             </div>
             <div className="text-right">
-              <p className="font-semibold text-secondary-900">${otherRevenue.toLocaleString()}</p>
+              <p className="font-semibold text-secondary-900">{formatPrice(otherRevenue, currency)}</p>
               <p className="text-sm text-secondary-500">{otherPercentage}%</p>
             </div>
           </div>

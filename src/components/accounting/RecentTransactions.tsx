@@ -1,5 +1,7 @@
 'use client';
 
+import { formatPrice } from '@/helper';
+
 interface Transaction {
   id: string;
   type: string;
@@ -13,9 +15,10 @@ interface Transaction {
 
 interface RecentTransactionsProps {
   folios: Transaction[];
+  currency: string;
 }
 
-export default function RecentTransactions({ folios }: RecentTransactionsProps) {
+export default function RecentTransactions({ folios, currency }: RecentTransactionsProps) {
   if (!folios || folios.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-secondary-200">
@@ -48,7 +51,7 @@ export default function RecentTransactions({ folios }: RecentTransactionsProps) 
               </div>
               <div className="text-right">
                 <p className={`font-semibold ${(transaction.balance || 0) > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                  ${Math.abs(transaction.amount).toFixed(2)}
+                  {formatPrice(Math.abs(transaction.amount), currency)}
                 </p>
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   transaction.status === 'completed' ? 'bg-green-100 text-green-800' : 

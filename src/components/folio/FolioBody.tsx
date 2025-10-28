@@ -21,8 +21,13 @@ export default function FolioBody() {
   const router = useRouter();
   const stay = useSelector((state: RootState) => state.stay);
   const order = useSelector((state: RootState) => state.order);
+  const hotel = useSelector((state: RootState) => state.hotel);
   const { stays } = stay;
   const { orders} = order;
+  
+  // Get selected hotel and currency
+  const selectedHotel = hotel.hotels?.find(h => h._id === hotel.selectedHotelId);
+  const currency = selectedHotel?.currency || 'USD';
 
   // Transform stays data to folio format
   const folios = stays.map((stay) => {
@@ -107,6 +112,7 @@ export default function FolioBody() {
           openFolios={folioStats.openFolios}
           totalOutstanding={folioStats.totalOutstanding}
           totalCharges={folioStats.totalCharges}
+          currency={currency}
         />
 
         {/* Service Payment Categories */}
@@ -135,6 +141,7 @@ export default function FolioBody() {
         <FolioTable 
           folios={filteredFolios}
           onViewFolio={setSelectedFolio}
+          currency={currency}
         />
               </div>
               
@@ -146,6 +153,7 @@ export default function FolioBody() {
         onCloseFolio={() => setSelectedFolio(null)}
         onClosePaymentModal={() => setShowPaymentModal(false)}
         onCloseChargeModal={() => setShowChargeModal(false)}
+        currency={currency}
       />
       </div>
     

@@ -102,7 +102,7 @@ export default function Layout({ children }: LayoutProps) {
       </div>
     );
   }
-
+console.log("PAGE LAYOUT");
   return (
     <div className="min-h-screen bg-secondary-50">
       <Navigation sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />

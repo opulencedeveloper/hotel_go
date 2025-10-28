@@ -54,8 +54,6 @@ const staySlice = createSlice({
     setStays: (state, action: PayloadAction<StaySliceParams[]>) => {
       state.fetchedData = true;
       state.stays = action.payload;
-
-      console.log("state.stays", state.stays)
     },
 
     // Adds a new stay

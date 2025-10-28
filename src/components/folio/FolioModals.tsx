@@ -8,6 +8,7 @@ import {
   Plus,
   CheckCircle
 } from 'lucide-react';
+import { formatPrice } from '@/helper';
 
 interface FolioModalsProps {
   selectedFolio: any;
@@ -16,6 +17,7 @@ interface FolioModalsProps {
   onCloseFolio: () => void;
   onClosePaymentModal: () => void;
   onCloseChargeModal: () => void;
+  currency: string;
 }
 
 export default function FolioModals({
@@ -24,7 +26,8 @@ export default function FolioModals({
   showChargeModal,
   onCloseFolio,
   onClosePaymentModal,
-  onCloseChargeModal
+  onCloseChargeModal,
+  currency
 }: FolioModalsProps) {
   return (
     <>
@@ -263,7 +266,7 @@ export default function FolioModals({
                   </div>
                   <div className="flex justify-between">
                     <span className="text-secondary-600">Amount:</span>
-                    <span className="font-medium text-secondary-900">$0.00</span>
+                    <span className="font-medium text-secondary-900">{formatPrice(0, currency)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-secondary-600">Payment Method:</span>
@@ -271,7 +274,7 @@ export default function FolioModals({
                   </div>
                   <div className="flex justify-between border-t pt-2">
                     <span className="font-medium text-secondary-900">Total:</span>
-                    <span className="font-bold text-secondary-900">$0.00</span>
+                    <span className="font-bold text-secondary-900">{formatPrice(0, currency)}</span>
                   </div>
                 </div>
               </div>

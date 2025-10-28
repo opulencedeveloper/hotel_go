@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { OrderType, StayType, PaymentStatus } from '@/utils/enum';
 import { OrderStatus } from '@/lib/server/order/enum';
+import { formatPrice } from '@/helper';
 import AccountingHeader from './AccountingHeader';
 import FinancialOverviewCards from './FinancialOverviewCards';
 import RevenueBreakdown from './RevenueBreakdown';
@@ -37,7 +38,12 @@ export default function AccountingBody({
   
   // Redux State (using analytics slice like analytics page)
   const analytics = useSelector((state: RootState) => state.analytics);
+  const hotel = useSelector((state: RootState) => state.hotel);
   const { stays, orders } = analytics;
+  
+  // Get selected hotel and currency
+  const selectedHotel = hotel.hotels?.find(h => h._id === hotel.selectedHotelId);
+  const currency = selectedHotel?.currency || 'USD';
   
   // Convert stays to folio-like structure from analytics Redux state - only real data
   const folios = useMemo(() => {
@@ -104,30 +110,6 @@ export default function AccountingBody({
   
   const openFolios = folios.filter(folio => folio.status === 'open');
   const closedFolios = folios.filter(folio => folio.status === 'closed');
-
-  // Debug: Log all folios to understand balance and status
-  console.log('All Folios:', folios.map(f => ({
-    guest: f.guest_name,
-    total_amount: f.total_amount,
-    paid_amount: f.paid_amount,
-    balance: f.balance,
-    status: f.status,
-    payment_status: f.payment_status
-  })));
-  
-  // Debug: Log open folios data to understand balance calculation
-  if (openFolios.length > 0) {
-    console.log('Open Folios Data:', openFolios.map(f => ({
-      guest: f.guest_name,
-      total_amount: f.total_amount,
-      paid_amount: f.paid_amount,
-      balance: f.balance
-    })));
-  }
-  
-  // Debug: Calculate outstanding from all open folios
-  const calculatedOutstanding = openFolios.reduce((sum, folio) => sum + folio.balance, 0);
-  console.log('Calculated Outstanding:', calculatedOutstanding);
 
   // Convert stays and orders to transaction-like structure for RecentTransactions
   const recentTransactions = useMemo(() => {
@@ -387,6 +369,7 @@ export default function AccountingBody({
         roomsRevenue={revenues.rooms}
         fAndBRevenue={revenues.f_and_b}
         openFoliosCount={openFolios.length}
+        currency={currency}
       />
 
       {/* Revenue Breakdown */}
@@ -397,10 +380,11 @@ export default function AccountingBody({
           fAndBRevenue={revenues.f_and_b}
           otherRevenue={revenues.other}
           totalRevenue={totalRevenue}
+          currency={currency}
         />
 
         {/* Recent Transactions */}
-        <RecentTransactions folios={recentTransactions} />
+        <RecentTransactions folios={recentTransactions} currency={currency} />
         </div>
 
       {/* Open Folios */}
@@ -408,6 +392,7 @@ export default function AccountingBody({
         openFolios={openFolios}
         onViewFolio={handleViewFolio}
         onDownloadFolio={handleDownloadFolio}
+        currency={currency}
       />
 
       {/* View Transactions Modal */}
@@ -417,6 +402,7 @@ export default function AccountingBody({
         totalRevenue={totalRevenue}
         totalOutstanding={totalOutstanding}
         transactions={recentTransactions}
+        currency={currency}
       />
 
         {/* Financial Reports Modal */}
@@ -443,20 +429,20 @@ export default function AccountingBody({
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-green-700">Rooms</span>
-                        <span className="font-medium text-green-900">${revenues.rooms.toLocaleString()}</span>
+                        <span className="font-medium text-green-900">{formatPrice(revenues.rooms, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-green-700">Food & Beverage</span>
-                        <span className="font-medium text-green-900">${revenues.f_and_b.toLocaleString()}</span>
+                        <span className="font-medium text-green-900">{formatPrice(revenues.f_and_b, currency)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-green-700">Other Services</span>
-                        <span className="font-medium text-green-900">${revenues.other.toLocaleString()}</span>
+                        <span className="font-medium text-green-900">{formatPrice(revenues.other, currency)}</span>
                       </div>
                       <div className="border-t border-green-300 pt-3">
                         <div className="flex justify-between items-center">
                           <span className="font-semibold text-green-800">Total Revenue</span>
-                          <span className="font-bold text-green-900">${totalRevenue.toLocaleString()}</span>
+                          <span className="font-bold text-green-900">{formatPrice(totalRevenue, currency)}</span>
                         </div>
                       </div>
                     </div>
@@ -477,7 +463,7 @@ export default function AccountingBody({
                       <div className="flex justify-between items-center">
                         <span className="text-blue-700">ADR (Average Daily Rate)</span>
                         <span className="font-medium text-blue-900">
-                          ${performanceMetrics.adr}
+                          {formatPrice(parseFloat(performanceMetrics.adr), currency)}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
@@ -1002,15 +988,15 @@ export default function AccountingBody({
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-secondary-600">Total Amount:</span>
-                      <p className="font-semibold text-secondary-900">${selectedFolio.total_amount?.toFixed(2) || '0.00'}</p>
+                      <p className="font-semibold text-secondary-900">{formatPrice(selectedFolio.total_amount || 0, currency)}</p>
                     </div>
                     <div>
                       <span className="text-secondary-600">Paid Amount:</span>
-                      <p className="font-semibold text-green-900">${selectedFolio.paid_amount?.toFixed(2) || '0.00'}</p>
+                      <p className="font-semibold text-green-900">{formatPrice(selectedFolio.paid_amount || 0, currency)}</p>
                     </div>
                     <div>
                       <span className="text-secondary-600">Balance:</span>
-                      <p className="font-semibold text-orange-600">${selectedFolio.balance.toFixed(2)}</p>
+                      <p className="font-semibold text-orange-600">{formatPrice(selectedFolio.balance, currency)}</p>
                     </div>
                     <div>
                       <span className="text-secondary-600">Payment Method:</span>
@@ -1040,7 +1026,7 @@ export default function AccountingBody({
                               {charge.posted_at ? new Date(charge.posted_at).toLocaleDateString() : ''}
                             </p>
                           </div>
-                          <p className="font-semibold text-secondary-900">${charge.amount.toFixed(2)}</p>
+                          <p className="font-semibold text-secondary-900">{formatPrice(charge.amount, currency)}</p>
                         </div>
                       ))}
                     </div>
@@ -1062,7 +1048,7 @@ export default function AccountingBody({
                               {payment.processed_at ? new Date(payment.processed_at).toLocaleDateString() : ''}
                             </p>
                           </div>
-                          <p className="font-semibold text-green-900">${payment.amount.toFixed(2)}</p>
+                          <p className="font-semibold text-green-900">{formatPrice(payment.amount, currency)}</p>
                         </div>
                       ))}
                     </div>

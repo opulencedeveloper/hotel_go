@@ -1,0 +1,12 @@
+import Room from "../room/entity";
+import Stay from "../stay/entity";
+
+class CRMService {
+  public async findStaysByHotelId(hotelId: string) {
+    const room = await Stay.find({ hotelId });
+
+    return room;
+  }
+}
+
+export const crmService = new CRMService();

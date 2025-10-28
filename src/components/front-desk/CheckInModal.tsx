@@ -84,7 +84,7 @@ export default function CheckInModal({
                     <div>
                       <p className="font-medium text-secondary-900">Room {room.roomNumber}</p>
                       <p className="text-sm text-secondary-600">
-                        {roomTypes.find(type => type._id === room.roomTypeId)?.name} • Floor {room.floor}
+                        {room.roomTypeName || room.roomTypeId?.name || 'Unknown Type'} • Floor {room.floor}
                       </p>
                     </div>
                     <button

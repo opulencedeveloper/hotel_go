@@ -80,7 +80,7 @@ export default function RoomAssignmentModal({
             <h4 className="font-medium text-secondary-900 mb-3">Available Rooms</h4>
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {availableRooms.map(room => {
-                const roomType = roomTypes.find(type => type._id === room.roomTypeId);
+                const roomType = room.roomTypeId || { name: room.roomTypeName || 'Unknown Type', price: 0 };
                 return (
                   <div key={room._id} className="flex items-center justify-between p-4 border border-secondary-200 rounded-lg hover:border-primary-300 transition-colors">
                     <div className="flex items-center space-x-3">

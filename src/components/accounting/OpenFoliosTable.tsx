@@ -1,6 +1,7 @@
 'use client';
 
 import { Plus, Eye, Download } from 'lucide-react';
+import { formatPrice } from '@/helper';
 
 interface Folio {
   folio_id: string;
@@ -32,9 +33,10 @@ interface OpenFoliosTableProps {
   onNewFolio?: () => void;
   onViewFolio?: (folio: Folio) => void;
   onDownloadFolio?: (folio: Folio) => void;
+  currency: string;
 }
 
-export default function OpenFoliosTable({ openFolios, onNewFolio, onViewFolio, onDownloadFolio }: OpenFoliosTableProps) {
+export default function OpenFoliosTable({ openFolios, onNewFolio, onViewFolio, onDownloadFolio, currency }: OpenFoliosTableProps) {
   if (!openFolios || openFolios.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-secondary-200">

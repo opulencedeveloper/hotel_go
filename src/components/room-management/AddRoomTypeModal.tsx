@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import ManageHotelAmenitiesModal from "./ManageHotelAmenitiesModal";
 import { useHttp } from "@/hooks/useHttp";
 import { roomActions } from "@/store/redux/room-slice";
+import { formatPrice } from "@/helper";
 
 interface ValidationErrors {
   name?: string;
@@ -36,6 +37,7 @@ export default function AddRoomTypeModal({ isOpen, onClose }: AddRoomTypeModalPr
   const selectedHotelId = hotel.selectedHotelId;
   const selectedHotel = hotel?.hotels?.find((h) => h._id === selectedHotelId);
   const amenities = selectedHotel?.amenities;
+  const currency = selectedHotel?.currency || 'USD';
 
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
@@ -251,7 +253,7 @@ export default function AddRoomTypeModal({ isOpen, onClose }: AddRoomTypeModalPr
 
               <div>
                 <label className="block text-sm font-medium text-secondary-700 mb-2">
-                  Base Rate ($) *
+                  Base Rate ({currency}) *
                 </label>
                 <input
                   type="number"
@@ -279,6 +281,11 @@ export default function AddRoomTypeModal({ isOpen, onClose }: AddRoomTypeModalPr
                 {validationErrors.price && (
                   <p className="mt-1 text-sm text-red-600">
                     {validationErrors.price}
+                  </p>
+                )}
+                {newRoomTypeForm.price > 0 && (
+                  <p className="mt-1 text-sm text-secondary-600">
+                    Preview: {formatPrice(newRoomTypeForm.price, currency)}
                   </p>
                 )}
               </div>
