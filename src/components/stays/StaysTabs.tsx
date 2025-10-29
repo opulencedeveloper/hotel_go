@@ -70,3 +70,5 @@ export default function StaysTabs({ selectedTab, onTabChange, stays }: StaysTabs
 
 
 
+
+

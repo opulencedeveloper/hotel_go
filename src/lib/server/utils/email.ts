@@ -229,6 +229,23 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
       text-decoration: none;
       font-size: 14px;
     }
+    .copy-link-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .link-text {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #475569;
+      word-break: break-all;
+      user-select: all;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -247,6 +264,11 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
        
         <p style="margin: 15px 0; color: #64748b; font-size: 14px;">Click the button below to verify automatically:</p>
         <a href="${verificationLink}" class="verify-button">Verify Email Address</a>
+        
+        <div class="copy-link-section">
+          <p style="margin: 20px 0 10px; color: #64748b; font-size: 14px; font-weight: 600;">If the button doesn't work, copy and paste this link on your browser:</p>
+          <div class="link-text">${verificationLink}</div>
+        </div>
       </div>
 
       <div class="security-note">
@@ -449,6 +471,23 @@ export const sendForgotPasswordEmail = async (input: IForgotPasswordEmail) => {
       letter-spacing: 3px;
       font-family: 'Courier New', monospace;
     }
+    .copy-link-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .link-text {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #475569;
+      word-break: break-all;
+      user-select: all;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -466,10 +505,12 @@ export const sendForgotPasswordEmail = async (input: IForgotPasswordEmail) => {
         <p><strong>Click the button below to reset your password:</strong></p>
         <a href="${verificationLink}" class="reset-button">Reset My Password</a>
         
-        <div class="otp-display">
-          <p style="margin: 0 0 10px; color: #64748b; font-size: 14px;">Or use this verification code:</p>
-          <div class="otp-code">${otp}</div>
+        <div class="copy-link-section">
+          <p style="margin: 20px 0 10px; color: #64748b; font-size: 14px; font-weight: 600;">If the button doesn't work, copy and paste this link on your browser:</p>
+          <div class="link-text">${verificationLink}</div>
         </div>
+        
+      
       </div>
 
       <div class="security-note">
