@@ -6,7 +6,7 @@ import { useHttp } from "@/hooks/useHttp";
 import { orderActions } from "@/store/redux/order-slice";
 
 // Define the interface that ActiveOrders component expects
-interface KitchenOrder {
+export interface KitchenOrder {
   id: string;
   customer: string;
   table: string;

@@ -6,26 +6,12 @@ import { OrderStatus, OrderType } from "@/utils/enum";
 import { formatPrice } from '@/helper';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-
-interface Order {
-  id: string;
-  customer: string;
-  table: string;
-  status: OrderStatus;
-  orderTime: string;
-  total: number;
-  items: Array<{
-    name: string;
-    category: string;
-    price: number;
-    status: "pending" | "cooking" | "ready";
-  }>;
-}
+import type { KitchenOrder } from '@/hooks/useKitchenState';
 
 interface ActiveOrdersProps {
-  orders: Order[];
+  orders: KitchenOrder[];
   onOrderAction: (action: string, orderId: string) => void;
-  onViewOrderDetails: (order: Order) => void;
+  onViewOrderDetails: (order: KitchenOrder) => void;
 }
 
 export default function ActiveOrders({
