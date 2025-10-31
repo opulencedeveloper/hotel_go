@@ -35,6 +35,8 @@ export default function ServicesPage() {
 
         const hotelServices = resData.hotelServices;
 
+        console.log("hotelServices", hotelServices);
+
       dispatch( hotelServicesActions.setHotelServices(hotelServices));
     };
 

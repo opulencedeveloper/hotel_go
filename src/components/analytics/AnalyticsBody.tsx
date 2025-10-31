@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { formatPrice } from '@/helper';
+import { PaymentStatus } from '@/utils/enum';
+import { OrderStatus } from '@/lib/server/order/enum';
 
 // Import component sections
 import AnalyticsHeader from './AnalyticsHeader';
@@ -71,27 +73,83 @@ export default function AnalyticsBody({
   }, []);
 
   // Calculate analytics data from analytics Redux state
-  const { stays, orders, hotelRooms } = analytics;
+  const { stays, orders, scheduledServices, hotelRooms } = analytics;
 
-  // Calculate total revenue from stays and orders
+  // Calculate room revenue from stays
+  // Only count stays where ALL conditions are met:
+  // 1. checkInDate is in the past (guest has already checked in)
+  // 2. Current date is within checkInDate and checkOutDate (active stay period)
+  // 3. paymentStatus is PAID (only paid stays count as revenue)
   const totalRevenueFromStays = useMemo(() => {
-    return stays.reduce((sum, stay) => sum + (stay.totalAmount || 0), 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return stays.reduce((sum, stay) => {
+      // Check if stay should be included in revenue
+      const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
+      const checkOutDate = stay.checkOutDate ? new Date(stay.checkOutDate) : null;
+      
+      if (!checkInDate || !checkOutDate) return sum;
+      
+      // Set time to midnight for accurate date comparison
+      const checkIn = new Date(checkInDate);
+      checkIn.setHours(0, 0, 0, 0);
+      const checkOut = new Date(checkOutDate);
+      checkOut.setHours(0, 0, 0, 0);
+      
+      // Check if checkInDate is in the past
+      const isCheckInPast = checkIn <= today;
+      
+      // Check if today is within checkInDate and checkOutDate
+      const isTodayWithinStayPeriod = today >= checkIn && today <= checkOut;
+      
+      // Check if payment status is PAID - only paid stays count as revenue
+      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
+      
+      // Only add revenue if ALL conditions are met
+      if (isCheckInPast && isTodayWithinStayPeriod && isPaid) {
+        return sum + (stay.totalAmount || 0);
+      }
+      
+      return sum;
+    }, 0);
   }, [stays]);
 
+  // Calculate F&B revenue from orders
+  // Only count orders with status = PAID (pending orders cannot be counted as revenue)
   const totalRevenueFromOrders = useMemo(() => {
-    const today = new Date().toDateString();
-    const todaysOrders = orders.filter(order => 
-      new Date(order.createdAt).toDateString() === today
-    );
-    return todaysOrders.reduce((sum, order) => {
-      const orderTotal = order.items.reduce((itemSum, item) => 
-        itemSum + (item.priceWhenOrdered * item.quantity), 0
-      );
-      return sum + orderTotal;
+    return orders.reduce((sum, order) => {
+      // Only include PAID orders - pending/ready/cancelled orders don't count as revenue
+      if (order.status !== OrderStatus.PAID) return sum;
+      
+      const orderTotal = order.items.reduce((itemSum, item) => {
+        return itemSum + (item.priceWhenOrdered * item.quantity);
+      }, 0);
+      return sum + orderTotal - (order.discount || 0);
     }, 0);
   }, [orders]);
 
-  const totalRevenue = totalRevenueFromStays + totalRevenueFromOrders;
+  // Calculate scheduled services revenue
+  // Include paid or pending services (they are bookings within the period)
+  const totalRevenueFromScheduledServices = useMemo(() => {
+    return scheduledServices.reduce((sum, scheduledService) => {
+      // Include paid or pending services
+      // - Paid: Already collected revenue
+      // - Pending: Booked but not yet paid (still counts as revenue for accounting purposes)
+      if (scheduledService.paymentStatus !== PaymentStatus.PAID && scheduledService.paymentStatus !== PaymentStatus.PENDING) {
+        return sum;
+      }
+      
+      // Count the total amount (all scheduled services in period that are paid/pending)
+      return sum + (scheduledService.totalAmount || 0);
+    }, 0);
+  }, [scheduledServices]);
+
+  // Total revenue (room + F&B + scheduled services)
+  const totalRevenue = useMemo(() => 
+    totalRevenueFromStays + totalRevenueFromOrders + totalRevenueFromScheduledServices,
+    [totalRevenueFromStays, totalRevenueFromOrders, totalRevenueFromScheduledServices]
+  );
 
   // Filter stays that are checked in or completed (for analytics)
   const activeStays = stays.filter(stay => 
@@ -434,6 +492,7 @@ export default function AnalyticsBody({
       <StatsSummary
         stays={stays}
         orders={orders}
+        scheduledServices={scheduledServices}
         currency={selectedHotel?.currency}
       />
 
@@ -464,6 +523,8 @@ export default function AnalyticsBody({
         />
         <RecentActivity
           stays={stays}
+          orders={orders}
+          scheduledServices={scheduledServices}
           isClient={isClient}
           currency={selectedHotel?.currency}
         />

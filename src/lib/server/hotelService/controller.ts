@@ -41,7 +41,7 @@ class HotelServiceController {
       status: 201,
       message: MessageResponse.Success,
       description: "Hotel service created successfully!",
-      data: createdHotelService,
+      data: { createdHotelService },
     });
   }
 

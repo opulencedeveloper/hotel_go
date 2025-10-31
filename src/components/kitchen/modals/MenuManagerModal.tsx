@@ -123,7 +123,7 @@ export default function MenuManagerModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-secondary-100 flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-50 to-secondary-50 px-6 py-4 border-b border-secondary-200">

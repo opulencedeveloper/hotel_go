@@ -64,7 +64,7 @@ export default function MenuListModal({
   }, [dispatch, fetchedData]);
 
   if (isLoading || !mounted) {
-    return<div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"> <PageLoadingSpinner /></div>;
+    return<div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"> <PageLoadingSpinner /></div>;
   }
 
   if (error) {
@@ -90,7 +90,7 @@ export default function MenuListModal({
     };
 
     return (
-       <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+       <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
         <div className="max-w-md w-full">
           <ErrorDisplay
             error={error}
@@ -148,7 +148,7 @@ export default function MenuListModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-secondary-200">

@@ -95,18 +95,9 @@ export default function NewTaskModal({
   const handleFetchRooms = () => {
     const successHandler = (res: any) => {
       const resData = res?.data?.data;
+
       const fetchedRoomTypes = resData?.hotelRoomTypes;
-      const fetchedRooms =
-        resData?.hotelRooms?.map((room: any) => ({
-          _id: room._id,
-          floor: room.floor,
-          roomNumber: room.roomNumber,
-          roomTypeId: room.roomTypeId?._id ?? "",
-          roomTypeName: room.roomTypeId?.name ?? "",
-          roomStatus: room.roomStatus,
-          note: room.note,
-          lastCleaned: room?.lastCleaned,
-        })) ?? [];
+      const fetchedRooms = resData?.hotelRooms;
 
       dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
       dispatch(roomActions.setRooms(fetchedRooms));
@@ -229,7 +220,7 @@ export default function NewTaskModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 my-8 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-secondary-900">

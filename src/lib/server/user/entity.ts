@@ -73,10 +73,6 @@ userSchema.index({ firstName: 1, lastName: 1 });
 userSchema.index({ email: "text", firstName: "text", lastName: "text" }); // 🔹 Text search across user identity
 
 // ✅ Optional TTL index: auto-remove expired verification records (e.g., after 24h)
-userSchema.index(
-  { emailVerificationOtpExpiration: 1 },
-  { expireAfterSeconds: 0 } // MongoDB automatically deletes expired docs
-);
 
 // ✅ Performance Tweaks
 userSchema.set("versionKey", false);

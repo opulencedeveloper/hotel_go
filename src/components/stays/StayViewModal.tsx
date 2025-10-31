@@ -112,40 +112,29 @@ export default function StayViewModal({ viewingStay, onClose }: StayViewModalPro
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
             <div>
               <span className="font-medium text-gray-700">Payment Method:</span>
-              <p className="text-gray-900">{viewingStay.paymentMethod.replace("_", " ").toUpperCase()}</p>
+              <p className="text-gray-900">{viewingStay.paymentMethod?.replace(/_/g, " ").toUpperCase() || "N/A"}</p>
             </div>
             <div>
               <span className="font-medium text-gray-700">Payment Status:</span>
-              <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                viewingStay.paymentStatus === 'paid' ? 'bg-green-100 text-green-800' :
-                viewingStay.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {viewingStay.paymentStatus.toUpperCase()}
-              </span>
+              <p className="text-gray-900">{viewingStay.paymentStatus || "N/A"}</p>
             </div>
-            {viewingStay.paymentDate && (
-              <div>
-                <span className="font-medium text-gray-700">Payment Date:</span>
-                <p className="text-gray-900">{new Date(viewingStay.paymentDate).toLocaleDateString()}</p>
+            <div>
+              <span className="font-medium text-gray-700">Total Amount:</span>
+              <p className="text-gray-900">{viewingStay.totalAmount !== undefined ? formatPrice(viewingStay.totalAmount, selectedHotel?.currency) : "N/A"}</p>
+            </div>
+            <div>
+              <span className="font-medium text-gray-700">Paid Amount:</span>
+              <p className="text-gray-900">{viewingStay.paidAmount !== undefined ? formatPrice(viewingStay.paidAmount, selectedHotel?.currency) : "N/A"}</p>
+            </div>
+          </div>
+          <div className="mt-4">
+            {viewingStay.roomRateAtPayment !== undefined ? (
+              <div className="text-blue-600">
+                Room Rate at Payment: {formatPrice(viewingStay.roomRateAtPayment, selectedHotel?.currency)}
               </div>
-            )}
-            {viewingStay.totalAmount && (
-              <div>
-                <span className="font-medium text-gray-700">Total Amount:</span>
-                <p className="text-gray-900 font-semibold">{formatPrice(viewingStay.totalAmount, selectedHotel?.currency)}</p>
-              </div>
-            )}
-            {viewingStay.paidAmount && (
-              <div>
-                <span className="font-medium text-gray-700">Paid Amount:</span>
-                <p className="text-gray-900">{formatPrice(viewingStay.paidAmount, selectedHotel?.currency)}</p>
-              </div>
-            )}
-            {viewingStay.totalAmount && viewingStay.paidAmount && (
-              <div>
-                <span className="font-medium text-gray-700">Balance:</span>
-                <p className="text-gray-900 font-semibold">{formatPrice(viewingStay.totalAmount - viewingStay.paidAmount, selectedHotel?.currency)}</p>
+            ) : (
+              <div className="text-red-600">
+                Room Rate at Payment: <span className="italic">Not yet paid</span>
               </div>
             )}
           </div>

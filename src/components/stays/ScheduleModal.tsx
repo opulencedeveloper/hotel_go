@@ -1,6 +1,11 @@
 'use client';
 
-import { Calendar, X } from 'lucide-react';
+import { HotelServiceStatus } from '@/lib/server/hotelService/enum';
+import { Calendar, X, MapPin, Users, Tag, DollarSign, FileText } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { formatPrice } from '@/helper';
+import { paymentMethodList } from '@/resources';
 
 interface Service {
   _id: string;
@@ -23,6 +28,7 @@ interface ScheduleModalProps {
     date: string;
     time: string;
     notes: string;
+    paymentMethod?: string;
   };
   onFormChange: (field: string, value: string | number) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -44,8 +50,14 @@ export default function ScheduleModal({
 }: ScheduleModalProps) {
   if (!isOpen) return null;
 
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
+  // Find the selected service
+  const selectedService = services.find(service => service._id === scheduleForm.service_id);
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-secondary-900">
@@ -81,9 +93,9 @@ export default function ScheduleModal({
                 className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">Select Service</option>
-                {services.filter(service => service.status === 'active').map((service) => (
+                {services.filter(service => service.status === HotelServiceStatus.ACTIVE).map((service) => (
                   <option key={service._id} value={service._id}>
-                    {service.name} - ${service.price === 0 ? 'Free' : service.price}
+                    {service.name} - {service.price === 0 ? 'Free' : formatPrice(service.price, selectedHotel?.currency)}
                   </option>
                 ))}
               </select>
@@ -120,7 +132,87 @@ export default function ScheduleModal({
               />
             </div>
             
+            {/* Selected Service Details */}
+            {selectedService && (
+              <div className="md:col-span-2 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-lg p-5 border border-primary-200 shadow-sm">
+                <div className="flex items-center mb-4">
+                  <div className="p-2 bg-primary-100 rounded-lg mr-3">
+                    <Tag className="w-5 h-5 text-primary-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-secondary-900">{selectedService.name}</h3>
+                    <span className="text-xs text-secondary-500 capitalize">
+                      {selectedService.category.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <MapPin className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-secondary-500 mb-0.5">Location</p>
+                        <p className="text-sm font-medium text-secondary-900">{selectedService.location}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start">
+                      <Users className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-secondary-500 mb-0.5">Capacity</p>
+                        <p className="text-sm font-medium text-secondary-900">
+                          {selectedService.capacity} {selectedService.capacity === 1 ? 'person' : 'people'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <DollarSign className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-secondary-500 mb-0.5">Price</p>
+                        <p className="text-sm font-semibold text-primary-600">
+                          {selectedService.price === 0 ? 'Free' : formatPrice(selectedService.price, selectedHotel?.currency)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {selectedService.description && (
+                      <div className="flex items-start">
+                        <FileText className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-secondary-500 mb-0.5">Description</p>
+                          <p className="text-sm text-secondary-700 leading-relaxed">{selectedService.description}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             
+            {mode === 'create' && (
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 mb-2">
+                  Payment Method *
+                </label>
+                <select
+                  required
+                  value={scheduleForm.paymentMethod || ''}
+                  onChange={(e) => onFormChange('paymentMethod', e.target.value)}
+                  className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Select payment method</option>
+                  {paymentMethodList.map((method) => (
+                    <option key={method.value} value={method.value}>
+                      {method.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-secondary-700 mb-2">

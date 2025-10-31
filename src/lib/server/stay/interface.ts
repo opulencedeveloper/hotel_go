@@ -5,6 +5,7 @@ export interface IStay extends Document {
   roomId: Types.ObjectId;
   hotelId: Types.ObjectId;
   paymentDate: Date;
+  roomRateAtPayment?: number;
   tax?: number;
   discount?: number;
   serviceCharge?: number;
@@ -35,6 +36,7 @@ export interface IAddStayInput {
   address: string;
   paymentMethod: PaymentMethod;
   totalAmount?: number;
+  roomRateAtPayment?: number;
   paidAmount?: number;
   checkInDate: Date;
   checkOutDate: Date;

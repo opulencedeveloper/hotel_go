@@ -7,7 +7,7 @@ interface StaysHeaderProps {
   onCreateStay: () => void;
 }
 
-export default function StaysHeader({ onCreateStay }: StaysHeaderProps) {
+export default function ({ onCreateStay }: StaysHeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>

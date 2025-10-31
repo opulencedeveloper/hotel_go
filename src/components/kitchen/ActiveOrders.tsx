@@ -18,7 +18,8 @@ interface Order {
     name: string;
     category: string;
     price: number;
-    status: "pending" | "cooking" | "ready";
+    quantity?: number;
+    status: OrderStatus;
   }>;
 }
 
@@ -144,7 +145,7 @@ export default function ActiveOrders({
           Active Orders
         </h2>
         <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+         
           <span className="text-sm text-secondary-600">Live Updates</span>
         </div>
       </div>
@@ -219,6 +220,10 @@ export default function ActiveOrders({
           ) : (
             filteredOrders.map((order) => {
               const statusInfo = getStatusInfo(order.status);
+            const computedTotal = order.items.reduce((sum, item) => {
+              const qty = item.quantity ?? 1;
+              return sum + item.price * qty;
+            }, 0);
               return (
                 <div
                   key={order.id}
@@ -259,7 +264,7 @@ export default function ActiveOrders({
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-secondary-600">Total:</span>
                       <span className="text-lg font-bold text-primary-600">
-                        {formatPrice(order.total, selectedHotel?.currency)}
+                      {formatPrice(computedTotal, selectedHotel?.currency)}
                       </span>
                     </div>
                     <div className="text-sm text-secondary-500">

@@ -117,6 +117,8 @@ export default function ProductionDashboard() {
       fetchData({
         successRes: (res: any) => {
           const data = res?.data;
+
+          console.log("QuickSummary", data);
           dispatch(dashboardSummaryActions.setQuickSummary(data.data))
           setLastUpdated(new Date());
         },
@@ -135,6 +137,7 @@ export default function ProductionDashboard() {
       fetchData({
         successRes: (res: any) => {
           const data = res?.data;
+           console.log("DashboardSummary", data);
           dispatch(dashboardSummaryActions.setDashboardSummary(data.data))
           setLastUpdated(new Date());
         },
@@ -489,6 +492,33 @@ export default function ProductionDashboard() {
                 <span className="text-xl font-bold text-purple-600">{formatPrice(dashboardSummary.revenue?.thisMonth || 0, selectedHotel?.currency)}</span>
               </div>
             </div>
+            
+            {/* Revenue Breakdown by Source */}
+            {dashboardSummary.revenue?.bySource && (
+              <div className="mt-6 pt-6 border-t border-secondary-200">
+                <h4 className="text-sm font-semibold text-gray-700 mb-4">Revenue by Source</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                    <span className="text-sm text-gray-700">Rooms</span>
+                    <span className="text-sm font-semibold text-blue-600">
+                      {formatPrice(dashboardSummary.revenue.bySource.roomRevenue || 0, selectedHotel?.currency)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
+                    <span className="text-sm text-gray-700">Food & Beverage</span>
+                    <span className="text-sm font-semibold text-orange-600">
+                      {formatPrice(dashboardSummary.revenue.bySource.foodRevenue || 0, selectedHotel?.currency)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
+                    <span className="text-sm text-gray-700">Scheduled Services</span>
+                    <span className="text-sm font-semibold text-indigo-600">
+                      {formatPrice(dashboardSummary.revenue.bySource.serviceRevenue || 0, selectedHotel?.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Staff Performance */}

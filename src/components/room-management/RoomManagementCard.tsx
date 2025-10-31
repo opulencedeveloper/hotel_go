@@ -1,17 +1,19 @@
-import { mockRooms } from "@/data/mockData";
-import { Room } from "@/types";
 import { RoomManagementCardProps } from "@/types/room-management/room-management";
 import { Bed, DollarSign, Plus, Star } from "lucide-react";
-import { useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { RoomStatus } from "@/types/room-management/enum";
 
 export default function RoomManagementCard({addRoom, addRoomType, addRatePlan} : RoomManagementCardProps) {
-  const [rooms, setRooms] = useState<Room[]>(mockRooms);
-      const roomStats = {
-    total: rooms.length,
-    available: rooms.filter(r => r.status === 'available').length,
-    occupied: rooms.filter(r => r.status === 'occupied').length,
-    maintenance: rooms.filter(r => r.status === 'maintenance').length,
-    cleaning: rooms.filter(r => r.status === 'cleaning').length
+  const room = useSelector((state: RootState) => state.room);
+  const { hotelRooms } = room;
+  
+  const roomStats = {
+    total: hotelRooms?.length || 0,
+    available: hotelRooms?.filter(r => r?.roomStatus === RoomStatus.Available).length || 0,
+    occupied: hotelRooms?.filter(r => r?.roomStatus === RoomStatus.Occupied).length || 0,
+    maintenance: hotelRooms?.filter(r => r?.roomStatus === RoomStatus.Maintenance).length || 0,
+    cleaning: hotelRooms?.filter(r => r?.roomStatus === RoomStatus.Cleaning || r?.roomStatus === RoomStatus.MarkForCleaning).length || 0
   };
 
 

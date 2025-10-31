@@ -2,6 +2,9 @@
 
 import { X, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { OrderStatus } from '@/utils/enum';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { formatPrice } from '@/helper';
 
 interface Order {
   id: string;
@@ -9,12 +12,14 @@ interface Order {
   table: string;
   status: OrderStatus;
   orderTime: string;
+  total?: number;
   paymentMethod?: string;
   items: Array<{
     name: string;
     category: string;
     price: number;
-    status: 'pending' | 'cooking' | 'ready';
+    quantity?: number;
+    status: OrderStatus;
   }>;
 }
 
@@ -32,6 +37,9 @@ export default function OrderDetailsModal({
   onOrderAction 
 }: OrderDetailsModalProps) {
   if (!isOpen || !order) return null;
+
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
 
   // Helper function to get status info
   const getStatusInfo = (status: OrderStatus) => {
@@ -77,7 +85,7 @@ export default function OrderDetailsModal({
   const statusInfo = getStatusInfo(order.status);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-secondary-900">Order Details - #{order.id}</h2>
@@ -140,9 +148,13 @@ export default function OrderDetailsModal({
                     <div className="flex items-center space-x-2">
                       <p className="font-medium text-secondary-900">{item.name}</p>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        item.status === 'ready' ? 'bg-green-100 text-green-800' :
-                        item.status === 'cooking' ? 'bg-blue-100 text-blue-800' :
-                        'bg-yellow-100 text-yellow-800'
+                        item.status === OrderStatus.READY
+                          ? 'bg-green-100 text-green-800'
+                          : item.status === OrderStatus.PAID
+                          ? 'bg-blue-100 text-blue-800'
+                          : item.status === OrderStatus.CANCELLED
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
                       }`}>
                         {item.status}
                       </span>
@@ -150,8 +162,14 @@ export default function OrderDetailsModal({
                     <p className="text-sm text-secondary-600 capitalize">{item.category}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-secondary-500 mb-1">Price during order</div>
-                    <span className="font-medium text-secondary-900">${item.price.toFixed(2)}</span>
+                    <div className="text-xs text-secondary-500 mb-1">Qty × Price</div>
+                    <div className="text-sm text-secondary-700">
+                      {(item.quantity ?? 1)} × {formatPrice(item.price, selectedHotel?.currency)}
+                    </div>
+                    <div className="text-xs text-secondary-500 mt-1">Line total</div>
+                    <span className="font-medium text-secondary-900">
+                      {formatPrice(item.price * (item.quantity ?? 1), selectedHotel?.currency)}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -160,7 +178,10 @@ export default function OrderDetailsModal({
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-secondary-900">Total:</span>
                 <span className="text-lg font-bold text-primary-600">
-                  ${order.items.reduce((sum, item) => sum + item.price, 0).toFixed(2)}
+                  {formatPrice(
+                    order.total ?? order.items.reduce((sum, item) => sum + item.price * (item.quantity ?? 1), 0),
+                    selectedHotel?.currency
+                  )}
                 </span>
               </div>
             </div>

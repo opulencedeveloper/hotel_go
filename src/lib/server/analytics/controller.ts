@@ -13,12 +13,13 @@ class AnalyticsController {
     const rooms = await anayticsService.findRoomsByHotelId(hotelId!, period);
     const stays = await anayticsService.findStaysByHotelId(hotelId!, period);
     const orders = await anayticsService.findOrdersByHotelId(hotelId!, period);
+    const scheduledServices = await anayticsService.findScheduledServicesByHotelId(hotelId!, period);
 
     return utils.customResponse({
       status: 200,
       message: MessageResponse.Success,
       description: "Analytics fetched successfully!",
-      data: { rooms, stays, orders, period },
+      data: { rooms, stays, orders, scheduledServices, period },
     });
   }
 

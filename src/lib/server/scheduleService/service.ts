@@ -14,6 +14,11 @@ class ScheduledServiceService {
     const savedScheduleService = new ScheduleService({ ...input });
     await savedScheduleService.save();
 
+    await savedScheduleService.populate({
+      path: "hotelServiceId",
+      model: "HotelService",
+    });
+
     return savedScheduleService;
   }
 
@@ -24,6 +29,10 @@ class ScheduledServiceService {
         model: "HotelService",
       })
       .exec();
+  }
+
+  public async fetchScheduledServiceBySchedule(scheduledAt: Date) {
+    return await ScheduleService.findOne({ scheduledAt });
   }
 
   public async findScheduledServiceByIdAndHotellId(
@@ -53,7 +62,7 @@ class ScheduledServiceService {
         path: "hotelServiceId",
         model: "HotelService",
       })
-      .exec();;
+      .exec();
 
     return updatedRoom;
   }

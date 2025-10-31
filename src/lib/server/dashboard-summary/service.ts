@@ -6,6 +6,7 @@ import Stay from "../stay/entity";
 import HouseKeeping from "../house-keeping/entity";
 import { Order } from "../order/entity";
 import Inventory from "../inventory/enitity";
+import ScheduledService from "../scheduleService/entity";
 
 /**
  * Dashboard Summary Service
@@ -94,7 +95,8 @@ class DashboardSummaryService {
         housekeepingStats,
         orderStats,
         inventoryStats,
-        revenueStats
+        revenueStats,
+        scheduledServiceRevenue
       ] = await Promise.all([
         this.getQuickRoomStats(hotelId),
         this.getTodayStats(hotelId, startOfDay, endOfDay),
@@ -102,7 +104,8 @@ class DashboardSummaryService {
         this.getQuickHousekeepingStats(hotelId),
         this.getQuickOrderStats(hotelId, startOfDay, endOfDay),
         this.getQuickInventoryStats(hotelId),
-        this.getTodayRevenue(hotelId, startOfDay, endOfDay)
+        this.getTodayRevenue(hotelId, startOfDay, endOfDay),
+        this.getTodayScheduledServiceRevenue(hotelId, startOfDay, endOfDay)
       ]);
 
       return {
@@ -113,7 +116,7 @@ class DashboardSummaryService {
         activeStaff: staffStats.active,
         pendingTasks: housekeepingStats.pending,
         completedTasks: housekeepingStats.completed,
-        todayRevenue: revenueStats.today,
+        todayRevenue: revenueStats.today + scheduledServiceRevenue,
         lowStockItems: inventoryStats.lowStock,
         pendingOrders: orderStats.pending,
         lastUpdated: new Date().toISOString()
@@ -507,22 +510,31 @@ class DashboardSummaryService {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const startOfYear = new Date(today.getFullYear(), 0, 1);
 
-    const [todayRevenue, weekRevenue, monthRevenue, yearRevenue] = await Promise.all([
+    const [todayRevenue, weekRevenue, monthRevenue, yearRevenue, todayScheduledServiceRevenue, weekScheduledServiceRevenue, monthScheduledServiceRevenue, yearScheduledServiceRevenue] = await Promise.all([
       this.getTodayRevenue(hotelId, startOfDay, endOfDay),
       this.getPeriodRevenue(hotelId, startOfWeek, endOfDay),
       this.getPeriodRevenue(hotelId, startOfMonth, endOfDay),
-      this.getPeriodRevenue(hotelId, startOfYear, endOfDay)
+      this.getPeriodRevenue(hotelId, startOfYear, endOfDay),
+      this.getTodayScheduledServiceRevenue(hotelId, startOfDay, endOfDay),
+      this.getPeriodScheduledServiceRevenue(hotelId, startOfWeek, endOfDay),
+      this.getPeriodScheduledServiceRevenue(hotelId, startOfMonth, endOfDay),
+      this.getPeriodScheduledServiceRevenue(hotelId, startOfYear, endOfDay)
     ]);
 
+    const totalTodayRevenue = todayRevenue.today + todayScheduledServiceRevenue;
+    const totalWeekRevenue = weekRevenue.today + weekScheduledServiceRevenue;
+    const totalMonthRevenue = monthRevenue.today + monthScheduledServiceRevenue;
+    const totalYearRevenue = yearRevenue.today + yearScheduledServiceRevenue;
+
     return {
-      today: todayRevenue.today,
-      thisWeek: weekRevenue.today,
-      thisMonth: monthRevenue.today,
-      thisYear: yearRevenue.today,
+      today: totalTodayRevenue,
+      thisWeek: totalWeekRevenue,
+      thisMonth: totalMonthRevenue,
+      thisYear: totalYearRevenue,
       bySource: {
-        roomRevenue: todayRevenue.today,
-        foodRevenue: 0,
-        serviceRevenue: 0,
+        roomRevenue: todayRevenue.stayRevenue || 0,
+        foodRevenue: todayRevenue.orderRevenue || 0,
+        serviceRevenue: todayScheduledServiceRevenue,
         otherRevenue: 0
       },
       averageDailyRate: 0,
@@ -649,14 +661,19 @@ class DashboardSummaryService {
       paidAmount: s.paidAmount
     })));
 
-    // Calculate revenue from stays with actual revenue data or estimate based on room rates
+    // Calculate revenue from stays and PAID orders separately
     const [stayRevenue, orderRevenue] = await Promise.all([
-      // Revenue from stays - use actual totalAmount if available, otherwise estimate
+      // Revenue from stays - filter by today's check-in or check-out dates
       Stay.aggregate([
         {
           $match: {
             hotelId: new Types.ObjectId(hotelId),
-            status: { $in: ["checked_in", "checked_out"] }
+            status: { $in: ["checked_in", "checked_out"] },
+            $or: [
+              { checkInDate: { $gte: startOfDay, $lte: endOfDay } }, // Checked in today
+              { checkOutDate: { $gte: startOfDay, $lte: endOfDay } }, // Checked out today
+              { createdAt: { $gte: startOfDay, $lte: endOfDay } } // OR created/paid today
+            ]
           }
         },
         {
@@ -702,18 +719,67 @@ class DashboardSummaryService {
           }
         }
       ]),
-      // Revenue from orders (if available)
+      // Revenue from PAID orders only - filter by today
+      // A paid order is one with status="paid" OR has a paymentMethod set (which indicates payment)
       Order.aggregate([
         {
           $match: {
             hotelId: new Types.ObjectId(hotelId),
-            status: { $in: ["confirmed", "preparing", "ready", "delivered"] }
+            $or: [
+              { status: "paid" }, // Status is explicitly paid
+              { 
+                paymentMethod: { $exists: true, $ne: null }, // Has payment method (indicates paid)
+                status: { $in: ["ready", "paid"] } // And status is ready or paid
+              }
+            ],
+            createdAt: { $gte: startOfDay, $lte: endOfDay } // Orders created today
+          }
+        },
+        {
+          $project: {
+            items: 1,
+            discount: { $ifNull: ["$discount", 0] },
+            tax: { $ifNull: ["$tax", 0] }
+          }
+        },
+        {
+          $unwind: {
+            path: "$items",
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $group: {
+            _id: "$_id",
+            orderSubtotal: {
+              $sum: {
+                $multiply: [
+                  { $ifNull: ["$items.priceWhenOrdered", 0] },
+                  { $ifNull: ["$items.quantity", 0] }
+                ]
+              }
+            },
+            discount: { $first: "$discount" },
+            tax: { $first: "$tax" }
+          }
+        },
+        {
+          $project: {
+            orderTotal: {
+              $subtract: [
+                { $add: ["$orderSubtotal", "$tax"] },
+                "$discount"
+              ]
+            }
           }
         },
         {
           $group: {
             _id: null,
-            orderRevenue: { $sum: { $ifNull: ["$totalAmount", 0] } }
+            orderRevenue: {
+              $sum: "$orderTotal"
+            },
+            count: { $sum: 1 }
           }
         }
       ])
@@ -723,91 +789,282 @@ class DashboardSummaryService {
     const orderRev = orderRevenue[0]?.orderRevenue || 0;
     const totalRevenue = stayRev + orderRev;
 
+    // Debug: Check what orders exist
+    const sampleOrders = await Order.find({ 
+      hotelId: new Types.ObjectId(hotelId),
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    }).limit(5);
+    console.log('📦 Sample orders today:', sampleOrders.map((o: any) => ({
+      _id: o._id,
+      status: o.status,
+      itemsCount: o.items?.length || 0,
+      createdAt: o.createdAt,
+      discount: o.discount,
+      tax: o.tax
+    })));
+
+    // Check all orders to see what statuses exist
+    const allOrdersToday = await Order.find({ 
+      hotelId: new Types.ObjectId(hotelId),
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+    console.log('📦 All orders today (all statuses):', allOrdersToday.map((o: any) => ({
+      _id: o._id,
+      status: o.status,
+      paymentMethod: o.paymentMethod,
+      itemsCount: o.items?.length || 0
+    })));
+
+    const paidOrders = await Order.find({ 
+      hotelId: new Types.ObjectId(hotelId),
+      $or: [
+        { status: "paid" },
+        { paymentMethod: { $exists: true, $ne: null }, status: { $in: ["ready", "paid"] } }
+      ],
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    });
+    console.log('💰 Paid orders count:', paidOrders.length);
+    if (paidOrders.length > 0) {
+      console.log('💰 Paid order details:', paidOrders.map((o: any) => ({
+        _id: o._id,
+        items: o.items?.map((item: any) => ({
+          priceWhenOrdered: item.priceWhenOrdered,
+          quantity: item.quantity,
+          subtotal: (item.priceWhenOrdered || 0) * (item.quantity || 0)
+        })),
+        discount: o.discount || 0,
+        tax: o.tax || 0
+      })));
+    }
+
     console.log('💰 Revenue breakdown:', {
+      stayRevenue: stayRev,
+      orderRevenue: orderRev,
+      orderCount: orderRevenue[0]?.count || 0,
+      totalRevenue: totalRevenue,
+      dateRange: { startOfDay, endOfDay }
+    });
+
+    return { today: totalRevenue, stayRevenue: stayRev, orderRevenue: orderRev };
+  }
+
+  private async getPeriodRevenue(hotelId: Types.ObjectId, startDate: Date, endDate: Date) {
+    // Calculate revenue from stays and PAID orders within the date period
+    const [stayRevenue, orderRevenue] = await Promise.all([
+      // Revenue from stays - filter by date period
+      Stay.aggregate([
+        {
+          $match: {
+            hotelId: new Types.ObjectId(hotelId),
+            status: { $in: ["checked_in", "checked_out"] },
+            $or: [
+              { checkInDate: { $gte: startDate, $lte: endDate } }, // Checked in during period
+              { checkOutDate: { $gte: startDate, $lte: endDate } }, // Checked out during period
+              { createdAt: { $gte: startDate, $lte: endDate } } // OR created/paid during period
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: "rooms",
+            localField: "roomId",
+            foreignField: "_id",
+            as: "room"
+          }
+        },
+        {
+          $addFields: {
+            // Use actual totalAmount if available, otherwise calculate based on room rate and duration
+            calculatedAmount: {
+              $cond: {
+                if: { $gt: ["$totalAmount", 0] },
+                then: "$totalAmount",
+                else: {
+                  $multiply: [
+                    { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] }, // Default rate $100/night
+                    {
+                      $max: [
+                        1,
+                        {
+                          $divide: [
+                            { $subtract: ["$checkOutDate", "$checkInDate"] },
+                            1000 * 60 * 60 * 24 // Convert to days
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: "$calculatedAmount" },
+            paidRevenue: { $sum: { $ifNull: ["$paidAmount", 0] } }
+          }
+        }
+      ]),
+      // Revenue from PAID orders only - filter by date period
+      // A paid order is one with status="paid" OR has a paymentMethod set (which indicates payment)
+      Order.aggregate([
+        {
+          $match: {
+            hotelId: new Types.ObjectId(hotelId),
+            $or: [
+              { status: "paid" }, // Status is explicitly paid
+              { 
+                paymentMethod: { $exists: true, $ne: null }, // Has payment method (indicates paid)
+                status: { $in: ["ready", "paid"] } // And status is ready or paid
+              }
+            ],
+            createdAt: { $gte: startDate, $lte: endDate } // Orders created in period
+          }
+        },
+        {
+          $project: {
+            items: 1,
+            discount: { $ifNull: ["$discount", 0] },
+            tax: { $ifNull: ["$tax", 0] }
+          }
+        },
+        {
+          $unwind: {
+            path: "$items",
+            preserveNullAndEmptyArrays: false
+          }
+        },
+        {
+          $group: {
+            _id: "$_id",
+            orderSubtotal: {
+              $sum: {
+                $multiply: [
+                  { $ifNull: ["$items.priceWhenOrdered", 0] },
+                  { $ifNull: ["$items.quantity", 0] }
+                ]
+              }
+            },
+            discount: { $first: "$discount" },
+            tax: { $first: "$tax" }
+          }
+        },
+        {
+          $project: {
+            orderTotal: {
+              $subtract: [
+                { $add: ["$orderSubtotal", "$tax"] },
+                "$discount"
+              ]
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            orderRevenue: {
+              $sum: "$orderTotal"
+            },
+            count: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    const stayRev = stayRevenue[0]?.totalRevenue || 0;
+    const orderRev = orderRevenue[0]?.orderRevenue || 0;
+    const totalRevenue = stayRev + orderRev;
+
+    console.log(`💰 Period revenue breakdown (${startDate.toISOString()} to ${endDate.toISOString()}):`, {
       stayRevenue: stayRev,
       orderRevenue: orderRev,
       totalRevenue: totalRevenue
     });
 
-    return { today: totalRevenue };
+    return { today: totalRevenue, stayRevenue: stayRev, orderRevenue: orderRev };
   }
 
-  private async getPeriodRevenue(hotelId: Types.ObjectId, startDate: Date, endDate: Date) {
-    // Calculate revenue from ALL checked-out stays and paid orders
-    const [stayRevenue, orderRevenue] = await Promise.all([
-      // Revenue from stays - use actual totalAmount if available, otherwise estimate
-      Stay.aggregate([
-        {
-          $match: {
-            hotelId: new Types.ObjectId(hotelId),
-            status: { $in: ["checked_in", "checked_out"] }
-          }
-        },
-        {
-          $lookup: {
-            from: "rooms",
-            localField: "roomId",
-            foreignField: "_id",
-            as: "room"
-          }
-        },
-        {
-          $addFields: {
-            // Use actual totalAmount if available, otherwise calculate based on room rate and duration
-            calculatedAmount: {
-              $cond: {
-                if: { $gt: ["$totalAmount", 0] },
-                then: "$totalAmount",
-                else: {
-                  $multiply: [
-                    { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] }, // Default rate $100/night
-                    {
-                      $max: [
-                        1,
-                        {
-                          $divide: [
-                            { $subtract: ["$checkOutDate", "$checkInDate"] },
-                            1000 * 60 * 60 * 24 // Convert to days
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            totalRevenue: { $sum: "$calculatedAmount" },
-            paidRevenue: { $sum: { $ifNull: ["$paidAmount", 0] } }
-          }
+  /**
+   * Get scheduled service revenue for today
+   * Includes services created today OR scheduled for today
+   */
+  private async getTodayScheduledServiceRevenue(hotelId: Types.ObjectId, startOfDay: Date, endOfDay: Date) {
+    // Debug: Check if there are any scheduled services
+    const totalServices = await ScheduledService.countDocuments({ 
+      hotelId: new Types.ObjectId(hotelId) 
+    });
+    console.log('📅 Total scheduled services for hotel:', totalServices);
+
+    const sampleServices = await ScheduledService.find({ 
+      hotelId: new Types.ObjectId(hotelId) 
+    }).limit(3);
+    console.log('📅 Sample scheduled services:', sampleServices.map((s: any) => ({
+      _id: s._id,
+      scheduledAt: s.scheduledAt,
+      createdAt: s.createdAt || (s as any).__createdAt,
+      paymentStatus: s.paymentStatus,
+      totalAmount: s.totalAmount,
+      hotelId: s.hotelId
+    })));
+
+    const stats = await ScheduledService.aggregate([
+      {
+        $match: {
+          hotelId: new Types.ObjectId(hotelId),
+          $or: [
+            { createdAt: { $gte: startOfDay, $lte: endOfDay } }, // Created today
+            { scheduledAt: { $gte: startOfDay, $lte: endOfDay } } // OR scheduled for today
+          ],
+          paymentStatus: { $in: ["paid", "pending"] } // Include both paid and pending
         }
-      ]),
-      // Revenue from orders (if available)
-      Order.aggregate([
-        {
-          $match: {
-            hotelId: new Types.ObjectId(hotelId),
-            status: { $in: ["confirmed", "preparing", "ready", "delivered"] }
-          }
-        },
-        {
-          $group: {
-            _id: null,
-            orderRevenue: { $sum: { $ifNull: ["$totalAmount", 0] } }
-          }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          count: { $sum: 1 }
         }
-      ])
+      }
     ]);
 
-    const stayRev = stayRevenue[0]?.totalRevenue || 0;
-    const orderRev = orderRevenue[0]?.orderRevenue || 0;
-    const totalRevenue = stayRev + orderRev;
+    console.log('💰 Scheduled service revenue stats:', stats);
+    const revenue = stats[0]?.totalRevenue || 0;
+    console.log('💰 Scheduled service revenue for today:', revenue);
 
-    return { today: totalRevenue };
+    return revenue;
+  }
+
+  /**
+   * Get scheduled service revenue for a period
+   * Includes services created in period OR scheduled in period
+   */
+  private async getPeriodScheduledServiceRevenue(hotelId: Types.ObjectId, startDate: Date, endDate: Date) {
+    const stats = await ScheduledService.aggregate([
+      {
+        $match: {
+          hotelId: new Types.ObjectId(hotelId),
+          $or: [
+            { createdAt: { $gte: startDate, $lte: endDate } }, // Created in period
+            { scheduledAt: { $gte: startDate, $lte: endDate } } // OR scheduled in period
+          ],
+          paymentStatus: { $in: ["paid", "pending"] } // Include both paid and pending
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const revenue = stats[0]?.totalRevenue || 0;
+    console.log(`💰 Scheduled service revenue for period (${startDate.toISOString()} to ${endDate.toISOString()}):`, revenue, `(count: ${stats[0]?.count || 0})`);
+
+    return revenue;
   }
 }
 

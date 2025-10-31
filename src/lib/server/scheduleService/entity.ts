@@ -1,5 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { IScheduledService } from "./interface";
+import { PaymentMethod } from "../stay/enum";
+import { PaymentStatus } from "@/utils/enum";
 
 const scheduledServiceSchema = new Schema(
   {
@@ -16,6 +18,23 @@ const scheduledServiceSchema = new Schema(
       required: true,
       trim: true,
       index: true,
+    },
+     paymentStatus: {
+          type: String,
+          enum: Object.values(PaymentStatus),
+          required: true,
+          index: true, // 🔹 Common filter in billing dashboards
+        },
+    paymentMethod: {
+      type: String,
+      enum: Object.values(PaymentMethod),
+      required: true,
+      trim: true,
+    },
+     totalAmount: {
+      type: Number,
+      required: true,
+      min: 0,
     },
     scheduledAt: {
       type: Date,
@@ -38,8 +57,6 @@ const ScheduledService =
   mongoose.model<IScheduledService>("ScheduledService", scheduledServiceSchema);
 
 export default ScheduledService;
-
-
 
 // import mongoose, { Schema } from "mongoose";
 // import { IScheduledService } from "./interface";

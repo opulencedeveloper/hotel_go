@@ -113,9 +113,26 @@ export default function Rooms() {
 
   const handleEditRoom = (room: any) => {
     setEditingRoom(room);
+    
+    // Extract roomTypeId - it might be a string ID or an object
+    let roomTypeId = "";
+    if (typeof room.roomTypeId === 'string') {
+      roomTypeId = room.roomTypeId;
+    } else if (room.roomTypeId?._id) {
+      roomTypeId = room.roomTypeId._id;
+    } else if (room.room_type_id) {
+      roomTypeId = room.room_type_id;
+    } else if (room.roomTypeId && typeof room.roomTypeId === 'object') {
+      // If roomTypeId is an object, find matching room type by name
+      const matchingRoomType = hotelRoomTypes.find(
+        rt => rt.name === room.roomTypeId.name || rt.name === room.roomTypeName
+      );
+      roomTypeId = matchingRoomType?._id || "";
+    }
+    
     setEditForm({
       roomNumber: room.roomNumber || room.room_number || "",
-      roomTypeId: room.roomTypeId || room.room_type_id || "",
+      roomTypeId: roomTypeId,
       floor: room.floor || 1,
       roomStatus: room.roomStatus || room.status || RoomStatus.Available,
       note: room.note || room.notes || "",
@@ -313,7 +330,7 @@ export default function Rooms() {
 
       {/* Room Details Modal */}
       {showRoomModal && selectedRoom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
               <div className="flex items-center justify-between">
@@ -531,7 +548,7 @@ export default function Rooms() {
 
       {/* Edit Room Modal */}
       {showEditModal && editingRoom && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
               <div className="flex items-center justify-between">

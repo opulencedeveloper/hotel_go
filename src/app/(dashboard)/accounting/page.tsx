@@ -17,16 +17,17 @@ export default function AccountingPage() {
 
   // Select analytics data from Redux (same as analytics page)
   const analytics = useSelector((state: RootState) => state.analytics);
-  const { fetchedRooms, fetchedStays, fetchedOrders } = analytics;
+  const { fetchedRooms, fetchedStays, fetchedOrders, fetchedScheduledServices } = analytics;
 
   const handleAccountingResponse = (res: any) => {
     const resData = res?.data?.data;
 
-    const { stays, rooms, orders } = resData;
+    const { stays, rooms, orders, scheduledServices } = resData;
 
     dispatch(analyticsActions.setRooms(rooms));
     dispatch(analyticsActions.setStays(stays));
     dispatch(analyticsActions.setOrders(orders));
+    dispatch(analyticsActions.setScheduledServices(scheduledServices || []));
   };
 
   // Fetch analytics on initial page load only
@@ -34,7 +35,7 @@ export default function AccountingPage() {
     setMounted(true);
 
     // Initial fetch when page loads
-    if (!fetchedRooms || !fetchedStays || !fetchedOrders) {
+    if (!fetchedRooms || !fetchedStays || !fetchedOrders || !fetchedScheduledServices) {
       fetchAnalytics({
         successRes: handleAccountingResponse,
         requestConfig: {

@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import Stay from "./entity";
 import { IAddStayInput, IEditStayUserInput } from "./interface";
 import { StayStatus, StayType, PaymentStatus } from "./enum";
+import { roomService } from "../room/service";
 // Import models to ensure they're registered with Mongoose
 import "../room/model";
 import "../roomType/model";
@@ -131,12 +132,29 @@ public async findStayById(id: string) {
         paymentStatus !== existingStay.paymentStatus
       ) {
      
-         return `Invalid payment status transition: '${existingStay.paymentStatus}' → '${paymentStatus}'.`
+         return `Invalid payment status transition: '${existingStay.paymentStatus}' to '${paymentStatus}'.`
         
       }
     }
 
-    // ✅ Step 4: Update stay
+  if (paymentStatus === PaymentStatus.PAID && existingStay.type === StayType.RESERVED) {
+      const checkInTime = new Date(existingStay.checkInDate).getTime();
+      const checkOutTime = new Date(existingStay.checkOutDate).getTime();
+      const msPerNight = 1000 * 60 * 60 * 24;
+      const nights = Math.max(1, Math.ceil((checkOutTime - checkInTime) / msPerNight));
+
+      const room = await roomService.findRoomByRoomIdAndHotellId(
+        existingStay.roomId.toString(),
+        hotelId.toString()
+      );
+      const price = (room as any)?.roomTypeId?.price;
+      if (price !== undefined && price !== null) {
+        (updateData as any).totalAmount = price * nights;
+        (updateData as any).paidAmount = price * nights;
+        (updateData as any).roomRateAtPayment = price
+      }
+  }
+
     const updatedStay = await Stay.findOneAndUpdate(
       { _id: stayId, hotelId },
       { $set: { ...updateData, status, paymentStatus } },

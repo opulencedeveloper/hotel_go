@@ -14,6 +14,9 @@ import {
   X,
   Edit
 } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { formatPrice } from '@/helper';
 
 interface Service {
   _id: string;
@@ -34,6 +37,9 @@ interface ServiceDetailsModalProps {
 
 export default function ServiceDetailsModal({ selectedService, onClose }: ServiceDetailsModalProps) {
   if (!selectedService) return null;
+
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -77,7 +83,7 @@ export default function ServiceDetailsModal({ selectedService, onClose }: Servic
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
@@ -105,7 +111,7 @@ export default function ServiceDetailsModal({ selectedService, onClose }: Servic
               <h4 className="font-medium text-secondary-900 mb-2">Service Information</h4>
               <div className="space-y-2 text-sm">
                 <p><span className="font-medium">Description:</span> {selectedService.description}</p>
-                <p><span className="font-medium">Price:</span> {selectedService.price === 0 ? 'Free' : `$${selectedService.price}`}</p>
+                <p><span className="font-medium">Price:</span> {selectedService.price === 0 ? 'Free' : formatPrice(selectedService.price, selectedHotel?.currency)}</p>
                 <p><span className="font-medium">Capacity:</span> {selectedService.capacity} people</p>
                 <p><span className="font-medium">Location:</span> {selectedService.location}</p>
                 <p><span className="font-medium">Status:</span> 

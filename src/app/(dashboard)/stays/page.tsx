@@ -36,7 +36,7 @@ export default function StaysPage() {
 
       const stays = resData.stays;
 
-      console.log(stays)
+      console.log("fetched stayes===>",stays)
       
       dispatch(stayActions.setStays(stays));
     };

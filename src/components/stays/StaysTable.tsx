@@ -209,7 +209,7 @@ export default function StaysTable({
                     <div className="text-sm font-medium text-gray-900">
                       Room {stay.roomId.roomNumber}
                     </div>
-                    {(() => {
+                    {/* {(() => {
                       const roomDetails = getRoomDetails(stay.roomId._id);
                       const roomTypeDetails = getRoomTypeDetails(roomDetails?.roomTypeId || stay.roomId.roomTypeId);
                       return (
@@ -226,7 +226,7 @@ export default function StaysTable({
                           )}
                         </>
                       );
-                    })()}
+                    })()} */}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -278,6 +278,15 @@ export default function StaysTable({
                         Balance: {formatPrice(stay.totalAmount - (stay.paidAmount || 0), selectedHotel?.currency)}
                       </div>
                     )}
+                    {stay.roomRateAtPayment !== undefined ? (
+                      <div className="text-xs text-blue-600">
+                        Room Rate at Payment: {formatPrice(stay.roomRateAtPayment, selectedHotel?.currency)}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-red-600">
+                        Room Rate at Payment: <span className="italic">Not yet paid</span>
+                      </div>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -304,14 +313,14 @@ export default function StaysTable({
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => onDeleteStay(stay)}
                       disabled={isDeleting}
                       className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Delete Stay"
                     >
                       <Trash2 className="w-4 h-4" />
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

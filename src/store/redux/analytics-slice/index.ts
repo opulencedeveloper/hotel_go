@@ -17,6 +17,7 @@ export interface StaySliceParams {
   emailAddress?: string;
   phoneNumber: string;
   address: string;
+  roomRateAtPayment?: number | null;
   paymentMethod: string;
   paymentStatus: string;
   paymentDate?: string;
@@ -63,14 +64,41 @@ export interface Order {
   updatedAt: string;
 }
 
+/* ------------------- Scheduled Service Interfaces ------------------- */
+export interface ScheduledServiceHotelService {
+  _id: string;
+  name: string;
+  category: string;
+  location?: string;
+  capacity?: number;
+  price?: number;
+  description?: string;
+  status?: string;
+}
+
+export interface ScheduledServiceSliceParams {
+  _id: string;
+  hotelId: string;
+  hotelServiceId: ScheduledServiceHotelService;
+  paymentMethod: string;
+  paymentStatus: string;
+  totalAmount: number;
+  scheduledAt: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /* ------------------- Analytics State ------------------- */
 export interface AnalyticsState {
   fetchedRooms: boolean;
   hotelRooms: RoomSliceParams[];
   stays: StaySliceParams[];
   orders: Order[];
+  scheduledServices: ScheduledServiceSliceParams[];
   fetchedStays: boolean;
   fetchedOrders: boolean;
+  fetchedScheduledServices: boolean;
 }
 
 const initialState: AnalyticsState = {
@@ -78,8 +106,10 @@ const initialState: AnalyticsState = {
   hotelRooms: [],
   stays: [],
   orders: [],
+  scheduledServices: [],
   fetchedStays: false,
   fetchedOrders: false,
+  fetchedScheduledServices: false,
 };
 
 /* ------------------- Slice ------------------- */
@@ -101,6 +131,11 @@ const analyticsSlice = createSlice({
     setOrders: (state, action: PayloadAction<Order[]>) => {
       state.fetchedOrders = true;
       state.orders = action.payload;
+    },
+
+    setScheduledServices: (state, action: PayloadAction<ScheduledServiceSliceParams[]>) => {
+      state.fetchedScheduledServices = true;
+      state.scheduledServices = action.payload;
     },
   },
 });

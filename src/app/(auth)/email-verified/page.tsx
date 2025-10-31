@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Building2, CheckCircle, Mail, ArrowRight, RefreshCw, AlertCircle, Hotel, Shield, Clock, Users } from "lucide-react";
@@ -14,11 +14,13 @@ export default function EmailVerifiedPage() {
   const { isLoading, sendHttpRequest: verifyEmailReq, error } = useHttp();
 
   const [verificationStatus, setVerificationStatus] = useState<
-    "verifying" | "success" | "error" | "expired" | "network_error"
-  >("verifying");
+    "verifying" | "success" | "error" | "expired" | "network_error" | "pending"
+  >("pending");
   const [email, setEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [token, setToken] = useState("");
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -30,12 +32,18 @@ export default function EmailVerifiedPage() {
 
     if (tokenParam) {
       setToken(tokenParam);
-      verifyEmail(tokenParam, emailParam);
+      // If token is 6 digits, auto-populate OTP inputs
+      if (tokenParam.length === 6 && /^\d+$/.test(tokenParam)) {
+        const tokenDigits = tokenParam.split("");
+        setOtp(tokenDigits);
+        // Auto-verify if token is in URL
+        verifyEmail(tokenParam, emailParam);
+      } else if (tokenParam.length === 6) {
+        // Still try to verify even if not all digits
+        verifyEmail(tokenParam, emailParam);
+      }
     } else {
-      setVerificationStatus("error");
-      setErrorMessage(
-        "Invalid verification link. Please check your email for the correct link."
-      );
+      setVerificationStatus("pending");
     }
   }, [searchParams]);
 
@@ -78,6 +86,70 @@ export default function EmailVerifiedPage() {
     verifyEmail(token, email);
   };
 
+  const handleOtpChange = (index: number, value: string) => {
+    // Only allow digits
+    if (value && !/^\d$/.test(value)) {
+      return;
+    }
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    // Auto-verify when all 6 digits are entered
+    if (newOtp.every(digit => digit !== "") && newOtp.length === 6) {
+      const otpString = newOtp.join("");
+      setVerificationStatus("verifying");
+      verifyEmail(otpString, email);
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Handle backspace
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").trim();
+    
+    // Only process if it's 6 digits
+    if (pastedData.length === 6 && /^\d+$/.test(pastedData)) {
+      const digits = pastedData.split("");
+      setOtp(digits);
+      const otpString = digits.join("");
+      
+      // Focus the last input
+      inputRefs.current[5]?.focus();
+      
+      // Auto-verify
+      setVerificationStatus("verifying");
+      verifyEmail(otpString, email);
+    }
+  };
+
+  const handleVerifyOtp = () => {
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      toast.error("Please enter all 6 digits");
+      return;
+    }
+    if (!/^\d+$/.test(otpString)) {
+      toast.error("OTP must contain only digits");
+      return;
+    }
+    setVerificationStatus("verifying");
+    setErrorMessage("");
+    verifyEmail(otpString, email);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Background Pattern */}
@@ -108,6 +180,68 @@ export default function EmailVerifiedPage() {
 
           {/* Main Content Card */}
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
+            {verificationStatus === "pending" && (
+              <div className="text-center">
+                <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-500/20 mb-6">
+                  <Mail className="h-8 w-8 text-blue-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  Enter Verification Code
+                </h3>
+                <p className="text-blue-100 mb-6">
+                  Please enter the 6-digit verification code sent to{" "}
+                  <strong className="text-yellow-300">{email || "your email"}</strong>
+                </p>
+
+                {/* OTP Input */}
+                <div className="mb-6">
+                  <div className="flex justify-center gap-3 mb-4">
+                    {otp.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => {
+                          inputRefs.current[index] = el;
+                        }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        onPaste={index === 0 ? handleOtpPaste : undefined}
+                        className="w-14 h-16 text-center text-2xl font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 focus:outline-none transition-all duration-200"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleVerifyOtp}
+                  disabled={otp.some(digit => !digit) || isLoading}
+                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent text-lg font-semibold rounded-xl text-slate-900 bg-gradient-to-r from-yellow-300 to-yellow-400 hover:from-yellow-400 hover:to-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-300 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <LoadingSpinner title="Verifying..." />
+                  ) : (
+                    <>
+                      Verify Email
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </button>
+
+                <div className="mt-6 bg-white/5 rounded-lg p-4 border border-white/10">
+                  <div className="flex items-center justify-center space-x-2 text-blue-200 mb-2">
+                    <Shield className="h-4 w-4" />
+                    <span className="text-sm font-medium">Security Tip</span>
+                  </div>
+                  <p className="text-xs text-blue-200">
+                    You can paste the 6-digit code or enter it manually
+                  </p>
+                </div>
+              </div>
+            )}
+
             {verificationStatus === "verifying" && (
               <div className="text-center">
                 <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-full bg-blue-500/20 mb-6">
@@ -180,13 +314,43 @@ export default function EmailVerifiedPage() {
                 </h3>
                 <p className="text-blue-100 mb-6">{errorMessage}</p>
 
+                {/* OTP Input for Retry */}
+                <div className="mb-6">
+                  <p className="text-blue-200 text-sm mb-4">
+                    Please enter the 6-digit verification code again
+                  </p>
+                  <div className="flex justify-center gap-3 mb-4">
+                    {otp.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => {
+                          inputRefs.current[index] = el;
+                        }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        onPaste={index === 0 ? handleOtpPaste : undefined}
+                        className="w-14 h-16 text-center text-2xl font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-red-400/50 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 focus:outline-none transition-all duration-200"
+                      />
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-4">
-                  <Link
-                    href="/verify-email"
-                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                  <button
+                    onClick={handleVerifyOtp}
+                    disabled={otp.some(digit => !digit) || isLoading}
+                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    Try Again
-                  </Link>
+                    {isLoading ? (
+                      <LoadingSpinner title="Verifying..." />
+                    ) : (
+                      "Verify Again"
+                    )}
+                  </button>
 
                   <Link
                     href="/register"
@@ -204,15 +368,40 @@ export default function EmailVerifiedPage() {
                   <AlertCircle className="h-12 w-12 text-orange-400" />
                 </div>
                 <h3 className="text-2xl font-bold text-white mb-4">
-                  An Error Occured
+                  Network Error
                 </h3>
                 <p className="text-blue-100 mb-6">{errorMessage}</p>
 
+                {/* OTP Input for Retry */}
+                <div className="mb-6">
+                  <p className="text-blue-200 text-sm mb-4">
+                    Please re-enter the 6-digit verification code
+                  </p>
+                  <div className="flex justify-center gap-3 mb-4">
+                    {otp.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => {
+                          inputRefs.current[index] = el;
+                        }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                        onPaste={index === 0 ? handleOtpPaste : undefined}
+                        className="w-14 h-16 text-center text-2xl font-bold text-white bg-white/10 backdrop-blur-sm border-2 border-orange-400/50 rounded-xl focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/50 focus:outline-none transition-all duration-200"
+                      />
+                    ))}
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   <button
-                    onClick={handleRetryVerification}
-                    disabled={isLoading}
-                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 transition-colors"
+                    onClick={handleVerifyOtp}
+                    disabled={otp.some(digit => !digit) || isLoading}
+                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isLoading ? (
                       <LoadingSpinner title="Retrying..." />

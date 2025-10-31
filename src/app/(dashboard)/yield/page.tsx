@@ -53,17 +53,18 @@ export default function YieldPage() {
       if (fetchedData) return;
 
       const onFetchUserAndHotelInfoReq = (res: any) => {
+
         const resData = res?.data?.data;
 
-        const stays = resData.stays;
+      const stays = resData.stays;
 
-        dispatch(stayActions.setStays(stays));
+      dispatch(stayActions.setStays(stays));
       };
 
       fetchUserAndHotelInfoReq({
         successRes: onFetchUserAndHotelInfoReq,
         requestConfig: {
-          url: "/hotel/room-info",
+           url: "/hotel/stays-info",
           method: "GET",
         },
       });

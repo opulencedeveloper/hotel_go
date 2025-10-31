@@ -17,16 +17,17 @@ export default function AnalyticsPage() {
 
   // ✅ Select analytics data from Redux
   const analytics = useSelector((state: RootState) => state.analytics);
-  const { fetchedRooms, fetchedStays, fetchedOrders } = analytics;
+  const { fetchedRooms, fetchedStays, fetchedOrders, fetchedScheduledServices } = analytics;
 
   const handleAnalyticsResponse = (res: any) => {
     const resData = res?.data?.data;
 
-    const { stays, rooms, orders } = resData;
+    const { stays, rooms, orders, scheduledServices } = resData;
 
     dispatch(analyticsActions.setRooms(rooms));
     dispatch(analyticsActions.setStays(stays));
     dispatch(analyticsActions.setOrders(orders));
+    dispatch(analyticsActions.setScheduledServices(scheduledServices || []));
   };
 
   // ✅ Fetch analytics on initial page load only
@@ -34,7 +35,7 @@ export default function AnalyticsPage() {
     setMounted(true);
 
     // Initial fetch when page loads
-    if (!fetchedRooms || !fetchedStays || !fetchedOrders) {
+    if (!fetchedRooms || !fetchedStays || !fetchedOrders || !fetchedScheduledServices) {
       fetchAnalytics({
         successRes: handleAnalyticsResponse,
         requestConfig: {
@@ -45,6 +46,20 @@ export default function AnalyticsPage() {
       });
     }
   }, []);
+
+  // ✅ Refetch when period changes (after initial mount)
+  useEffect(() => {
+    if (mounted) {
+      fetchAnalytics({
+        successRes: handleAnalyticsResponse,
+        requestConfig: {
+          url: "/hotel/get-analytics",
+          method: "GET",
+          params: { period: selectedPeriod },
+        },
+      });
+    }
+  }, [selectedPeriod]);
 
   // ✅ Manual fetch function that can be triggered by button
   const refetchAnalytics = () => {

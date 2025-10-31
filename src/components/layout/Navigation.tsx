@@ -82,7 +82,7 @@ export default function Navigation({ sidebarOpen, setSidebarOpen }: NavigationPr
         }`}
       >
         <div
-          className="fixed inset-0 bg-black bg-opacity-25"
+          className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-25"
           onClick={() => setSidebarOpen(false)}
         />
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col">

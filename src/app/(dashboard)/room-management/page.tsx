@@ -32,17 +32,8 @@ export default function RoomManagementPage() {
     const onFetchRoomInfoReq = (res: any) => {
       const resData = res?.data?.data;
       const fetchedRoomTypes: RoomTypeSliceParams[] = resData?.hotelRoomTypes;
-      const fetchedRooms: RoomSliceParams[] =
-        resData?.hotelRooms?.map((room: any) => ({
-          _id: room._id,
-          floor: room.floor,
-          roomNumber: room.roomNumber,
-          roomTypeId: room.roomTypeId?._id ?? "", // ensure it's a string
-          roomTypeName: room.roomTypeId?.name ?? "", // populate field from roomType
-          roomStatus: room.roomStatus,
-          note: room.note,
-        })) ?? [];
-
+      const fetchedRooms: RoomSliceParams[] = resData?.hotelRooms;
+console.log("fetchedRooms", fetchedRooms)
       dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
       dispatch(roomActions.setRooms(fetchedRooms));
     };
@@ -66,18 +57,11 @@ export default function RoomManagementPage() {
 
       const onFetchRoomInfoReq = (res: any) => {
         const resData = res?.data?.data;
-        const fetchedRoomTypes: RoomTypeSliceParams[] = resData?.hotelRoomTypes;
-        const fetchedRooms: RoomSliceParams[] =
-          resData?.hotelRooms?.map((room: any) => ({
-            _id: room._id,
-            floor: room.floor,
-            roomNumber: room.roomNumber,
-            roomTypeId: room.roomTypeId?._id ?? "", // ensure it's a string
-            roomTypeName: room.roomTypeId?.name ?? "", // populate field from roomType
-            roomStatus: room.roomStatus,
-            note: room.note,
-            lastCleaned: room?.lastCleaned
-          })) ?? [];
+      const fetchedRoomTypes: RoomTypeSliceParams[] = resData?.hotelRoomTypes;
+      const fetchedRooms: RoomSliceParams[] = resData?.hotelRooms;
+
+      dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
+      dispatch(roomActions.setRooms(fetchedRooms));
 
         dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
         dispatch(roomActions.setRooms(fetchedRooms));

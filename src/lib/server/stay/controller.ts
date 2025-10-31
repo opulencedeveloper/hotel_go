@@ -77,12 +77,20 @@ class StayController {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // Calculate number of nights between check-in and check-out (minimum 1)
+    const checkInTime = new Date(body.checkInDate).getTime();
+    const checkOutTime = new Date(body.checkOutDate).getTime();
+    const msPerNight = 1000 * 60 * 60 * 24;
+    const nights = Math.max(1, Math.ceil((checkOutTime - checkInTime) / msPerNight));
+    const unitPrice = (roomNoExist.roomTypeId as any)?.price;
     const stay = await stayService.createStay({
       ...body,
       hotelId: hotelId!,
-      ...(body.type === StayType.WALK_IN && {
-        totalAmount: (roomNoExist.roomTypeId as any)?.price,
-        paidAmount: (roomNoExist.roomTypeId as any)?.price,
+      ...((body.type === StayType.WALK_IN || body.type === StayType.BOOKED) && {
+        totalAmount: unitPrice * nights,
+        paidAmount: unitPrice * nights,
+        roomRateAtPayment: unitPrice
       }),
       paymentDate: body.type !== StayType.RESERVED ? today : body.paymentDate,
       paymentStatus:

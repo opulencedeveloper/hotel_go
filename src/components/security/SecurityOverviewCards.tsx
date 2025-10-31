@@ -23,91 +23,112 @@ export default function SecurityOverviewCards({
   recentEvents,
   criticalEvents,
 }: SecurityOverviewCardsProps) {
+  const cards = [
+    {
+      label: 'Active',
+      value: activeUsers,
+      subtitle: 'Working',
+      icon: UserCheck,
+      gradient: 'from-emerald-500 to-teal-600',
+      iconBg: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      subtitleColor: 'text-emerald-600',
+      borderColor: 'border-emerald-200',
+    },
+    {
+      label: 'Suspended',
+      value: suspendedUsers,
+      subtitle: 'Disciplinary',
+      icon: UserX,
+      gradient: 'from-red-500 to-rose-600',
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-600',
+      subtitleColor: 'text-red-600',
+      borderColor: 'border-red-200',
+    },
+    {
+      label: 'Inactive',
+      value: inactiveUsers,
+      subtitle: 'Deactivated',
+      icon: UserMinus,
+      gradient: 'from-gray-400 to-gray-500',
+      iconBg: 'bg-gray-50',
+      iconColor: 'text-gray-600',
+      subtitleColor: 'text-gray-600',
+      borderColor: 'border-gray-200',
+    },
+    {
+      label: 'On Leave',
+      value: onLeaveUsers,
+      subtitle: 'Vacation',
+      icon: Clock,
+      gradient: 'from-amber-500 to-orange-600',
+      iconBg: 'bg-amber-50',
+      iconColor: 'text-amber-600',
+      subtitleColor: 'text-amber-600',
+      borderColor: 'border-amber-200',
+    },
+    {
+      label: 'Terminated',
+      value: terminatedUsers,
+      subtitle: 'No longer employed',
+      icon: Ban,
+      gradient: 'from-red-600 to-pink-600',
+      iconBg: 'bg-red-50',
+      iconColor: 'text-red-600',
+      subtitleColor: 'text-red-600',
+      borderColor: 'border-red-200',
+    },
+    {
+      label: 'Pending',
+      value: pendingUsers,
+      subtitle: 'Awaiting setup',
+      icon: Plus,
+      gradient: 'from-blue-500 to-indigo-600',
+      iconBg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      subtitleColor: 'text-blue-600',
+      borderColor: 'border-blue-200',
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {/* Active Users */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-secondary-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-secondary-600">Active</p>
-            <p className="text-xl font-bold text-secondary-900">{activeUsers}</p>
-            <p className="text-xs text-green-600">Working</p>
-          </div>
-          <div className="p-2 bg-green-100 rounded-full">
-            <UserCheck className="w-4 h-4 text-green-600" />
-          </div>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      {cards.map((card, index) => {
+        const Icon = card.icon;
+        return (
+          <div
+            key={index}
+            className="group relative bg-white rounded-xl p-6 shadow-sm hover:shadow-lg border border-gray-200 hover:border-gray-300 transition-all duration-300 overflow-hidden"
+          >
+            {/* Decorative gradient background */}
+            <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${card.gradient} opacity-5 rounded-full -mr-16 -mt-16 group-hover:opacity-10 transition-opacity duration-300`} />
+            
+            <div className="relative flex flex-col space-y-4">
+              {/* Header with icon */}
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    {card.label}
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 mb-2">
+                    {card.value}
+                  </p>
+                  <p className={`text-xs font-medium ${card.subtitleColor}`}>
+                    {card.subtitle}
+                  </p>
+                </div>
+                <div className={`p-3 ${card.iconBg} rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
+                  <Icon className={`w-5 h-5 ${card.iconColor}`} />
+                </div>
+              </div>
 
-      {/* Suspended Users */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-secondary-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-secondary-600">Suspended</p>
-            <p className="text-xl font-bold text-secondary-900">{suspendedUsers}</p>
-            <p className="text-xs text-red-600">Disciplinary</p>
+              {/* Bottom accent bar */}
+              <div className={`h-1 w-full bg-gradient-to-r ${card.gradient} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+            </div>
           </div>
-          <div className="p-2 bg-red-100 rounded-full">
-            <UserX className="w-4 h-4 text-red-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Inactive Users */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-secondary-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-secondary-600">Inactive</p>
-            <p className="text-xl font-bold text-secondary-900">{inactiveUsers}</p>
-            <p className="text-xs text-gray-600">Deactivated</p>
-          </div>
-          <div className="p-2 bg-gray-100 rounded-full">
-            <UserMinus className="w-4 h-4 text-gray-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* On Leave Users */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-secondary-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-secondary-600">On Leave</p>
-            <p className="text-xl font-bold text-secondary-900">{onLeaveUsers}</p>
-            <p className="text-xs text-yellow-600">Vacation</p>
-          </div>
-          <div className="p-2 bg-yellow-100 rounded-full">
-            <Clock className="w-4 h-4 text-yellow-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Terminated Users */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-secondary-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-secondary-600">Terminated</p>
-            <p className="text-xl font-bold text-secondary-900">{terminatedUsers}</p>
-            <p className="text-xs text-red-600">No longer employed</p>
-          </div>
-          <div className="p-2 bg-red-100 rounded-full">
-            <Ban className="w-4 h-4 text-red-600" />
-          </div>
-        </div>
-      </div>
-
-      {/* Pending Users */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-secondary-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-secondary-600">Pending</p>
-            <p className="text-xl font-bold text-secondary-900">{pendingUsers}</p>
-            <p className="text-xs text-blue-600">Awaiting setup</p>
-          </div>
-          <div className="p-2 bg-blue-100 rounded-full">
-            <Plus className="w-4 h-4 text-blue-600" />
-          </div>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }

@@ -45,6 +45,8 @@ import {
   Archive,
   CheckCircle,
   Save,
+  Layers,
+  Tag,
 } from "lucide-react";
 import { RootState } from "@/store";
 import { StayType, UserRole } from "@/utils/enum";
@@ -125,8 +127,25 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     error: reservationError,
   } = useHttp();
 
+  // Helper function to validate capacity
+  const validateCapacity = (adults: number, children: number): string => {
+    if (!reservationForm.roomType) return "";
+    
+    const selectedRoom = hotelRooms?.find(
+      (room) => room.roomNumber === reservationForm.roomType
+    );
+    
+    if (selectedRoom?.roomTypeId?.capacity) {
+      const totalGuests = adults + children;
+      if (totalGuests > selectedRoom.roomTypeId.capacity) {
+        return `Total guests (${totalGuests}) exceeds room capacity (${selectedRoom.roomTypeId.capacity})`;
+      }
+    }
+    return "";
+  };
+
   // Validation functions
-  const validateField = (fieldName: string, value: string): string => {
+  const validateField = (fieldName: string, value: string, currentAdults?: number, currentChildren?: number): string => {
     switch (fieldName) {
       case "roomNumber":
         if (!value) return "Room number is required";
@@ -206,16 +225,36 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         }
         return "";
       }
-      case "adults":
-        if (!value || parseInt(value) < 1)
+      case "adults": {
+        // Only validate if value is provided and not empty
+        if (value === "" || value === null || value === undefined) return "";
+        
+        const adultsNum = parseInt(value);
+        if (isNaN(adultsNum) || adultsNum < 1)
           return "At least 1 adult is required";
-        if (parseInt(value) > 10) return "Maximum 10 adults allowed";
+        if (adultsNum > 10) return "Maximum 10 adults allowed";
+        
+        // Check capacity constraint using current values
+        const adultsCount = adultsNum;
+        const childrenCount = currentChildren !== undefined ? currentChildren : reservationForm.children || 0;
+        const capacityError = validateCapacity(adultsCount, childrenCount);
+        if (capacityError) return capacityError;
+        
         return "";
-      case "children":
+      }
+      case "children": {
         if (value && parseInt(value) < 0)
           return "Children count cannot be negative";
         if (value && parseInt(value) > 10) return "Maximum 10 children allowed";
+        
+        // Check capacity constraint using current values
+        const adultsCount = currentAdults !== undefined ? currentAdults : reservationForm.adults || 1;
+        const childrenCount = parseInt(value) || 0;
+        const capacityError = validateCapacity(adultsCount, childrenCount);
+        if (capacityError) return capacityError;
+        
         return "";
+      }
       case "paymentDate":
         if (!value) return "Payment date is required for reservations";
         const paymentDate = new Date(value);
@@ -379,22 +418,12 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         },
         successRes: (res) => {
           const resData = res?.data?.data;
-          const fetchedRoomTypes: RoomTypeSliceParams[] =
-            resData?.hotelRoomTypes;
-          const fetchedRooms: RoomSliceParams[] =
-            resData?.hotelRooms?.map((room: any) => ({
-              _id: room._id,
-              floor: room.floor,
-              roomNumber: room.roomNumber,
-              roomTypeId: room.roomTypeId?._id ?? "", // ensure it's a string
-              roomTypeName: room.roomTypeId?.name ?? "", // populate field from roomType
-              roomStatus: room.roomStatus,
-              note: room.note,
-              lastCleaned: room?.lastCleaned,
-            })) ?? [];
-
-          dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
-          dispatch(roomActions.setRooms(fetchedRooms));
+         
+        const fetchedRoomTypes = resData?.hotelRoomTypes;
+            const fetchedRooms = resData?.hotelRooms;
+      
+            dispatch(roomActions.setRoomTypes(fetchedRoomTypes));
+            dispatch(roomActions.setRooms(fetchedRooms));
         },
       });
     }
@@ -839,7 +868,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </div>
 
       {showReservationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-secondary-900">
@@ -1082,17 +1111,27 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                           ...reservationForm,
                           roomType: e.target.value,
                         });
-                        const error = validateField("roomType", e.target.value);
+                        const roomTypeError = validateField("roomType", e.target.value);
+                        // Also validate capacity when room changes
+                        const adultsError = validateField("adults", reservationForm.adults.toString(), reservationForm.adults, reservationForm.children);
+                        const childrenError = validateField("children", reservationForm.children.toString(), reservationForm.adults, reservationForm.children);
                         setReservationErrors({
                           ...reservationErrors,
-                          roomType: error,
+                          roomType: roomTypeError,
+                          adults: adultsError,
+                          children: childrenError,
                         });
                       }}
                       onBlur={(e) => {
-                        const error = validateField("roomType", e.target.value);
+                        const roomTypeError = validateField("roomType", e.target.value);
+                        // Also validate capacity when room changes
+                        const adultsError = validateField("adults", reservationForm.adults.toString(), reservationForm.adults, reservationForm.children);
+                        const childrenError = validateField("children", reservationForm.children.toString(), reservationForm.adults, reservationForm.children);
                         setReservationErrors({
                           ...reservationErrors,
-                          roomType: error,
+                          roomType: roomTypeError,
+                          adults: adultsError,
+                          children: childrenError,
                         });
                       }}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
@@ -1151,6 +1190,100 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                     </p>
                   )}
                 </div>
+
+                {/* Selected Room Details */}
+                {reservationForm.roomType && hotelRooms && (() => {
+                  const selectedRoom = hotelRooms.find(
+                    (room) => room.roomNumber === reservationForm.roomType
+                  );
+                  if (!selectedRoom) return null;
+                  
+                  return (
+                    <div className="md:col-span-2 mt-4 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-lg p-5 border border-primary-200 shadow-sm">
+                        <div className="flex items-center mb-4">
+                          <div className="p-2 bg-primary-100 rounded-lg mr-3">
+                            <Bed className="w-5 h-5 text-primary-600" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold text-secondary-900">
+                              Room {selectedRoom.roomNumber}
+                            </h3>
+                            <span className="text-xs text-secondary-500">
+                              {selectedRoom.roomTypeId?.name || selectedRoom.roomTypeName || "Room"}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <div className="flex items-start">
+                              <Tag className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-secondary-500 mb-0.5">Room Type</p>
+                                <p className="text-sm font-medium text-secondary-900">
+                                  {selectedRoom.roomTypeId?.name || selectedRoom.roomTypeName || "N/A"}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start">
+                              <Layers className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-secondary-500 mb-0.5">Floor</p>
+                                <p className="text-sm font-medium text-secondary-900">
+                                  Floor {selectedRoom.floor}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start">
+                              <Users className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-secondary-500 mb-0.5">Capacity</p>
+                                <p className="text-sm font-medium text-secondary-900">
+                                  {selectedRoom.roomTypeId?.capacity ? (
+                                    <>
+                                      {selectedRoom.roomTypeId.capacity} {selectedRoom.roomTypeId.capacity === 1 ? "person" : "people"}
+                                    </>
+                                  ) : (
+                                    "N/A"
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-start">
+                              <DollarSign className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-secondary-500 mb-0.5">Price</p>
+                                <p className="text-sm font-semibold text-primary-600">
+                                  {formatPrice(selectedRoom.roomTypeId?.price || 0, currency)}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-start">
+                              <Building className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-secondary-500 mb-0.5">Status</p>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  selectedRoom.roomStatus === "available" 
+                                    ? "bg-green-100 text-green-800"
+                                    : selectedRoom.roomStatus === "occupied"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-yellow-100 text-yellow-800"
+                                }`}>
+                                  {selectedRoom.roomStatus}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                 <div>
                   <label className="block text-sm font-medium text-secondary-700 mb-2">
@@ -1436,21 +1569,28 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                     max="10"
                     value={reservationForm.adults}
                     onChange={(e) => {
+                      const newAdults = parseInt(e.target.value) || 1;
                       setReservationForm({
                         ...reservationForm,
-                        adults: parseInt(e.target.value) || 1,
+                        adults: newAdults,
                       });
-                      const error = validateField("adults", e.target.value);
+                      // Use current values for validation
+                      const adultsError = validateField("adults", e.target.value, newAdults, reservationForm.children);
+                      const childrenError = validateField("children", reservationForm.children.toString(), newAdults, reservationForm.children);
                       setReservationErrors({
                         ...reservationErrors,
-                        adults: error,
+                        adults: adultsError,
+                        children: childrenError,
                       });
                     }}
                     onBlur={(e) => {
-                      const error = validateField("adults", e.target.value);
+                      const currentAdults = parseInt(e.target.value) || 1;
+                      const adultsError = validateField("adults", e.target.value, currentAdults, reservationForm.children);
+                      const childrenError = validateField("children", reservationForm.children.toString(), currentAdults, reservationForm.children);
                       setReservationErrors({
                         ...reservationErrors,
-                        adults: error,
+                        adults: adultsError,
+                        children: childrenError,
                       });
                     }}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
@@ -1476,21 +1616,28 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                     max="10"
                     value={reservationForm.children}
                     onChange={(e) => {
+                      const newChildren = parseInt(e.target.value) || 0;
                       setReservationForm({
                         ...reservationForm,
-                        children: parseInt(e.target.value) || 0,
+                        children: newChildren,
                       });
-                      const error = validateField("children", e.target.value);
+                      // Use current values for validation
+                      const adultsError = validateField("adults", reservationForm.adults.toString(), reservationForm.adults, newChildren);
+                      const childrenError = validateField("children", e.target.value, reservationForm.adults, newChildren);
                       setReservationErrors({
                         ...reservationErrors,
-                        children: error,
+                        adults: adultsError,
+                        children: childrenError,
                       });
                     }}
                     onBlur={(e) => {
-                      const error = validateField("children", e.target.value);
+                      const currentChildren = parseInt(e.target.value) || 0;
+                      const adultsError = validateField("adults", reservationForm.adults.toString(), reservationForm.adults, currentChildren);
+                      const childrenError = validateField("children", e.target.value, reservationForm.adults, currentChildren);
                       setReservationErrors({
                         ...reservationErrors,
-                        children: error,
+                        adults: adultsError,
+                        children: childrenError,
                       });
                     }}
                     className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
@@ -1603,7 +1750,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
 
       {/* Booking Modal (public-like booking separate from reservation) */}
       {false && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-secondary-900">
@@ -1761,7 +1908,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
 
       {/* Walk-in Modal */}
       {showWalkInModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-secondary-900">

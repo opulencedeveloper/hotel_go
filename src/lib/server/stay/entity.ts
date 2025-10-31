@@ -94,6 +94,10 @@ const staySchema = new Schema<IStay>(
       required: true,
       index: true, // 🔹 Common filter in billing dashboards
     },
+    roomRateAtPayment: {
+      type: Number,
+      default: null,
+    },
     totalAmount: {
       type: Number,
       default: 0,

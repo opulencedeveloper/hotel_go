@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Bed, Printer, Mail, Eye, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Bed, Printer, Mail, Eye, Clock, CheckCircle, AlertCircle, Utensils, Calendar, Tag } from 'lucide-react';
 import { formatPrice } from '@/helper';
 
 interface Folio {
   id: string;
+  type: 'stay' | 'order' | 'service';
   guest: string;
   room: string;
   checkIn: string;
@@ -15,6 +16,8 @@ interface Folio {
   balance: number;
   status: string;
   lastActivity: string;
+  orderItems?: string;
+  serviceCategory?: string;
 }
 
 interface FolioTableProps {
@@ -29,21 +32,64 @@ export default function FolioTable({ folios, onViewFolio, currency }: FolioTable
   useEffect(() => {
     setIsClient(true);
   }, []);
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open': return 'bg-yellow-100 text-yellow-800';
-      case 'closed': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getTypeIcon = (type: 'stay' | 'order' | 'service') => {
+    switch (type) {
+      case 'stay':
+        return <Bed className="w-4 h-4 text-blue-600" />;
+      case 'order':
+        return <Utensils className="w-4 h-4 text-orange-600" />;
+      case 'service':
+        return <Calendar className="w-4 h-4 text-indigo-600" />;
+      default:
+        return <User className="w-4 h-4" />;
     }
+  };
+
+  const getTypeLabel = (type: 'stay' | 'order' | 'service') => {
+    switch (type) {
+      case 'stay':
+        return 'Stay';
+      case 'order':
+        return 'Order';
+      case 'service':
+        return 'Service';
+      default:
+        return 'Item';
+    }
+  };
+
+  const getTypeColor = (type: 'stay' | 'order' | 'service') => {
+    switch (type) {
+      case 'stay':
+        return 'bg-blue-100 text-blue-800';
+      case 'order':
+        return 'bg-orange-100 text-orange-800';
+      case 'service':
+        return 'bg-indigo-100 text-indigo-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusColor = (status: string, type: 'stay' | 'order' | 'service') => {
+    if (status === 'paid' || status === 'closed') return 'bg-green-100 text-green-800';
+    if (status === 'pending') return 'bg-yellow-100 text-yellow-800';
+    if (status === 'cancelled') return 'bg-red-100 text-red-800';
+    if (type === 'stay' && (status === 'checked_in' || status === 'checked_out')) return 'bg-blue-100 text-blue-800';
+    return 'bg-gray-100 text-gray-800';
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'open': return <Clock className="w-4 h-4" />;
-      case 'closed': return <CheckCircle className="w-4 h-4" />;
-      case 'pending': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'paid':
+      case 'closed': 
+        return <CheckCircle className="w-4 h-4" />;
+      case 'pending': 
+        return <Clock className="w-4 h-4" />;
+      case 'cancelled': 
+        return <AlertCircle className="w-4 h-4" />;
+      default: 
+        return <Clock className="w-4 h-4" />;
     }
   };
 
@@ -54,16 +100,16 @@ export default function FolioTable({ folios, onViewFolio, currency }: FolioTable
           <thead className="bg-secondary-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Folio
+                Type
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Guest
+                Item
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Room
+                Location/Details
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
-                Stay Period
+                Date/Period
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-secondary-500 uppercase tracking-wider">
                 Charges
@@ -86,29 +132,44 @@ export default function FolioTable({ folios, onViewFolio, currency }: FolioTable
             {folios.map((folio) => (
               <tr key={folio.id} className="hover:bg-secondary-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-secondary-900">{folio.id}</div>
-                  <div className="text-sm text-secondary-500">{folio.lastActivity}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-primary-600" />
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getTypeColor(folio.type)}`}>
+                      {getTypeIcon(folio.type)}
                     </div>
                     <div className="ml-3">
-                      <div className="text-sm font-medium text-secondary-900">{folio.guest}</div>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(folio.type)}`}>
+                        {getTypeLabel(folio.type)}
+                      </span>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Bed className="w-4 h-4 text-secondary-400 mr-2" />
-                    <span className="text-sm text-secondary-900">{folio.room}</span>
-                  </div>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-secondary-900">{folio.guest}</div>
+                  <div className="text-xs text-secondary-500 mt-1">#{folio.id.slice(-6)}</div>
+                  <div className="text-xs text-secondary-400 mt-1">{folio.lastActivity}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-secondary-900">{folio.room}</div>
+                  {folio.type === 'order' && folio.orderItems && (
+                    <div className="text-xs text-secondary-500 mt-1">{folio.orderItems}</div>
+                  )}
+                  {folio.type === 'service' && folio.serviceCategory && (
+                    <div className="text-xs text-secondary-500 mt-1 capitalize">{folio.serviceCategory}</div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-secondary-900">
-                    {isClient ? `${new Date(folio.checkIn).toLocaleDateString()} - ${new Date(folio.checkOut).toLocaleDateString()}` : '--/--/---- - --/--/----'}
+                    {isClient ? (
+                      folio.type === 'stay' 
+                        ? `${new Date(folio.checkIn).toLocaleDateString()} - ${new Date(folio.checkOut).toLocaleDateString()}`
+                        : new Date(folio.checkIn).toLocaleDateString()
+                    ) : '--/--/----'}
                   </div>
+                  {folio.type === 'service' && isClient && (
+                    <div className="text-xs text-secondary-500 mt-1">
+                      {new Date(folio.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
                   {formatPrice(folio.totalCharges, currency)}
@@ -124,7 +185,7 @@ export default function FolioTable({ folios, onViewFolio, currency }: FolioTable
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(folio.status)}`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(folio.status, folio.type)}`}>
                     {getStatusIcon(folio.status)}
                     <span className="ml-1 capitalize">{folio.status}</span>
                   </span>
@@ -134,15 +195,16 @@ export default function FolioTable({ folios, onViewFolio, currency }: FolioTable
                     <button
                       onClick={() => onViewFolio(folio)}
                       className="text-primary-600 hover:text-primary-900"
+                      title="View details"
                     >
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button className="text-secondary-600 hover:text-secondary-900">
+                    {/* <button className="text-secondary-600 hover:text-secondary-900" title="Print">
                       <Printer className="w-4 h-4" />
                     </button>
-                    <button className="text-green-600 hover:text-green-900">
+                    <button className="text-green-600 hover:text-green-900" title="Email">
                       <Mail className="w-4 h-4" />
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

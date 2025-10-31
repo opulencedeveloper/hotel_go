@@ -10,7 +10,12 @@ class RoomService {
     const room = new Room({ ...input });
     await room.save();
 
-    return room;
+    const populatedRoom = await room.populate({
+    path: "roomTypeId",
+    select: "name price capacity", // only pull necessary fields
+  });
+
+  return populatedRoom;
   }
 
   public async editRoomByIdAndHotelId(

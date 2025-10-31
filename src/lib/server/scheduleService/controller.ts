@@ -9,6 +9,7 @@ import {
 import { hoteServiceService } from "../hotelService/service";
 import { scheduledServiceService } from "./service";
 import { HotelServiceStatus } from "../hotelService/enum";
+import { PaymentStatus } from "../stay/enum";
 
 class ScheduleServiceController {
   public async createScheduleService(
@@ -41,8 +42,27 @@ class ScheduleServiceController {
       }
     }
 
+    console.log("newScheduledService", body);
+
+    const hasServiceBeenScheduled =
+      await scheduledServiceService.fetchScheduledServiceBySchedule(
+        body.scheduledAt
+      );
+
+    if (hasServiceBeenScheduled) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Success,
+        description:
+          "A service has already been scheduled for the selected date and time.",
+        data: null,
+      });
+    }
+
     const newScheduledService =
       await scheduledServiceService.creatScheduledServiceService({
+        totalAmount: hotelServiceExist.price,
+        paymentStatus: PaymentStatus.PAID,
         ...body,
         hotelId: hotelId!,
       });
@@ -51,7 +71,7 @@ class ScheduleServiceController {
       status: 201,
       message: MessageResponse.Success,
       description: "Service scheduled successfully!",
-      data: newScheduledService,
+      data: { newScheduledService },
     });
   }
 

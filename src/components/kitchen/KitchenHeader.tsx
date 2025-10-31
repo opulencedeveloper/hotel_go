@@ -33,10 +33,10 @@ export default function KitchenHeader({
               <Flame className="w-4 h-4" />
               <span className="text-orange-100">Kitchen Active</span>
             </div>
-            <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+            {/* <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
               <span className="text-orange-200">Active Orders:</span>
               <span className="font-medium">12</span>
-            </div>
+            </div> */}
             {/* <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
               <span className="text-orange-200">Avg. Prep Time:</span>
               <span className="font-medium">18 min</span>

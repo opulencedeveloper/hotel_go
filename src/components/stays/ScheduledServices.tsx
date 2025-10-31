@@ -1,42 +1,22 @@
 'use client';
 
-import { Calendar, Clock, MapPin, User, Trash2, Edit } from 'lucide-react';
-
-interface HotelService {
-  _id: string;
-  name: string;
-  category: string;
-  location: string;
-  capacity: number;
-  description: string;
-  price: number;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ScheduledService {
-  _id: string;
-  hotelId: string;
-  hotelServiceId: HotelService; // Populated service object
-  note: string;
-  scheduledAt: string; // e.g. "2025-10-23T14:55:00.000Z"
-  createdAt: string;
-  updatedAt: string;
-}
+import { Calendar, Clock, MapPin, User, Trash2, Edit, Eye } from 'lucide-react';
+import { ScheduledService } from '@/store/redux/scheduled-services-slice';
 
 interface ScheduledServicesProps {
   scheduledServices: ScheduledService[];
   isLoading?: boolean;
   onEdit?: (scheduledService: ScheduledService) => void;
   onDelete?: (scheduledServiceId: string) => void;
+  onView?: (scheduledService: ScheduledService) => void;
 }
 
 export default function ScheduledServices({
   scheduledServices,
   isLoading = false,
   onEdit,
-  onDelete
+  onDelete,
+  onView
 }: ScheduledServicesProps) {
   const formatDateTime = (dateTime: string) => {
     const date = new Date(dateTime);
@@ -83,10 +63,16 @@ export default function ScheduledServices({
 
   if (scheduledServices.length === 0) {
     return (
-      <div className="text-center py-8">
-        <Calendar className="w-12 h-12 text-secondary-400 mx-auto mb-4" />
-        <p className="text-secondary-500 text-sm">No scheduled services yet</p>
-        <p className="text-secondary-400 text-xs mt-1">Schedule a service to see it here</p>
+      <div className="text-center py-12 px-4">
+        <div className="flex flex-col items-center justify-center">
+          <div className="p-4 bg-secondary-100 rounded-full mb-4">
+            <Calendar className="w-12 h-12 text-secondary-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-secondary-900 mb-2">No Scheduled Services</h3>
+          <p className="text-secondary-500 text-sm max-w-md mb-4">
+            You haven't scheduled any services yet. Schedule a service to see it here.
+          </p>
+        </div>
       </div>
     );
   }
@@ -132,6 +118,15 @@ export default function ScheduledServices({
                 </div>
 
                 <div className="flex items-center gap-2 ml-4">
+                  {onView && (
+                    <button
+                      onClick={() => onView(scheduledService)}
+                      className="p-2 text-secondary-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  )}
                   {onEdit && (
                     <button
                       onClick={() => onEdit(scheduledService)}

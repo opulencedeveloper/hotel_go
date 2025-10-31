@@ -2,8 +2,10 @@ import { Types } from "mongoose";
 import Room from "../room/entity";
 import Stay from "../stay/entity";
 import { Order } from "../order/entity";
+import ScheduledService from "../scheduleService/entity";
 import "../roomType/entity";
 import "../menu/entity";
+import "../hotelService/entity";
 
 
 class AnayticsService {
@@ -151,6 +153,41 @@ class AnayticsService {
       .exec();
 
     return orders;
+  }
+
+  /**
+   * Find scheduled services by hotel ID with date range filtering
+   * Uses indexed queries for efficient filtering
+   */
+  public async findScheduledServicesByHotelId(hotelId: Types.ObjectId, period: string = '30d') {
+    const dateRange = this.getDateRange(period);
+    
+    // Build query with date filtering for efficient database queries
+    const query: any = { hotelId: new Types.ObjectId(hotelId) };
+    
+    if (dateRange) {
+      // Use indexed createdAt or scheduledAt field for efficient filtering
+      query.$or = [
+        { createdAt: { $gte: dateRange } },
+        { scheduledAt: { $gte: dateRange } }
+      ];
+    }
+    
+    // Adjust limit based on period to prevent performance issues
+    const limit = period === '1y' ? 5000 : 10000; // Lower limit for year view
+    
+    const scheduledServices = await ScheduledService.find(query)
+      .select("hotelServiceId hotelId paymentMethod paymentStatus totalAmount scheduledAt note createdAt updatedAt") // Select only needed fields
+      .sort({ createdAt: -1 }) // Sort by newest first
+      .populate({
+        path: "hotelServiceId",
+        select: "name category location capacity price description status", // Select service fields
+      })
+      .limit(limit) // Prevent extremely large result sets
+      .lean() // Return plain objects for better performance
+      .exec();
+
+    return scheduledServices;
   }
 }
 

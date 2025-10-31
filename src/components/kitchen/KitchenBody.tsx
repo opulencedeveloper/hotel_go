@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import { useKitchenState } from '@/hooks/useKitchenState';
-import KitchenHeader from './KitchenHeader';
-import ActiveOrders from './ActiveOrders';
-import KitchenSidebar from './KitchenSidebar';
-import ViewOrdersModal from './modals/ViewOrdersModal';
-import KitchenTimerModal from './modals/KitchenTimerModal';
-import MenuManagerModal from './modals/MenuManagerModal';
-import MenuListModal from './modals/MenuListModal';
-import StaffScheduleModal from './modals/StaffScheduleModal';
-import InventoryCheckModal from './modals/InventoryCheckModal';
-import ReportIssueModal from './modals/ReportIssueModal';
-import OrderDetailsModal from './modals/OrderDetailsModal';
-import OrderConfirmationModal from './modals/OrderConfirmationModal';
-import OrderPaymentModal from './modals/OrderPaymentModal';
+import { useKitchenState } from "@/hooks/useKitchenState";
+import KitchenHeader from "./KitchenHeader";
+import ActiveOrders from "./ActiveOrders";
+import KitchenSidebar from "./KitchenSidebar";
+import ViewOrdersModal from "./modals/ViewOrdersModal";
+import KitchenTimerModal from "./modals/KitchenTimerModal";
+import MenuManagerModal from "./modals/MenuManagerModal";
+import MenuListModal from "./modals/MenuListModal";
+import StaffScheduleModal from "./modals/StaffScheduleModal";
+import InventoryCheckModal from "./modals/InventoryCheckModal";
+import ReportIssueModal from "./modals/ReportIssueModal";
+import OrderDetailsModal from "./modals/OrderDetailsModal";
+import OrderConfirmationModal from "./modals/OrderConfirmationModal";
+import OrderPaymentModal from "./modals/OrderPaymentModal";
 
 export default function KitchenBody() {
   const {
@@ -61,55 +61,57 @@ export default function KitchenBody() {
   } = useKitchenState();
 
   return (
-      <div className="space-y-6">
-        {/* Header */}
-      <KitchenHeader 
+    <div className="space-y-6">
+      {/* Header */}
+      <KitchenHeader
         onViewOrders={() => setShowViewOrdersModal(true)}
         onKitchenTimer={() => setShowKitchenTimerModal(true)}
         onMenuManager={() => setShowMenuListModal(true)}
       />
 
-        {/* Kitchen Dashboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Active Orders */}
-          <div className="lg:col-span-2">
-          <ActiveOrders 
+      {/* Kitchen Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Active Orders */}
+        <div className="lg:col-span-2">
+        <ActiveOrders
             orders={orders}
             onOrderAction={handleOrderAction}
             onViewOrderDetails={handleViewOrderDetails}
           />
-          </div>
-          
-          {/* Kitchen Stats & Tools */}
-        <KitchenSidebar 
+        </div>
+
+        {/* Kitchen Stats & Tools */}
+        <KitchenSidebar
           onMenuManager={() => setShowMenuListModal(true)}
           onStaffSchedule={() => setShowStaffScheduleModal(true)}
           onInventoryCheck={() => setShowInventoryCheckModal(true)}
           onReportIssue={() => setShowReportIssueModal(true)}
-                    />
-                  </div>
-                  
+        />
+      </div>
+
       {/* Modals */}
-      <ViewOrdersModal 
+      <ViewOrdersModal
         isOpen={showViewOrdersModal}
         onClose={() => setShowViewOrdersModal(false)}
       />
 
-      <KitchenTimerModal 
+      <KitchenTimerModal
         isOpen={showKitchenTimerModal}
         onClose={() => setShowKitchenTimerModal(false)}
         onSubmit={handleKitchenTimerSubmit}
       />
 
-      <MenuListModal 
-        isOpen={showMenuListModal}
-        onClose={() => setShowMenuListModal(false)}
-        onEditMenu={handleEditMenu}
-        onDeleteMenu={handleDeleteMenu}
-        onAddNew={handleAddNewMenu}
-      />
+      {showMenuListModal && (
+        <MenuListModal
+          isOpen={showMenuListModal}
+          onClose={() => setShowMenuListModal(false)}
+          onEditMenu={handleEditMenu}
+          onDeleteMenu={handleDeleteMenu}
+          onAddNew={handleAddNewMenu}
+        />
+      )}
 
-      <MenuManagerModal 
+      <MenuManagerModal
         isOpen={showMenuManagerModal}
         onClose={() => setShowMenuManagerModal(false)}
         onSuccess={handleMenuManagerSuccess}
@@ -117,25 +119,25 @@ export default function KitchenBody() {
         isEditing={isEditingMenu}
       />
 
-      <StaffScheduleModal 
+      <StaffScheduleModal
         isOpen={showStaffScheduleModal}
         onClose={() => setShowStaffScheduleModal(false)}
         onSubmit={handleStaffScheduleSubmit}
       />
 
-      <InventoryCheckModal 
+      <InventoryCheckModal
         isOpen={showInventoryCheckModal}
         onClose={() => setShowInventoryCheckModal(false)}
         onSubmit={handleInventoryCheckSubmit}
       />
 
-      <ReportIssueModal 
+      <ReportIssueModal
         isOpen={showReportIssueModal}
         onClose={() => setShowReportIssueModal(false)}
         onSubmit={handleReportIssueSubmit}
       />
 
-      <OrderDetailsModal 
+      <OrderDetailsModal
         isOpen={showOrderDetailsModal}
         onClose={() => setShowOrderDetailsModal(false)}
         order={selectedOrder}
@@ -146,8 +148,8 @@ export default function KitchenBody() {
         isOpen={showConfirmationModal}
         onClose={cancelOrderAction}
         onConfirm={confirmOrderAction}
-        action={pendingOrderAction?.action || ''}
-        orderId={pendingOrderAction?.orderId || ''}
+        action={pendingOrderAction?.action || ""}
+        orderId={pendingOrderAction?.orderId || ""}
         isLoading={isUpdatingOrder}
       />
 
@@ -155,11 +157,11 @@ export default function KitchenBody() {
         isOpen={showPaymentModal}
         onClose={cancelOrderAction}
         onConfirm={confirmOrderAction}
-        orderId={pendingOrderAction?.orderId || ''}
+        orderId={pendingOrderAction?.orderId || ""}
         selectedPaymentMethod={selectedPaymentMethod}
         onPaymentMethodChange={setSelectedPaymentMethod}
         isLoading={isUpdatingOrder}
-                    />
-                  </div>
+      />
+    </div>
   );
 }

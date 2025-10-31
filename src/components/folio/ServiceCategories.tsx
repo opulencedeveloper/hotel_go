@@ -5,25 +5,35 @@ import {
   Bed,
   Utensils,
   Heart,
-  Calendar
+  Calendar,
+  Tag
 } from 'lucide-react';
+import { formatPrice } from '@/helper';
 
 interface ServiceCategoriesProps {
   stays: any[];
   orders: any[];
+  scheduledServices?: any[];
+  currency?: string;
+  scheduledServicesRevenue?: number;
   onViewStays?: () => void;
   onViewOrders?: () => void;
   onViewPayments?: () => void;
   onViewDetails?: () => void;
+  onViewServices?: () => void;
 }
 
 export default function ServiceCategories({ 
   stays, 
-  orders, 
+  orders,
+  scheduledServices = [],
+  currency = 'USD',
+  scheduledServicesRevenue = 0,
   onViewStays, 
   onViewOrders, 
   onViewPayments, 
-  onViewDetails 
+  onViewDetails,
+  onViewServices 
 }: ServiceCategoriesProps) {
   // Calculate actual data from Redux state
   const currentStays = [...stays].filter(stay => 
@@ -36,6 +46,12 @@ export default function ServiceCategories({
   
   const totalOrders = orders.length;
   const totalStays = stays.length;
+  const totalScheduledServices = scheduledServices.length;
+  
+  // Scheduled services statistics
+  const paidServices = scheduledServices.filter((s: any) => s.paymentStatus === PaymentStatus.PAID).length;
+  const pendingServices = scheduledServices.filter((s: any) => s.paymentStatus === PaymentStatus.PENDING).length;
+  const cancelledServices = scheduledServices.filter((s: any) => s.paymentStatus === PaymentStatus.CANCELLED).length;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -139,39 +155,29 @@ export default function ServiceCategories({
         </button>
       </div>
 
-      {/* Stay Types */}
+      {/* Scheduled Services */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <div className="p-3 bg-orange-100 rounded-full">
-            <Calendar className="w-6 h-6 text-orange-600" />
+          <div className="p-3 bg-indigo-100 rounded-full">
+            <Tag className="w-6 h-6 text-indigo-600" />
           </div>
-          <span className="text-sm font-medium text-orange-600">Stay Types</span>
+          <span className="text-sm font-medium text-indigo-600">Scheduled Services</span>
         </div>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span className="text-sm text-secondary-600">Confirmed</span>
-            <span className="text-sm font-medium text-secondary-900">
-              {stays.filter(s => s.status === StayStatus.CONFIRMED).length}
-            </span>
+            <span className="text-sm text-secondary-600">Total Services</span>
+            <span className="text-sm font-medium text-secondary-900">{totalScheduledServices}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-secondary-600">Checked Out</span>
-            <span className="text-sm font-medium text-orange-600">
-              {stays.filter(s => s.status === StayStatus.CHECKED_OUT).length}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-secondary-600">Cancelled</span>
-            <span className="text-sm font-medium text-red-600">
-              {stays.filter(s => s.status === StayStatus.CANCELLED).length}
-            </span>
+            <span className="text-sm text-secondary-600">Paid</span>
+            <span className="text-sm font-medium text-green-600">{paidServices}</span>
           </div>
         </div>
         <button 
-          onClick={onViewDetails}
-          className="w-full mt-4 bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+          onClick={onViewServices || onViewDetails}
+          className="w-full mt-4 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
         >
-          View Details
+          View Services
         </button>
       </div>
     </div>

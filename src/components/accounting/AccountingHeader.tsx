@@ -71,14 +71,7 @@ export default function AccountingHeader({
               <Receipt className="w-4 h-4" />
               <span className="text-green-100">Real-time Accounting</span>
             </div>
-            <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
-              <span className="text-green-200">Fiscal Year:</span>
-              <span className="font-medium">{new Date().getFullYear()}</span>
-            </div>
-            <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
-              <span className="text-green-200">Last Reconciliation:</span>
-              <span className="font-medium">Today</span>
-            </div>
+         
           </div>
         </div>
         

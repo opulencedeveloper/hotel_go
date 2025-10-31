@@ -52,7 +52,7 @@ export default function TaskDetailsModal({ task, isOpen, onClose, isClient }: Ta
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-secondary-900">Task Details</h3>

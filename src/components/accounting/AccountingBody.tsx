@@ -1,6 +1,6 @@
 'use client';
 
-import { Calculator, DollarSign, FileText, TrendingUp, Receipt, PieChart, Plus, Eye, Download, X } from 'lucide-react';
+import { Calculator, DollarSign, FileText, TrendingUp, Receipt, PieChart, Plus, Eye, Download, X, Utensils, Calendar, Tag, MapPin, Users, CreditCard, Clock } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
@@ -39,7 +39,7 @@ export default function AccountingBody({
   // Redux State (using analytics slice like analytics page)
   const analytics = useSelector((state: RootState) => state.analytics);
   const hotel = useSelector((state: RootState) => state.hotel);
-  const { stays, orders } = analytics;
+  const { stays, orders, scheduledServices } = analytics;
   
   // Get selected hotel and currency
   const selectedHotel = hotel.hotels?.find(h => h._id === hotel.selectedHotelId);
@@ -178,11 +178,35 @@ export default function AccountingBody({
       });
     }
     
+    // Convert scheduled services to transactions
+    if (scheduledServices && scheduledServices.length > 0) {
+      scheduledServices.forEach(scheduledService => {
+        const serviceName = scheduledService.hotelServiceId?.name || 'Scheduled Service';
+        const categoryName = scheduledService.hotelServiceId?.category?.replace('_', ' ') || 'Service';
+        
+        allTransactions.push({
+          id: scheduledService._id,
+          type: 'Scheduled Service',
+          category: 'service',
+          description: `${serviceName} - ${categoryName}`,
+          amount: scheduledService.totalAmount || 0,
+          date: scheduledService.scheduledAt || scheduledService.createdAt,
+          status: scheduledService.paymentStatus === PaymentStatus.PAID ? 'completed' : 
+                  scheduledService.paymentStatus === PaymentStatus.PENDING ? 'pending' :
+                  scheduledService.paymentStatus === PaymentStatus.REFUNDED ? 'refunded' :
+                  scheduledService.paymentStatus === PaymentStatus.CANCELLED ? 'cancelled' : 
+                  'pending',
+          balance: scheduledService.totalAmount || 0,
+          status_label: scheduledService.paymentStatus
+        });
+      });
+    }
+    
     // Sort by date (most recent first) and take top 5
     return allTransactions
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 5);
-  }, [stays, orders]);
+  }, [stays, orders, scheduledServices]);
 
   // Generate Invoice Form State
   const [invoiceForm, setInvoiceForm] = useState({
@@ -213,26 +237,94 @@ export default function AccountingBody({
 
   // Calculate revenue from Redux state (using analytics slice) - NO MOCK DATA
   const revenues = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Calculate date range based on selected period (if available)
+    // For accounting, we calculate based on what's in the Redux state (already filtered by period)
+    // So we include all stays/orders/services that are in the period AND meet payment criteria
+
     // Room revenue from stays
-    const roomsRevenue = stays.length > 0 ? stays.reduce((sum, stay) => sum + (stay.totalAmount || 0), 0) : 0;
+    // Only count stays where ALL conditions are met:
+    // 1. checkInDate is in the past (guest has already checked in)
+    // 2. Current date is within checkInDate and checkOutDate (active stay period)
+    // 3. paymentStatus is PAID (only paid stays count as revenue)
+    const roomsRevenue = stays.length > 0 ? stays.reduce((sum, stay) => {
+      // Check if stay should be included in revenue
+      const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
+      const checkOutDate = stay.checkOutDate ? new Date(stay.checkOutDate) : null;
+      
+      if (!checkInDate || !checkOutDate) return sum;
+      
+      // Set time to midnight for accurate date comparison
+      const checkIn = new Date(checkInDate);
+      checkIn.setHours(0, 0, 0, 0);
+      const checkOut = new Date(checkOutDate);
+      checkOut.setHours(0, 0, 0, 0);
+      
+      // Check if checkInDate is in the past
+      const isCheckInPast = checkIn <= today;
+      
+      // Check if today is within checkInDate and checkOutDate
+      const isTodayWithinStayPeriod = today >= checkIn && today <= checkOut;
+      
+      // Check if payment status is PAID - only paid stays count as revenue
+      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
+      
+      // Only add revenue if ALL conditions are met
+      if (isCheckInPast && isTodayWithinStayPeriod && isPaid) {
+        return sum + (stay.totalAmount || 0);
+      }
+      
+      return sum;
+    }, 0) : 0;
     
     // F&B revenue from orders
+    // Only count orders with status = PAID (pending orders cannot be counted as revenue)
     const fAndBRevenue = orders.length > 0 ? orders.reduce((sum, order) => {
+      // Only include PAID orders - pending/ready/cancelled orders don't count as revenue
+      if (order.status !== OrderStatus.PAID) return sum;
+      
       const orderTotal = order.items.reduce((itemSum, item) => {
         return itemSum + (item.priceWhenOrdered * item.quantity);
       }, 0);
       return sum + orderTotal - (order.discount || 0);
     }, 0) : 0;
+
+    // Scheduled services revenue
+    // Since scheduledServices are already filtered by period from analytics API,
+    // we count all paid or pending services as revenue (they are bookings within the period)
+    const scheduledServicesRevenue = scheduledServices.length > 0 ? scheduledServices.reduce((sum, scheduledService) => {
+      // Include paid or pending services
+      // - Paid: Already collected revenue
+      // - Pending: Booked but not yet paid (still counts as revenue for accounting purposes)
+      if (scheduledService.paymentStatus !== PaymentStatus.PAID && scheduledService.paymentStatus !== PaymentStatus.PENDING) {
+        return sum;
+      }
+      
+      // Count the total amount (all scheduled services in period that are paid/pending)
+      return sum + (scheduledService.totalAmount || 0);
+    }, 0) : 0;
+
+    // Debug logging
+    console.log('💰 Accounting Revenue Calculation:', {
+      scheduledServicesCount: scheduledServices.length,
+      scheduledServicesRevenue,
+      roomsRevenue,
+      fAndBRevenue,
+      totalRevenue: roomsRevenue + fAndBRevenue + scheduledServicesRevenue
+    });
     
     // Return only real data from Redux - no mock fallback
     return {
       rooms: roomsRevenue,
       f_and_b: fAndBRevenue,
+      scheduled_services: scheduledServicesRevenue,
       other: 0 // No "other" revenue source in analytics state
     };
-  }, [stays, orders]);
+  }, [stays, orders, scheduledServices]);
   
-  const totalRevenue = revenues.rooms + revenues.f_and_b + revenues.other;
+  const totalRevenue = revenues.rooms + revenues.f_and_b + revenues.scheduled_services + revenues.other;
   const totalOutstanding = openFolios.reduce((sum, folio) => sum + folio.balance, 0);
 
   // Calculate performance metrics from Redux state
@@ -268,8 +360,8 @@ export default function AccountingBody({
     };
   }, [stays]);
 
-  const handleViewFolio = (folio: any) => {
-    setSelectedFolio(folio);
+  const handleViewFolio = (item: any, type?: 'stay' | 'order' | 'service') => {
+    setSelectedFolio({ ...item, itemType: type || 'stay' });
     setShowFolioModal(true);
   };
 
@@ -365,10 +457,9 @@ export default function AccountingBody({
       {/* Financial Overview Cards */}
       <FinancialOverviewCards
         totalRevenue={totalRevenue}
-        totalOutstanding={totalOutstanding}
+        scheduledServicesRevenue={revenues.scheduled_services}
         roomsRevenue={revenues.rooms}
         fAndBRevenue={revenues.f_and_b}
-        openFoliosCount={openFolios.length}
         currency={currency}
       />
 
@@ -378,6 +469,7 @@ export default function AccountingBody({
         <RevenueBreakdown
           roomsRevenue={revenues.rooms}
           fAndBRevenue={revenues.f_and_b}
+          scheduledServicesRevenue={revenues.scheduled_services}
           otherRevenue={revenues.other}
           totalRevenue={totalRevenue}
           currency={currency}
@@ -387,9 +479,11 @@ export default function AccountingBody({
         <RecentTransactions folios={recentTransactions} currency={currency} />
         </div>
 
-      {/* Open Folios */}
+      {/* Open Items (Folios, Orders, Scheduled Services) */}
       <OpenFoliosTable 
         openFolios={openFolios}
+        orders={orders}
+        scheduledServices={scheduledServices}
         onViewFolio={handleViewFolio}
         onDownloadFolio={handleDownloadFolio}
         currency={currency}
@@ -407,7 +501,7 @@ export default function AccountingBody({
 
         {/* Financial Reports Modal */}
         {showFinancialReportsModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-secondary-900">Financial Reports</h2>
@@ -525,7 +619,7 @@ export default function AccountingBody({
 
         {/* Generate Invoice Modal */}
         {showGenerateInvoiceModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-secondary-900">Generate Invoice</h2>
@@ -748,7 +842,7 @@ export default function AccountingBody({
 
         {/* Report Generation Modal */}
         {showReportGenerationModal && selectedReport && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-secondary-900">Generate Report</h2>
@@ -902,13 +996,15 @@ export default function AccountingBody({
           </div>
         )}
 
-        {/* Folio Details Modal */}
+        {/* Item Details Modal (Folio/Order/Service) */}
         {showFolioModal && selectedFolio && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
             <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-semibold text-secondary-900">
-                  Folio Details - {selectedFolio.guest_name}
+                  {selectedFolio.itemType === 'order' ? 'Order Details' : 
+                   selectedFolio.itemType === 'service' ? 'Scheduled Service Details' : 
+                   `Folio Details - ${selectedFolio.guest_name || 'N/A'}`}
                 </h2>
                 <button
                   onClick={() => setShowFolioModal(false)}
@@ -919,143 +1015,413 @@ export default function AccountingBody({
               </div>
               
               <div className="space-y-6">
-                {/* Guest Info */}
-                <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-secondary-900 mb-3">Guest Information</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-secondary-600">Guest Name:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.guest_name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Email:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.guest_email || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Phone:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.guest_phone || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Room:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.room_number || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stay Details */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-secondary-900 mb-3">Stay Details</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-secondary-600">Check-in:</span>
-                      <p className="font-medium text-secondary-900">
-                        {selectedFolio.check_in ? new Date(selectedFolio.check_in).toLocaleDateString() : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Check-out:</span>
-                      <p className="font-medium text-secondary-900">
-                        {selectedFolio.check_out ? new Date(selectedFolio.check_out).toLocaleDateString() : 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Adults:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.adults || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Children:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.children || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Type:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.type || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Status:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        selectedFolio.status === 'open' ? 'bg-orange-100 text-orange-800' : 
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {selectedFolio.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Financial Info */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-secondary-900 mb-3">Financial Information</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-secondary-600">Total Amount:</span>
-                      <p className="font-semibold text-secondary-900">{formatPrice(selectedFolio.total_amount || 0, currency)}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Paid Amount:</span>
-                      <p className="font-semibold text-green-900">{formatPrice(selectedFolio.paid_amount || 0, currency)}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Balance:</span>
-                      <p className="font-semibold text-orange-600">{formatPrice(selectedFolio.balance, currency)}</p>
-                    </div>
-                    <div>
-                      <span className="text-secondary-600">Payment Method:</span>
-                      <p className="font-medium text-secondary-900">{selectedFolio.payment_method || 'N/A'}</p>
-                    </div>
-                    {selectedFolio.payment_date && (
-                      <div>
-                        <span className="text-secondary-600">Payment Date:</span>
-                        <p className="font-medium text-secondary-900">
-                          {new Date(selectedFolio.payment_date).toLocaleDateString()}
-                        </p>
+                {/* STAY/FOLIO DETAILS */}
+                {(!selectedFolio.itemType || selectedFolio.itemType === 'stay') && (
+                  <>
+                    {/* Guest Info */}
+                    <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-secondary-900 mb-3">Guest Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-secondary-600">Guest Name:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.guest_name || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Email:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.guest_email || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Phone:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.guest_phone || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Room:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.room_number || 'N/A'}</p>
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    {/* Stay Details */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-secondary-900 mb-3">Stay Details</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-secondary-600">Check-in:</span>
+                          <p className="font-medium text-secondary-900">
+                            {selectedFolio.check_in ? new Date(selectedFolio.check_in).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Check-out:</span>
+                          <p className="font-medium text-secondary-900">
+                            {selectedFolio.check_out ? new Date(selectedFolio.check_out).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Adults:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.adults || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Children:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.children || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Type:</span>
+                          <p className="font-medium text-secondary-900">{selectedFolio.type || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            selectedFolio.status === 'open' ? 'bg-orange-100 text-orange-800' : 
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {selectedFolio.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Charges */}
+                    <div>
+                      <h3 className="font-semibold text-secondary-900 mb-3">Charges</h3>
+                      {selectedFolio.charges && selectedFolio.charges.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedFolio.charges.map((charge: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center p-3 bg-secondary-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-secondary-900">{charge.description}</p>
+                                <p className="text-xs text-secondary-600">
+                                  {charge.posted_at ? new Date(charge.posted_at).toLocaleDateString() : ''}
+                                </p>
+                              </div>
+                              <p className="font-semibold text-secondary-900">{formatPrice(charge.amount, currency)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-secondary-500">No charges recorded</p>
+                      )}
+                    </div>
+
+                    {/* Payments */}
+                    <div>
+                      <h3 className="font-semibold text-secondary-900 mb-3">Payments</h3>
+                      {selectedFolio.payments && selectedFolio.payments.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedFolio.payments.map((payment: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                              <div>
+                                <p className="font-medium text-green-900">Payment ({payment.method})</p>
+                                <p className="text-xs text-green-700">
+                                  {payment.processed_at ? new Date(payment.processed_at).toLocaleDateString() : ''}
+                                </p>
+                              </div>
+                              <p className="font-semibold text-green-900">{formatPrice(payment.amount, currency)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-secondary-500">No payments recorded</p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {/* ORDER DETAILS */}
+                {selectedFolio.itemType === 'order' && (
+                  <>
+                    {/* Order Information */}
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <div className="p-2 bg-orange-100 rounded-lg mr-3">
+                          <Utensils className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-secondary-900">Order Information</h3>
+                          <p className="text-xs text-secondary-500">Order #{selectedFolio._id?.slice(-6) || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                        {selectedFolio.tableNumber && (
+                          <div>
+                            <span className="text-secondary-600">Table Number:</span>
+                            <p className="font-medium text-secondary-900">{selectedFolio.tableNumber}</p>
+                          </div>
+                        )}
+                        {selectedFolio.roomId && (
+                          <div>
+                            <span className="text-secondary-600">Room:</span>
+                            <p className="font-medium text-secondary-900">{selectedFolio.roomId}</p>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-secondary-600">Order Type:</span>
+                          <p className="font-medium text-secondary-900">
+                            {selectedFolio.orderType === OrderType.HOTEL_GUEST ? 'Room Service' : 
+                             selectedFolio.orderType === OrderType.RESTAURANT ? 'Restaurant' : 
+                             selectedFolio.orderType || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            selectedFolio.status === OrderStatus.PAID ? 'bg-green-100 text-green-800' :
+                            selectedFolio.status === OrderStatus.READY ? 'bg-blue-100 text-blue-800' :
+                            selectedFolio.status === OrderStatus.CANCELLED ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {selectedFolio.status}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Created:</span>
+                          <p className="font-medium text-secondary-900">
+                            {selectedFolio.createdAt ? new Date(selectedFolio.createdAt).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                        {selectedFolio.paymentMethod && (
+                          <div>
+                            <span className="text-secondary-600">Payment Method:</span>
+                            <p className="font-medium text-secondary-900">{selectedFolio.paymentMethod}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div>
+                      <h3 className="font-semibold text-secondary-900 mb-3">Order Items</h3>
+                      {selectedFolio.items && selectedFolio.items.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedFolio.items.map((item: any, index: number) => (
+                            <div key={index} className="flex justify-between items-center p-3 bg-secondary-50 rounded-lg">
+                              <div className="flex-1">
+                                <p className="font-medium text-secondary-900">
+                                  {item.menuId?.itemName || 'Unknown Item'}
+                                </p>
+                                <div className="flex items-center space-x-4 mt-1 text-xs text-secondary-600">
+                                  <span>Qty: {item.quantity}</span>
+                                  <span>Price: {formatPrice(item.priceWhenOrdered, currency)}</span>
+                                </div>
+                              </div>
+                              <p className="font-semibold text-secondary-900">
+                                {formatPrice(item.priceWhenOrdered * item.quantity, currency)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-secondary-500">No items in this order</p>
+                      )}
+                    </div>
+
+                    {/* Financial Information */}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-secondary-900 mb-3">Financial Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        {(() => {
+                          const subtotal = selectedFolio.items?.reduce((sum: number, item: any) => 
+                            sum + (item.priceWhenOrdered * item.quantity), 0) || 0;
+                          const discount = selectedFolio.discount || 0;
+                          const tax = selectedFolio.tax || 0;
+                          const total = subtotal - discount + tax;
+                          
+                          return (
+                            <>
+                              <div>
+                                <span className="text-secondary-600">Subtotal:</span>
+                                <p className="font-semibold text-secondary-900">{formatPrice(subtotal, currency)}</p>
+                              </div>
+                              {discount > 0 && (
+                                <div>
+                                  <span className="text-secondary-600">Discount:</span>
+                                  <p className="font-semibold text-red-600">-{formatPrice(discount, currency)}</p>
+                                </div>
+                              )}
+                              {tax > 0 && (
+                                <div>
+                                  <span className="text-secondary-600">Tax:</span>
+                                  <p className="font-semibold text-secondary-900">{formatPrice(tax, currency)}</p>
+                                </div>
+                              )}
+                              <div className="col-span-2 pt-2 border-t border-green-200">
+                                <span className="text-secondary-600">Total Amount:</span>
+                                <p className="text-lg font-bold text-secondary-900">{formatPrice(total, currency)}</p>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* SCHEDULED SERVICE DETAILS */}
+                {selectedFolio.itemType === 'service' && (
+                  <>
+                    {/* Service Information */}
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <div className="p-2 bg-indigo-100 rounded-lg mr-3">
+                          <Tag className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-secondary-900">
+                            {selectedFolio.hotelServiceId?.name || 'Scheduled Service'}
+                          </h3>
+                          <p className="text-xs text-secondary-500 capitalize">
+                            {selectedFolio.hotelServiceId?.category?.replace('_', ' ') || 'Service'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                        {selectedFolio.hotelServiceId?.location && (
+                          <div className="flex items-start">
+                            <MapPin className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                            <div>
+                              <span className="text-secondary-600">Location:</span>
+                              <p className="font-medium text-secondary-900">{selectedFolio.hotelServiceId.location}</p>
+                            </div>
+                          </div>
+                        )}
+                        {selectedFolio.hotelServiceId?.capacity && (
+                          <div className="flex items-start">
+                            <Users className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                            <div>
+                              <span className="text-secondary-600">Capacity:</span>
+                              <p className="font-medium text-secondary-900">
+                                {selectedFolio.hotelServiceId.capacity} {selectedFolio.hotelServiceId.capacity === 1 ? 'person' : 'people'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {selectedFolio.hotelServiceId?.description && (
+                        <div className="mt-4 pt-4 border-t border-indigo-200">
+                          <p className="text-sm text-secondary-700">{selectedFolio.hotelServiceId.description}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Schedule Information */}
+                    <div className="bg-white border border-secondary-200 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <Calendar className="w-5 h-5 text-secondary-600 mr-2" />
+                        <h3 className="font-semibold text-secondary-900">Schedule Information</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-start">
+                          <Calendar className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <div>
+                            <span className="text-secondary-600">Scheduled Date:</span>
+                            <p className="font-medium text-secondary-900">
+                              {selectedFolio.scheduledAt ? new Date(selectedFolio.scheduledAt).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                              }) : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <Clock className="w-4 h-4 text-secondary-400 mt-0.5 mr-2 flex-shrink-0" />
+                          <div>
+                            <span className="text-secondary-600">Scheduled Time:</span>
+                            <p className="font-medium text-secondary-900">
+                              {selectedFolio.scheduledAt ? new Date(selectedFolio.scheduledAt).toLocaleTimeString('en-US', { 
+                                hour: '2-digit', 
+                                minute: '2-digit',
+                                hour12: true 
+                              }) : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        {selectedFolio.note && (
+                          <div className="col-span-2 pt-2 border-t border-secondary-200">
+                            <span className="text-secondary-600">Notes:</span>
+                            <p className="font-medium text-secondary-900 mt-1">{selectedFolio.note}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Payment Information */}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center mb-3">
+                        <CreditCard className="w-5 h-5 text-secondary-600 mr-2" />
+                        <h3 className="font-semibold text-secondary-900">Payment Information</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-secondary-600">Payment Method:</span>
+                          <p className="font-medium text-secondary-900">
+                            {selectedFolio.paymentMethod || 'N/A'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Payment Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            selectedFolio.paymentStatus === PaymentStatus.PAID ? 'bg-green-100 text-green-800' :
+                            selectedFolio.paymentStatus === PaymentStatus.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                            selectedFolio.paymentStatus === PaymentStatus.REFUNDED ? 'bg-blue-100 text-blue-800' :
+                            selectedFolio.paymentStatus === PaymentStatus.CANCELLED ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {selectedFolio.paymentStatus || 'pending'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-secondary-600">Total Amount:</span>
+                          <p className="text-lg font-bold text-secondary-900">
+                            {formatPrice(selectedFolio.totalAmount || 0, currency)}
+                          </p>
+                        </div>
+                        {selectedFolio.createdAt && (
+                          <div>
+                            <span className="text-secondary-600">Created:</span>
+                            <p className="font-medium text-secondary-900">
+                              {new Date(selectedFolio.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* FINANCIAL INFO (Common for all types - shown last) */}
+                {(!selectedFolio.itemType || selectedFolio.itemType === 'stay') && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="font-semibold text-secondary-900 mb-3">Financial Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-secondary-600">Total Amount:</span>
+                        <p className="font-semibold text-secondary-900">{formatPrice(selectedFolio.total_amount || 0, currency)}</p>
+                      </div>
+                      <div>
+                        <span className="text-secondary-600">Paid Amount:</span>
+                        <p className="font-semibold text-green-900">{formatPrice(selectedFolio.paid_amount || 0, currency)}</p>
+                      </div>
+                      <div>
+                        <span className="text-secondary-600">Balance:</span>
+                        <p className="font-semibold text-orange-600">{formatPrice(selectedFolio.balance, currency)}</p>
+                      </div>
+                      <div>
+                        <span className="text-secondary-600">Payment Method:</span>
+                        <p className="font-medium text-secondary-900">{selectedFolio.payment_method || 'N/A'}</p>
+                      </div>
+                      {selectedFolio.payment_date && (
+                        <div>
+                          <span className="text-secondary-600">Payment Date:</span>
+                          <p className="font-medium text-secondary-900">
+                            {new Date(selectedFolio.payment_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-
-                {/* Charges */}
-                <div>
-                  <h3 className="font-semibold text-secondary-900 mb-3">Charges</h3>
-                  {selectedFolio.charges && selectedFolio.charges.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedFolio.charges.map((charge: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center p-3 bg-secondary-50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-secondary-900">{charge.description}</p>
-                            <p className="text-xs text-secondary-600">
-                              {charge.posted_at ? new Date(charge.posted_at).toLocaleDateString() : ''}
-                            </p>
-                          </div>
-                          <p className="font-semibold text-secondary-900">{formatPrice(charge.amount, currency)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-secondary-500">No charges recorded</p>
-                  )}
-                </div>
-
-                {/* Payments */}
-                <div>
-                  <h3 className="font-semibold text-secondary-900 mb-3">Payments</h3>
-                  {selectedFolio.payments && selectedFolio.payments.length > 0 ? (
-                    <div className="space-y-2">
-                      {selectedFolio.payments.map((payment: any, index: number) => (
-                        <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                          <div>
-                            <p className="font-medium text-green-900">Payment ({payment.method})</p>
-                            <p className="text-xs text-green-700">
-                              {payment.processed_at ? new Date(payment.processed_at).toLocaleDateString() : ''}
-                            </p>
-                          </div>
-                          <p className="font-semibold text-green-900">{formatPrice(payment.amount, currency)}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-secondary-500">No payments recorded</p>
-                  )}
-                </div>
+                )}
               </div>
               
               <div className="flex justify-end space-x-3 pt-6 border-t border-secondary-200 mt-6">

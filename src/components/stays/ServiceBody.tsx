@@ -13,6 +13,7 @@ import EditServiceModal from './EditServiceModal';
 import ScheduleModal from './ScheduleModal';
 import SettingsModal from './SettingsModal';
 import ScheduledServices from './ScheduledServices';
+import ScheduledServiceDetailsModal from './ScheduledServiceDetailsModal';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import { hotelServicesActions } from '@/store/redux/hotel-services-slice';
@@ -44,6 +45,7 @@ export default function ServicesBody() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [editingScheduledService, setEditingScheduledService] = useState<any>(null);
+  const [selectedScheduledService, setSelectedScheduledService] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'services' | 'scheduled'>('services');
   // const [scheduledServices, setScheduledServices] = useState<any[]>([]);
   const scheduledService = useSelector((state: RootState) => state.scheduledService);
@@ -101,7 +103,8 @@ export default function ServicesBody() {
     service_id: '',
     date: '',
     time: '',
-    notes: ''
+    notes: '',
+    paymentMethod: ''
   });
 
   // Edit Schedule Form State
@@ -137,16 +140,22 @@ export default function ServicesBody() {
 
   // Success response handler for creating service
   const createServiceSuccessResHandler = (res: any) => {
-    const createdService = res?.data?.data.createdService;
+    const createdHotelService = res?.data?.data.createdHotelService;
+
+    console.log("createdHotelService:", createdHotelService)
     
-    // Check if createdService exists
-    if (!createdService || !createdService._id) {
-      console.error('Invalid service data received:', createdService);
+         dispatch(hotelServicesActions.addHotelService(createdHotelService));
+
+    // Check if createdHotelService exists
+    if (!createdHotelService || !createdHotelService._id) {
+      console.error('Invalid service data received:', createdHotelService);
+      // Still close the modal even if data structure is unexpected
+      setShowNewService(false);
       return;
     }
     
-    // Update Redux state
-    dispatch(hotelServicesActions.addHotelService(createdService));
+   
+
     
     // Close modal and reset form
     setShowNewService(false);
@@ -203,18 +212,18 @@ export default function ServicesBody() {
   const scheduleServiceSuccessResHandler = (res: any) => {
     // Add the new scheduled service to the list
     const newScheduledService = res?.data?.data.newScheduledService;
-    if (newScheduledService) {
-      dispatch(scheduledServicesActions.updateScheduledService(newScheduledService))
+ 
+      dispatch(scheduledServicesActions.addScheduledService(newScheduledService))
      
-    }
-    
+ 
     // Close modal and reset form
     setShowScheduleModal(false);
     setScheduleForm({
       service_id: '',
       date: '',
       time: '',
-      notes: ''
+      notes: '',
+      paymentMethod: ''
     });
   };
 
@@ -231,7 +240,8 @@ export default function ServicesBody() {
         body: {
           hotelServiceId: scheduleForm.service_id,
           scheduledAt: scheduledAt.toISOString(),
-          notes: scheduleForm.notes || undefined
+          note: scheduleForm.notes || undefined,
+          ...(scheduleForm.paymentMethod && { paymentMethod: scheduleForm.paymentMethod })
         },
         successMessage: "Service scheduled successfully!"
       },
@@ -312,6 +322,11 @@ export default function ServicesBody() {
         successMessage: "Service updated successfully!"
       },
     });
+  };
+
+  // Handler for viewing scheduled service
+  const handleViewScheduledService = (scheduledService: any) => {
+    setSelectedScheduledService(scheduledService);
   };
 
   // Handler for editing scheduled service
@@ -454,6 +469,7 @@ export default function ServicesBody() {
               <ScheduledServices
                 scheduledServices={allScheduledServices || []}
                 isLoading={isLoadingScheduled}
+                onView={handleViewScheduledService}
                 onEdit={handleEditScheduledService}
                 onDelete={handleDeleteScheduledService}
               />
@@ -528,7 +544,12 @@ export default function ServicesBody() {
         settingsForm={settingsForm}
         onFormChange={(field, value) => setSettingsForm({...settingsForm, [field]: value})}
         onSubmit={handleSettingsSubmit}
-                    />
+      />
+
+      <ScheduledServiceDetailsModal
+        scheduledService={selectedScheduledService}
+        onClose={() => setSelectedScheduledService(null)}
+      />
                   </div>
   );
 }

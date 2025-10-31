@@ -18,7 +18,8 @@ interface KitchenOrder {
     name: string;
     category: string;
     price: number;
-    status: "pending" | "cooking" | "ready";
+    quantity?: number;
+    status: OrderStatus;
   }>;
 }
 
@@ -80,18 +81,27 @@ export function useKitchenState() {
          }
          return 'Order time not available';
        })(),
-       total: reduxOrder.items?.reduce((sum: number, item: any) => sum + (item.priceWhenOrdered || 0), 0) || 0,
+      total: reduxOrder.items?.reduce(
+        (sum: number, item: any) => sum + (item.priceWhenOrdered || 0) * (item.quantity ?? 1),
+        0
+      ) || 0,
        paymentMethod: reduxOrder.paymentMethod,
       items:
         reduxOrder.items?.map((item: any) => ({
           name: item.menuId?.itemName || "Unknown Item",
           category: item.menuId?.category || "Unknown",
           price: item.priceWhenOrdered || 0,
-          status: (reduxOrder.status === "pending"
-            ? "pending"
-            : reduxOrder.status === "completed"
-            ? "ready"
-            : "cooking") as "pending" | "cooking" | "ready",
+          quantity: item.quantity ?? 1,
+          status:
+            reduxOrder.status === "pending"
+              ? OrderStatus.PENDING
+              : reduxOrder.status === "ready"
+              ? OrderStatus.READY
+              : reduxOrder.status === "paid"
+              ? OrderStatus.PAID
+              : reduxOrder.status === "cancelled"
+              ? OrderStatus.CANCELLED
+              : OrderStatus.PENDING,
         })) || [],
     })) || [];
   const [selectedOrder, setSelectedOrder] = useState<any>(null);

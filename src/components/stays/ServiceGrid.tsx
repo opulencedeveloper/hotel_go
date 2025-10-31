@@ -14,8 +14,12 @@ import {
   Scissors, 
   Star,
   Eye,
-  Edit
+  Edit,
+  Package
 } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
+import { formatPrice } from '@/helper';
 
 interface Service {
   _id: string;
@@ -36,6 +40,9 @@ interface ServiceGridProps {
 }
 
 export default function ServiceGrid({ services, onViewService, onEditService }: ServiceGridProps) {
+  const hotel = useSelector((state: RootState) => state.hotel);
+  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case HotelServiceCategory.SPA: return <Heart className="w-5 h-5" />;
@@ -77,6 +84,22 @@ export default function ServiceGrid({ services, onViewService, onEditService }: 
     }
   };
 
+  if (services.length === 0) {
+    return (
+      <div className="text-center py-12 px-4">
+        <div className="flex flex-col items-center justify-center">
+          <div className="p-4 bg-secondary-100 rounded-full mb-4">
+            <Package className="w-12 h-12 text-secondary-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-secondary-900 mb-2">No Services Found</h3>
+          <p className="text-secondary-500 text-sm max-w-md">
+            There are no services available at the moment. Create a new service to get started.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {services.map((service) => (
@@ -104,7 +127,7 @@ export default function ServiceGrid({ services, onViewService, onEditService }: 
             <div className="flex items-center justify-between">
               <span className="text-sm text-secondary-600">Price</span>
               <span className="text-sm font-medium text-secondary-900">
-                {service.price === 0 ? 'Free' : `$${service.price}`}
+                {service.price === 0 ? 'Free' : formatPrice(service.price, selectedHotel?.currency)}
               </span>
             </div>
             

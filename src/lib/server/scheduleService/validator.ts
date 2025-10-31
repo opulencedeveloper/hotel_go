@@ -1,14 +1,17 @@
 import Joi from "joi";
-import { MessageResponse } from "../utils/enum";
 import { utils } from "../utils";
 import {
   ICreateScheduledServiceUserInput,
   IEditScheduledServiceUserInput,
 } from "./interface";
 import { Types } from "mongoose";
+import { PaymentMethod } from "../stay/enum";
+import { MessageResponse } from "../utils/enum";
 
 class ScheduleServiceValidator {
   public createScheduleService(body: ICreateScheduledServiceUserInput) {
+    const paymentMethodValues = Object.values(PaymentMethod);
+
     const schema = Joi.object({
       hotelServiceId: Joi.string()
         .required()
@@ -21,6 +24,16 @@ class ScheduleServiceValidator {
         .messages({
           "any.required": "Hotel Service Id is required.",
           "any.invalid": "Hotel Service Id must be a valid ObjectId.",
+        }),
+
+      paymentMethod: Joi.string()
+        .valid(...paymentMethodValues)
+        .required()
+        .messages({
+          "any.required": "Payment method is required.",
+          "any.only": `Payment method must be one of: ${paymentMethodValues.join(
+            ", "
+          )}.`,
         }),
 
       scheduledAt: Joi.date().required().min("now").messages({

@@ -1,3 +1,4 @@
+import { PaymentStatus } from "@/utils/enum";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 
@@ -17,7 +18,8 @@ export interface StaySliceParams {
   phoneNumber: string;
   address: string;
   paymentMethod: string;
-  paymentStatus: string;
+  roomRateAtPayment?: number | null;
+  paymentStatus: PaymentStatus;
   paymentDate?: string;
   checkInDate: string;
   checkOutDate: string;

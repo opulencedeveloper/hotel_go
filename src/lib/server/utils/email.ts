@@ -246,6 +246,34 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
       user-select: all;
       margin-top: 10px;
     }
+    .otp-display {
+      background: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .otp-label {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .otp-code {
+      font-size: 32px;
+      font-weight: 700;
+      color: #f59e0b;
+      letter-spacing: 5px;
+      font-family: 'Courier New', monospace;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      display: inline-block;
+      padding: 15px 25px;
+      border: 2px solid #fbbf24;
+      border-radius: 8px;
+      margin: 10px 0;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -261,6 +289,12 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
       
       <div class="verification-section">
         <p><strong>Please verify your email address to complete your registration:</strong></p>
+        
+        <div class="otp-display">
+          <p class="otp-label">Your 6-digit verification code:</p>
+          <div class="otp-code">${otp}</div>
+          <p style="margin-top: 15px; color: #64748b; font-size: 12px;">Enter this code on the verification page or click the button below</p>
+        </div>
        
         <p style="margin: 15px 0; color: #64748b; font-size: 14px;">Click the button below to verify automatically:</p>
         <a href="${verificationLink}" class="verify-button">Verify Email Address</a>
