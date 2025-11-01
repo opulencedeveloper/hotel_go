@@ -51,7 +51,37 @@ export default function FolioBody({
 
     // Transform stays data to folio format
     stays.forEach((stay) => {
-      const totalAmount = stay.totalAmount || 0;
+      // Calculate charges based on full stay duration (nights × room rate)
+      let totalAmount = stay.totalAmount || 0;
+      
+      // If we have dates, calculate based on nights × rate for accuracy
+      if (stay.checkInDate && stay.checkOutDate) {
+        const checkInDate = new Date(stay.checkInDate);
+        const checkOutDate = new Date(stay.checkOutDate);
+        
+        checkInDate.setHours(0, 0, 0, 0);
+        checkOutDate.setHours(0, 0, 0, 0);
+        
+        // Calculate nights (minimum 1 night)
+        const diffTime = checkOutDate.getTime() - checkInDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const numberOfNights = Math.max(1, diffDays);
+        
+        // Get room rate
+        let roomRate = stay.roomRateAtPayment || 0;
+        if (!roomRate && stay.totalAmount && numberOfNights > 0) {
+          roomRate = stay.totalAmount / numberOfNights;
+        }
+        
+        // Calculate total amount: nights × room rate
+        // Use totalAmount if available and valid, otherwise calculate
+        if (stay.totalAmount && stay.totalAmount > 0 && numberOfNights > 0) {
+          totalAmount = stay.totalAmount;
+        } else if (roomRate > 0) {
+          totalAmount = roomRate * numberOfNights;
+        }
+      }
+      
       const paidAmount = stay.paidAmount || 0;
       const balance = totalAmount - paidAmount;
       
@@ -154,16 +184,8 @@ export default function FolioBody({
     return {
       totalFolios: folios.length,
       openFolios: folios.filter(f => {
-        // Open folios are items with balance > 0 or pending status
-        if (f.type === 'stay') {
-          return f.status === StayStatus.CHECKED_IN || f.status === StayStatus.CONFIRMED || f.balance > 0;
-        }
-        if (f.type === 'order') {
-          return f.status !== OrderStatus.PAID && f.status !== OrderStatus.CANCELLED;
-        }
-        if (f.type === 'service') {
-          return f.paymentStatus !== PaymentStatus.PAID && f.paymentStatus !== PaymentStatus.CANCELLED;
-        }
+        // Open folios are items with outstanding balance (balance > 0)
+        // This means total charges exceed total payments
         return f.balance > 0;
       }).length,
       totalOutstanding: folios.reduce((sum, folio) => sum + (folio.balance > 0 ? folio.balance : 0), 0),
@@ -173,34 +195,47 @@ export default function FolioBody({
 
   // Revenue Calculation (matching AccountingBody logic)
   const revenues = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     // Room revenue from stays
-    // Only count stays where ALL conditions are met:
-    // 1. checkInDate is in the past (guest has already checked in)
-    // 2. Current date is within checkInDate and checkOutDate (active stay period)
-    // 3. paymentStatus is PAID (only paid stays count as revenue)
+    // Calculate revenue based on full stay duration (checkInDate to checkOutDate)
+    // Only count stays where paymentStatus is PAID (only paid stays count as revenue)
+    // Revenue = number of nights × room rate (matching backend calculation)
     const stayRevenue = stays.length > 0 ? stays.reduce((sum: number, stay: any) => {
       const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
       const checkOutDate = stay.checkOutDate ? new Date(stay.checkOutDate) : null;
       
       if (!checkInDate || !checkOutDate) return sum;
       
+      // Check if payment status is PAID - only paid stays count as revenue
+      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
+      
+      if (!isPaid) return sum;
+      
+      // Calculate number of nights between checkInDate and checkOutDate
       const checkIn = new Date(checkInDate);
       checkIn.setHours(0, 0, 0, 0);
       const checkOut = new Date(checkOutDate);
       checkOut.setHours(0, 0, 0, 0);
       
-      const isCheckInPast = checkIn <= today;
-      const isTodayWithinStayPeriod = today >= checkIn && today <= checkOut;
-      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
+      // Calculate nights (minimum 1 night)
+      const diffTime = checkOut.getTime() - checkIn.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const numberOfNights = Math.max(1, diffDays);
       
-      if (isCheckInPast && isTodayWithinStayPeriod && isPaid) {
-        return sum + (stay.totalAmount || 0);
+      // Get room rate - prefer roomRateAtPayment if available
+      let roomRate = stay.roomRateAtPayment || 0;
+      
+      // If still no rate, use totalAmount / numberOfNights as fallback
+      if (!roomRate && stay.totalAmount && numberOfNights > 0) {
+        roomRate = stay.totalAmount / numberOfNights;
       }
       
-      return sum;
+      // Calculate revenue: nights × room rate
+      // Use totalAmount if available and valid, otherwise calculate based on nights × rate
+      const revenue = stay.totalAmount && stay.totalAmount > 0 && numberOfNights > 0
+        ? stay.totalAmount
+        : roomRate * numberOfNights;
+      
+      return sum + revenue;
     }, 0) : 0;
 
     // F&B revenue from orders

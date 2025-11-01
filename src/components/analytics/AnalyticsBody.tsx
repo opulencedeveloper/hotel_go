@@ -76,14 +76,10 @@ export default function AnalyticsBody({
   const { stays, orders, scheduledServices, hotelRooms } = analytics;
 
   // Calculate room revenue from stays
-  // Only count stays where ALL conditions are met:
-  // 1. checkInDate is in the past (guest has already checked in)
-  // 2. Current date is within checkInDate and checkOutDate (active stay period)
-  // 3. paymentStatus is PAID (only paid stays count as revenue)
+  // Calculate revenue based on full stay duration (checkInDate to checkOutDate)
+  // Only count stays where paymentStatus is PAID (only paid stays count as revenue)
+  // Revenue = number of nights × room rate (matching backend calculation)
   const totalRevenueFromStays = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
     return stays.reduce((sum, stay) => {
       // Check if stay should be included in revenue
       const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
@@ -91,27 +87,37 @@ export default function AnalyticsBody({
       
       if (!checkInDate || !checkOutDate) return sum;
       
-      // Set time to midnight for accurate date comparison
+      // Check if payment status is PAID - only paid stays count as revenue
+      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
+      
+      if (!isPaid) return sum;
+      
+      // Calculate number of nights between checkInDate and checkOutDate
       const checkIn = new Date(checkInDate);
       checkIn.setHours(0, 0, 0, 0);
       const checkOut = new Date(checkOutDate);
       checkOut.setHours(0, 0, 0, 0);
       
-      // Check if checkInDate is in the past
-      const isCheckInPast = checkIn <= today;
+      // Calculate nights (minimum 1 night)
+      const diffTime = checkOut.getTime() - checkIn.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const numberOfNights = Math.max(1, diffDays);
       
-      // Check if today is within checkInDate and checkOutDate
-      const isTodayWithinStayPeriod = today >= checkIn && today <= checkOut;
+      // Get room rate - prefer roomRateAtPayment if available
+      let roomRate = stay.roomRateAtPayment || 0;
       
-      // Check if payment status is PAID - only paid stays count as revenue
-      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
-      
-      // Only add revenue if ALL conditions are met
-      if (isCheckInPast && isTodayWithinStayPeriod && isPaid) {
-        return sum + (stay.totalAmount || 0);
+      // If still no rate, use totalAmount / numberOfNights as fallback
+      if (!roomRate && stay.totalAmount && numberOfNights > 0) {
+        roomRate = stay.totalAmount / numberOfNights;
       }
       
-      return sum;
+      // Calculate revenue: nights × room rate
+      // Use totalAmount if available and valid, otherwise calculate based on nights × rate
+      const revenue = stay.totalAmount && stay.totalAmount > 0 && numberOfNights > 0
+        ? stay.totalAmount
+        : roomRate * numberOfNights;
+      
+      return sum + revenue;
     }, 0);
   }, [stays]);
 
@@ -188,6 +194,7 @@ export default function AnalyticsBody({
   const occupancyRate = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : '0.0';
   
   // Calculate monthly revenue from stays
+  // Revenue = number of nights × room rate for paid stays (based on full stay duration)
   const monthlyRevenue = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentMonth = new Date().getMonth();
@@ -198,15 +205,50 @@ export default function AnalyticsBody({
       const monthIndex = (currentMonth - i + 12) % 12;
       const monthName = months[monthIndex];
       
-      // Calculate revenue for this month
+      // Calculate revenue for this month - only paid stays, based on full stay duration
       const monthRevenue = stays
-        .filter(stay => new Date(stay.checkInDate).getMonth() === monthIndex)
-        .reduce((sum, stay) => sum + (stay.totalAmount || 0), 0);
+        .filter(stay => {
+          // Filter by check-in date month and payment status
+          const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
+          if (!checkInDate) return false;
+          return checkInDate.getMonth() === monthIndex && stay.paymentStatus === PaymentStatus.PAID;
+        })
+        .reduce((sum, stay) => {
+          const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
+          const checkOutDate = stay.checkOutDate ? new Date(stay.checkOutDate) : null;
+          
+          if (!checkInDate || !checkOutDate) return sum;
+          
+          // Calculate number of nights
+          const checkIn = new Date(checkInDate);
+          checkIn.setHours(0, 0, 0, 0);
+          const checkOut = new Date(checkOutDate);
+          checkOut.setHours(0, 0, 0, 0);
+          
+          const diffTime = checkOut.getTime() - checkIn.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const numberOfNights = Math.max(1, diffDays);
+          
+          // Get room rate
+          let roomRate = stay.roomRateAtPayment || 0;
+          if (!roomRate && stay.totalAmount && numberOfNights > 0) {
+            roomRate = stay.totalAmount / numberOfNights;
+          }
+          
+          // Calculate revenue: nights × room rate
+          const revenue = stay.totalAmount && stay.totalAmount > 0 && numberOfNights > 0
+            ? stay.totalAmount
+            : roomRate * numberOfNights;
+          
+          return sum + revenue;
+        }, 0);
       
-      // Count bookings for this month
-      const monthBookings = stays.filter(stay => 
-        new Date(stay.checkInDate).getMonth() === monthIndex
-      ).length;
+      // Count bookings for this month (all stays, not just paid)
+      const monthBookings = stays.filter(stay => {
+        const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
+        if (!checkInDate) return false;
+        return checkInDate.getMonth() === monthIndex;
+      }).length;
       
       last6Months.push({
         month: monthName,

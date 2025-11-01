@@ -251,13 +251,41 @@ class DashboardSummaryService {
    * Get stay summary with aggregation
    */
   private async getStaySummary(hotelId: Types.ObjectId, startDate?: Date, endDate?: Date) {
-    const matchQuery: any = { hotelId: new Types.ObjectId(hotelId) };
+    const matchQuery: any = { 
+      hotelId: new Types.ObjectId(hotelId),
+      // Only include PAID stays for revenue calculation
+      $or: [
+        { paymentStatus: "paid" },
+        { paidAmount: { $gt: 0 } }
+      ]
+    };
     
     if (startDate || endDate) {
-      matchQuery.$or = [
-        { checkInDate: { $gte: startDate, $lte: endDate } },
-        { checkOutDate: { $gte: startDate, $lte: endDate } }
+      // Add date filtering with $and to combine with payment filter
+      const dateFilter: any = {
+        $or: [
+          { checkInDate: { $gte: startDate, $lte: endDate } },
+          { checkOutDate: { $gte: startDate, $lte: endDate } },
+          {
+            // Stays that span the entire period
+            $and: [
+              { checkInDate: { $lte: endDate } },
+              { checkOutDate: { $gte: startDate } }
+            ]
+          }
+        ]
+      };
+      
+      matchQuery.$and = [
+        {
+          $or: [
+            { paymentStatus: "paid" },
+            { paidAmount: { $gt: 0 } }
+          ]
+        },
+        dateFilter
       ];
+      delete matchQuery.$or; // Remove the top-level $or since we're using $and now
     }
 
     const stats = await Stay.aggregate([
@@ -272,26 +300,33 @@ class DashboardSummaryService {
       },
       {
         $addFields: {
-          // Use actual totalAmount if available, otherwise calculate based on room rate and duration
+          // Calculate number of nights from checkInDate to checkOutDate
+          numberOfNights: {
+            $max: [
+              1,
+              {
+                $ceil: {
+                  $divide: [
+                    { $subtract: ["$checkOutDate", "$checkInDate"] },
+                    1000 * 60 * 60 * 24 // Convert milliseconds to days
+                  ]
+                }
+              }
+            ]
+          },
+          roomRate: { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] } // Default rate $100/night
+        }
+      },
+      {
+        $addFields: {
+          // Calculate revenue: roomRate * numberOfNights
+          // Use totalAmount if available and valid, otherwise calculate based on nights
           calculatedAmount: {
             $cond: {
-              if: { $gt: ["$totalAmount", 0] },
+              if: { $and: [{ $gt: ["$totalAmount", 0] }, { $gt: ["$numberOfNights", 0] }] },
               then: "$totalAmount",
               else: {
-                $multiply: [
-                  { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] }, // Default rate $100/night
-                  {
-                    $max: [
-                      1,
-                      {
-                        $divide: [
-                          { $subtract: ["$checkOutDate", "$checkInDate"] },
-                          1000 * 60 * 60 * 24 // Convert to days
-                        ]
-                      }
-                    ]
-                  }
-                ]
+                $multiply: ["$roomRate", "$numberOfNights"]
               }
             }
           }
@@ -663,16 +698,34 @@ class DashboardSummaryService {
 
     // Calculate revenue from stays and PAID orders separately
     const [stayRevenue, orderRevenue] = await Promise.all([
-      // Revenue from stays - filter by today's check-in or check-out dates
+      // Revenue from PAID stays - calculate full stay period from checkInDate to checkOutDate
       Stay.aggregate([
         {
           $match: {
-            hotelId: new Types.ObjectId(hotelId),
-            status: { $in: ["checked_in", "checked_out"] },
-            $or: [
-              { checkInDate: { $gte: startOfDay, $lte: endOfDay } }, // Checked in today
-              { checkOutDate: { $gte: startOfDay, $lte: endOfDay } }, // Checked out today
-              { createdAt: { $gte: startOfDay, $lte: endOfDay } } // OR created/paid today
+            $and: [
+              { hotelId: new Types.ObjectId(hotelId) },
+              // Only include PAID stays
+              {
+                $or: [
+                  { paymentStatus: "paid" },
+                  { paidAmount: { $gt: 0 } }
+                ]
+              },
+              // Filter by date period - any stay that overlaps with the period
+              {
+                $or: [
+                  { checkInDate: { $gte: startOfDay, $lte: endOfDay } }, // Checked in during period
+                  { checkOutDate: { $gte: startOfDay, $lte: endOfDay } }, // Checked out during period
+                  { 
+                    // Stays that span the entire period
+                    $and: [
+                      { checkInDate: { $lte: endOfDay } },
+                      { checkOutDate: { $gte: startOfDay } }
+                    ]
+                  },
+                  { paymentDate: { $gte: startOfDay, $lte: endOfDay } } // OR paid during period
+                ]
+              }
             ]
           }
         },
@@ -686,26 +739,33 @@ class DashboardSummaryService {
         },
         {
           $addFields: {
-            // Use actual totalAmount if available, otherwise calculate based on room rate and duration
+            // Calculate number of nights from checkInDate to checkOutDate
+            numberOfNights: {
+              $max: [
+                1,
+                {
+                  $ceil: {
+                    $divide: [
+                      { $subtract: ["$checkOutDate", "$checkInDate"] },
+                      1000 * 60 * 60 * 24 // Convert milliseconds to days
+                    ]
+                  }
+                }
+              ]
+            },
+            roomRate: { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] } // Default rate $100/night
+          }
+        },
+        {
+          $addFields: {
+            // Calculate revenue: roomRate * numberOfNights
+            // Use totalAmount if available and valid, otherwise calculate based on nights
             calculatedAmount: {
               $cond: {
-                if: { $gt: ["$totalAmount", 0] },
+                if: { $and: [{ $gt: ["$totalAmount", 0] }, { $gt: ["$numberOfNights", 0] }] },
                 then: "$totalAmount",
                 else: {
-                  $multiply: [
-                    { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] }, // Default rate $100/night
-                    {
-                      $max: [
-                        1,
-                        {
-                          $divide: [
-                            { $subtract: ["$checkOutDate", "$checkInDate"] },
-                            1000 * 60 * 60 * 24 // Convert to days
-                          ]
-                        }
-                      ]
-                    }
-                  ]
+                  $multiply: ["$roomRate", "$numberOfNights"]
                 }
               }
             }
@@ -851,16 +911,34 @@ class DashboardSummaryService {
   private async getPeriodRevenue(hotelId: Types.ObjectId, startDate: Date, endDate: Date) {
     // Calculate revenue from stays and PAID orders within the date period
     const [stayRevenue, orderRevenue] = await Promise.all([
-      // Revenue from stays - filter by date period
+      // Revenue from PAID stays - calculate full stay period from checkInDate to checkOutDate
       Stay.aggregate([
         {
           $match: {
-            hotelId: new Types.ObjectId(hotelId),
-            status: { $in: ["checked_in", "checked_out"] },
-            $or: [
-              { checkInDate: { $gte: startDate, $lte: endDate } }, // Checked in during period
-              { checkOutDate: { $gte: startDate, $lte: endDate } }, // Checked out during period
-              { createdAt: { $gte: startDate, $lte: endDate } } // OR created/paid during period
+            $and: [
+              { hotelId: new Types.ObjectId(hotelId) },
+              // Only include PAID stays
+              {
+                $or: [
+                  { paymentStatus: "paid" },
+                  { paidAmount: { $gt: 0 } }
+                ]
+              },
+              // Filter by date period - any stay that overlaps with the period
+              {
+                $or: [
+                  { checkInDate: { $gte: startDate, $lte: endDate } }, // Checked in during period
+                  { checkOutDate: { $gte: startDate, $lte: endDate } }, // Checked out during period
+                  { 
+                    // Stays that span the entire period
+                    $and: [
+                      { checkInDate: { $lte: endDate } },
+                      { checkOutDate: { $gte: startDate } }
+                    ]
+                  },
+                  { paymentDate: { $gte: startDate, $lte: endDate } } // OR paid during period
+                ]
+              }
             ]
           }
         },
@@ -874,26 +952,33 @@ class DashboardSummaryService {
         },
         {
           $addFields: {
-            // Use actual totalAmount if available, otherwise calculate based on room rate and duration
+            // Calculate number of nights from checkInDate to checkOutDate
+            numberOfNights: {
+              $max: [
+                1,
+                {
+                  $ceil: {
+                    $divide: [
+                      { $subtract: ["$checkOutDate", "$checkInDate"] },
+                      1000 * 60 * 60 * 24 // Convert milliseconds to days
+                    ]
+                  }
+                }
+              ]
+            },
+            roomRate: { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] } // Default rate $100/night
+          }
+        },
+        {
+          $addFields: {
+            // Calculate revenue: roomRate * numberOfNights
+            // Use totalAmount if available and valid, otherwise calculate based on nights
             calculatedAmount: {
               $cond: {
-                if: { $gt: ["$totalAmount", 0] },
+                if: { $and: [{ $gt: ["$totalAmount", 0] }, { $gt: ["$numberOfNights", 0] }] },
                 then: "$totalAmount",
                 else: {
-                  $multiply: [
-                    { $ifNull: [{ $arrayElemAt: ["$room.roomRate", 0] }, 100] }, // Default rate $100/night
-                    {
-                      $max: [
-                        1,
-                        {
-                          $divide: [
-                            { $subtract: ["$checkOutDate", "$checkInDate"] },
-                            1000 * 60 * 60 * 24 // Convert to days
-                          ]
-                        }
-                      ]
-                    }
-                  ]
+                  $multiply: ["$roomRate", "$numberOfNights"]
                 }
               }
             }

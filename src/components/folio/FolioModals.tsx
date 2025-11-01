@@ -97,8 +97,12 @@ export default function FolioModals({
                         <p className="font-medium text-secondary-900">{selectedFolio.guest || 'N/A'}</p>
                       </div>
                       <div>
-                        <span className="text-secondary-600">Room:</span>
-                        <p className="font-medium text-secondary-900">{selectedFolio.room || 'N/A'}</p>
+                        <span className="text-secondary-600">Room Number:</span>
+                        <p className="font-medium text-secondary-900">
+                          {selectedFolio.room !== 'N/A' && selectedFolio.room
+                            ? selectedFolio.room
+                            : originalData?.roomId?.roomNumber || originalData?.roomNumber || 'N/A'}
+                        </p>
                       </div>
                       {selectedFolio.email && (
                         <div>

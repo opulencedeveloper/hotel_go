@@ -1,7 +1,6 @@
 import { HouseKeepingStatus, StaffRole } from "@/utils/enum";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-// Define the Staff type
 export interface Staff {
   _id: string;
   firstName: string;
@@ -11,31 +10,43 @@ export interface Staff {
   userRole: StaffRole;
 }
 
-// Define the Room type
+// 🏨 Room Type
 export interface Room {
   _id: string;
   roomNumber: string;
   floor: number;
 }
 
-// Define the HouseKeeping type
+// 🏗️ Facility Type
+export interface Facility {
+  _id: string;
+  facilityName: string;
+  category: string;
+  location: string;
+  floor: number;
+  capacity: number;
+  status: string;
+}
+
+// 🧹 HouseKeeping Type
 export interface HouseKeeping {
   _id: string;
   createdAt: string;
-  description?: string;
-  roomIds: Room[]; // 👈 updated to array
-  status: HouseKeepingStatus;
-  staffIds: Staff[];
   title: string;
+  description?: string;
+  status: HouseKeepingStatus;
+  roomIds: Room[]; // optional but always array
+  facilityIds: Facility[]; // ✅ new field added
+  staffIds: Staff[];
 }
 
-// Define the HouseKeepingState type
+// 🗂️ HouseKeeping State
 export interface HouseKeepingState {
   houseKeepings: HouseKeeping[];
   fetchedData: boolean;
 }
 
-// Initial state
+// 🏁 Initial State
 const initialState: HouseKeepingState = {
   houseKeepings: [],
   fetchedData: false,

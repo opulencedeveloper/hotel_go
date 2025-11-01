@@ -245,10 +245,8 @@ export default function AccountingBody({
     // So we include all stays/orders/services that are in the period AND meet payment criteria
 
     // Room revenue from stays
-    // Only count stays where ALL conditions are met:
-    // 1. checkInDate is in the past (guest has already checked in)
-    // 2. Current date is within checkInDate and checkOutDate (active stay period)
-    // 3. paymentStatus is PAID (only paid stays count as revenue)
+    // Calculate revenue based on full stay duration (checkInDate to checkOutDate)
+    // Only count stays where paymentStatus is PAID (only paid stays count as revenue)
     const roomsRevenue = stays.length > 0 ? stays.reduce((sum, stay) => {
       // Check if stay should be included in revenue
       const checkInDate = stay.checkInDate ? new Date(stay.checkInDate) : null;
@@ -256,23 +254,12 @@ export default function AccountingBody({
       
       if (!checkInDate || !checkOutDate) return sum;
       
-      // Set time to midnight for accurate date comparison
-      const checkIn = new Date(checkInDate);
-      checkIn.setHours(0, 0, 0, 0);
-      const checkOut = new Date(checkOutDate);
-      checkOut.setHours(0, 0, 0, 0);
-      
-      // Check if checkInDate is in the past
-      const isCheckInPast = checkIn <= today;
-      
-      // Check if today is within checkInDate and checkOutDate
-      const isTodayWithinStayPeriod = today >= checkIn && today <= checkOut;
-      
       // Check if payment status is PAID - only paid stays count as revenue
       const isPaid = stay.paymentStatus === PaymentStatus.PAID;
       
-      // Only add revenue if ALL conditions are met
-      if (isCheckInPast && isTodayWithinStayPeriod && isPaid) {
+      // Only add revenue for paid stays
+      // Use totalAmount which should represent the full stay revenue
+      if (isPaid) {
         return sum + (stay.totalAmount || 0);
       }
       

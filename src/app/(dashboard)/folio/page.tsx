@@ -25,6 +25,8 @@ export default function FolioPage() {
      const resData = res?.data?.data;
  
      const { stays, rooms, orders, scheduledServices } = resData;
+
+     console.log("folio", resData);
  
      dispatch(analyticsActions.setRooms(rooms));
      dispatch(analyticsActions.setStays(stays));

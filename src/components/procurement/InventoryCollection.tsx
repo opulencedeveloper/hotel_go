@@ -13,6 +13,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Search,
+  Warehouse,
 } from "lucide-react";
 import { inventoryActions, InventoryItem } from "@/store/redux/inventory-slice";
 import { useSelector, useDispatch } from "react-redux";
@@ -197,6 +198,8 @@ export default function InventoryCollection({
         guestType === InventoryDestination.HOTEL_GUEST
           ? roomNumber
           : guestType === InventoryDestination.WALK_IN
+          ? ""
+          : guestType === InventoryDestination.INVENTORY
           ? ""
           : "",
       guestName:
@@ -422,12 +425,13 @@ export default function InventoryCollection({
                 <h3 className="text-lg font-semibold text-secondary-900">
                   Destination
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <button
                     type="button"
-                    onClick={() =>
-                      setGuestType(InventoryDestination.HOTEL_GUEST)
-                    }
+                    onClick={() => {
+                      setGuestType(InventoryDestination.HOTEL_GUEST);
+                      setTableNumber("");
+                    }}
                     className={`p-4 border rounded-lg text-left transition-colors ${
                       guestType === InventoryDestination.HOTEL_GUEST
                         ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -447,7 +451,10 @@ export default function InventoryCollection({
 
                   <button
                     type="button"
-                    onClick={() => setGuestType(InventoryDestination.WALK_IN)}
+                    onClick={() => {
+                      setGuestType(InventoryDestination.WALK_IN);
+                      setTableNumber("");
+                    }}
                     className={`p-4 border rounded-lg text-left transition-colors ${
                       guestType === InventoryDestination.WALK_IN
                         ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -467,9 +474,10 @@ export default function InventoryCollection({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setGuestType(InventoryDestination.RESTAURANT)
-                    }
+                    onClick={() => {
+                      setGuestType(InventoryDestination.RESTAURANT);
+                      setRoomNumber("");
+                    }}
                     className={`p-4 border rounded-lg text-left transition-colors ${
                       guestType === InventoryDestination.RESTAURANT
                         ? "border-orange-500 bg-orange-50 text-orange-700"
@@ -486,18 +494,43 @@ export default function InventoryCollection({
                       </div>
                     </div>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGuestType(InventoryDestination.INVENTORY);
+                      setRoomNumber("");
+                      setTableNumber("");
+                    }}
+                    className={`p-4 border rounded-lg text-left transition-colors ${
+                      guestType === InventoryDestination.INVENTORY
+                        ? "border-orange-500 bg-orange-50 text-orange-700"
+                        : "border-secondary-200 hover:border-orange-300"
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Warehouse className="w-5 h-5" />
+                      <div>
+                        <p className="font-medium">Inventory</p>
+                        <p className="text-sm text-secondary-500">
+                          Stock management
+                        </p>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </div>
 
               {/* Room/Table Number */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-secondary-900">
-                  {guestType === InventoryDestination.HOTEL_GUEST
-                    ? "Room Number"
-                    : guestType === InventoryDestination.RESTAURANT
-                    ? "Table Number"
-                    : "Guest Details"}
-                </h3>
+              {guestType !== InventoryDestination.INVENTORY && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-secondary-900">
+                    {guestType === InventoryDestination.HOTEL_GUEST
+                      ? "Room Number"
+                      : guestType === InventoryDestination.RESTAURANT
+                      ? "Table Number"
+                      : "Guest Details"}
+                  </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {guestType === InventoryDestination.HOTEL_GUEST && (
                     <div>
@@ -547,7 +580,8 @@ export default function InventoryCollection({
                     </div>
                   )}
                 </div>
-              </div>
+                </div>
+              )}
 
               {/* Item Selection */}
               <div className="space-y-4">

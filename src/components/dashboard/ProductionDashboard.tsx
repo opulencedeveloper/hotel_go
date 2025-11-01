@@ -496,22 +496,32 @@ export default function ProductionDashboard() {
             {/* Revenue Breakdown by Source */}
             {dashboardSummary.revenue?.bySource && (
               <div className="mt-6 pt-6 border-t border-secondary-200">
-                <h4 className="text-sm font-semibold text-gray-700 mb-4">Revenue by Source</h4>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Revenue by Source (Today)</h4>
+                <p className="text-xs text-gray-500 mb-4">Stay revenue calculated as: nights × room rate</p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-                    <span className="text-sm text-gray-700">Rooms</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">Stay Revenue</span>
+                      <span className="text-xs text-gray-500">Room bookings</span>
+                    </div>
                     <span className="text-sm font-semibold text-blue-600">
                       {formatPrice(dashboardSummary.revenue.bySource.roomRevenue || 0, selectedHotel?.currency)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
-                    <span className="text-sm text-gray-700">Food & Beverage</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">Food & Beverage</span>
+                      <span className="text-xs text-gray-500">Orders & services</span>
+                    </div>
                     <span className="text-sm font-semibold text-orange-600">
                       {formatPrice(dashboardSummary.revenue.bySource.foodRevenue || 0, selectedHotel?.currency)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
-                    <span className="text-sm text-gray-700">Scheduled Services</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">Scheduled Services</span>
+                      <span className="text-xs text-gray-500">Pre-booked services</span>
+                    </div>
                     <span className="text-sm font-semibold text-indigo-600">
                       {formatPrice(dashboardSummary.revenue.bySource.serviceRevenue || 0, selectedHotel?.currency)}
                     </span>

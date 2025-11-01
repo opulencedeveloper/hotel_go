@@ -21,6 +21,12 @@ class StaffService {
     return staffs;
   }
 
+   public async findStaffEmailAndHotelId(email: string, hotelId: Types.ObjectId) {
+    const staff = await Staff.findOne({ email, hotelId });
+
+    return staff;
+  }
+
  public async findStaffByIdsAndRole(staffIds: Types.ObjectId[], userRole: StaffRole) {
   // Query all staff that match the given IDs AND have the given role
   const staffs = await Staff.find({

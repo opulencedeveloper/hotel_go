@@ -15,6 +15,7 @@ interface Stay {
   checkInDate?: string;
   checkOutDate?: string;
   totalAmount?: number;
+  roomRateAtPayment?: number | null;
 }
 
 interface Order {
@@ -53,10 +54,9 @@ export default function StatsSummary({ stays, orders, scheduledServices = [], cu
   }, [stays]);
 
   // Calculate room revenue from stays
-  // Only count stays where ALL conditions are met:
-  // 1. checkInDate is in the past (guest has already checked in)
-  // 2. Current date is within checkInDate and checkOutDate (active stay period)
-  // 3. paymentStatus is PAID (only paid stays count as revenue)
+  // Calculate revenue based on full stay duration (checkInDate to checkOutDate)
+  // Only count stays where paymentStatus is PAID (only paid stays count as revenue)
+  // Revenue = number of nights × room rate (matching backend calculation)
   const paidRevenue = useMemo(() => {
     return stays.reduce((sum, stay) => {
       // Check if stay should be included in revenue
@@ -65,29 +65,39 @@ export default function StatsSummary({ stays, orders, scheduledServices = [], cu
       
       if (!checkInDate || !checkOutDate) return sum;
       
-      // Set time to midnight for accurate date comparison
+      // Check if payment status is PAID - only paid stays count as revenue
+      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
+      
+      if (!isPaid) return sum;
+      
+      // Calculate number of nights between checkInDate and checkOutDate
       const checkIn = new Date(checkInDate);
       checkIn.setHours(0, 0, 0, 0);
       const checkOut = new Date(checkOutDate);
       checkOut.setHours(0, 0, 0, 0);
       
-      // Check if checkInDate is in the past
-      const isCheckInPast = checkIn <= today;
+      // Calculate nights (minimum 1 night)
+      const diffTime = checkOut.getTime() - checkIn.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const numberOfNights = Math.max(1, diffDays);
       
-      // Check if today is within checkInDate and checkOutDate
-      const isTodayWithinStayPeriod = today >= checkIn && today <= checkOut;
+      // Get room rate - prefer roomRateAtPayment if available
+      let roomRate = stay.roomRateAtPayment || 0;
       
-      // Check if payment status is PAID - only paid stays count as revenue
-      const isPaid = stay.paymentStatus === PaymentStatus.PAID;
-      
-      // Only add revenue if ALL conditions are met
-      if (isCheckInPast && isTodayWithinStayPeriod && isPaid) {
-        return sum + (stay.totalAmount || 0);
+      // If still no rate, use totalAmount / numberOfNights as fallback
+      if (!roomRate && stay.totalAmount && numberOfNights > 0) {
+        roomRate = stay.totalAmount / numberOfNights;
       }
       
-      return sum;
+      // Calculate revenue: nights × room rate
+      // Use totalAmount if available and valid, otherwise calculate based on nights × rate
+      const revenue = stay.totalAmount && stay.totalAmount > 0 && numberOfNights > 0
+        ? stay.totalAmount
+        : roomRate * numberOfNights;
+      
+      return sum + revenue;
     }, 0);
-  }, [stays, today]);
+  }, [stays]);
 
   // Calculate F&B revenue from orders
   // Only count orders with status = PAID (pending orders cannot be counted as revenue)

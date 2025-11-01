@@ -6,8 +6,9 @@ import { countries } from '@/resources/auth';
 import { staffRoleOptions } from '@/resources/staff';
 import { StaffShift, StaffRole } from '@/utils/enum';
 import { useHttp } from '@/hooks/useHttp';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { staffActions } from '@/store/redux/staff-slice';
 
 interface NewStaffModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export default function NewStaffModal({ isOpen, onClose }: NewStaffModalProps) {
   const { isLoading, sendHttpRequest: createStaffRequest, error } = useHttp();
   const hotel = useSelector((state: RootState) => state.hotel);
   const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  const dispatch = useDispatch();
   
   const [formData, setFormData] = useState<StaffFormData>({
     firstName: '',
@@ -240,6 +242,10 @@ export default function NewStaffModal({ isOpen, onClose }: NewStaffModalProps) {
 
     const onSuccessHandler = (res: any) => {
       console.log('Staff member created successfully:', res.data);
+
+      const newStaff = res?.data.data.newStaff;
+
+      dispatch(staffActions.addStaff(newStaff))
       // Reset form and validation errors
       setFormData({
         firstName: '',

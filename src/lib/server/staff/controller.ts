@@ -15,6 +15,17 @@ class StaffController {
   ) {
     const hotelId = customReq.hotelId;
 
+    const emailExist = await staffService.findStaffEmailAndHotelId(body.email, hotelId!);
+
+    if (emailExist) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Email already exist!",
+        data: null,
+      });
+    }
+
     const newStaff = await staffService.createStaff({
       ...body,
       hotelId: hotelId!,
@@ -24,7 +35,7 @@ class StaffController {
       status: 201,
       message: MessageResponse.Success,
       description: "Staff created successfully!",
-      data: newStaff,
+      data: { newStaff },
     });
   }
 
@@ -70,9 +81,7 @@ class StaffController {
     });
   }
 
-  public async createStaffPassword(
-    body: ICreateStaffPasswordUserInput
-  ) {
+  public async createStaffPassword(body: ICreateStaffPasswordUserInput) {
     const staff = await staffService.findStaffById(body.staffId!);
 
     if (!staff) {

@@ -21,10 +21,6 @@ class HouseKeepingValidator {
               }
               return value;
             })
-            .messages({
-              "any.invalid": "Each staff ID must be a valid ObjectId.",
-              "any.required": "Each staff ID is required.",
-            })
         )
         .min(1)
         .required()
@@ -36,25 +32,32 @@ class HouseKeepingValidator {
 
       roomIds: Joi.array()
         .items(
-          Joi.string()
-            .required()
-            .custom((value, helpers) => {
-              if (!Types.ObjectId.isValid(value)) {
-                return helpers.error("any.invalid");
-              }
-              return value;
-            })
-            .messages({
-              "any.invalid": "Each room ID must be a valid ObjectId.",
-              "any.required": "Each room ID is required.",
-            })
+          Joi.string().custom((value, helpers) => {
+            if (!Types.ObjectId.isValid(value)) {
+              return helpers.error("any.invalid");
+            }
+            return value;
+          })
         )
         .min(1)
-        .required()
         .messages({
           "array.base": "Room IDs must be an array of ObjectIds.",
-          "array.min": "At least one room ID is required.",
-          "any.required": "Room IDs field is required.",
+          "array.min": "At least one room ID is required if provided.",
+        }),
+
+      facilityIds: Joi.array()
+        .items(
+          Joi.string().custom((value, helpers) => {
+            if (!Types.ObjectId.isValid(value)) {
+              return helpers.error("any.invalid");
+            }
+            return value;
+          })
+        )
+        .min(1)
+        .messages({
+          "array.base": "Facility IDs must be an array of ObjectIds.",
+          "array.min": "At least one facility ID is required if provided.",
         }),
 
       title: Joi.string().trim().required().messages({
@@ -65,7 +68,12 @@ class HouseKeepingValidator {
       description: Joi.string().trim().optional().messages({
         "string.base": "Description must be a string.",
       }),
-    });
+    })
+      // ✅ This ensures at least one of roomIds or facilityIds must exist
+      .or("roomIds", "facilityIds")
+      .messages({
+        "object.missing": "You must provide either roomIds or facilityIds (or both).",
+      });
 
     const { error } = schema.validate(body, { abortEarly: true });
 
@@ -81,6 +89,8 @@ class HouseKeepingValidator {
       }),
     };
   }
+
+
 
   public markAsCompleted(
     body: IMarkHouseKeepingUserInputAsComplete,

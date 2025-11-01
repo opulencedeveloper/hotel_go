@@ -13,6 +13,7 @@ import {
   Filter,
   Eye,
   X,
+  Warehouse,
 } from "lucide-react";
 import { InventoryDestination } from "@/utils/enum";
 import { InventoryLog } from "@/store/redux/inventory-slice";
@@ -68,6 +69,8 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
         return <Utensils className="w-4 h-4" />;
       case InventoryDestination.WALK_IN:
         return <ShoppingBag className="w-4 h-4" />;
+      case InventoryDestination.INVENTORY:
+        return <Warehouse className="w-4 h-4" />;
       default:
         return <Package className="w-4 h-4" />;
     }
@@ -81,6 +84,8 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
         return "Restaurant";
       case InventoryDestination.WALK_IN:
         return "Walk-in Guest";
+      case InventoryDestination.INVENTORY:
+        return "Inventory";
       default:
         return "Unknown";
     }
@@ -141,6 +146,7 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
               <option value={InventoryDestination.HOTEL_GUEST}>Room Guest</option>
               <option value={InventoryDestination.RESTAURANT}>Restaurant</option>
               <option value={InventoryDestination.WALK_IN}>Walk-in Guest</option>
+              <option value={InventoryDestination.INVENTORY}>Inventory</option>
             </select>
           </div>
         </div>
@@ -198,6 +204,12 @@ export default function InventoryLogs({ logs }: InventoryLogsProps) {
                       <div className="flex items-center space-x-1">
                         <ShoppingBag className="w-4 h-4" />
                         <span>Walk-in Guest</span>
+                      </div>
+                    )}
+                    {log.destination === InventoryDestination.INVENTORY && (
+                      <div className="flex items-center space-x-1">
+                        <Package className="w-4 h-4" />
+                        <span>Inventory</span>
                       </div>
                     )}
                   </div>

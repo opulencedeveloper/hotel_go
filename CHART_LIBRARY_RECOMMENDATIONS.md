@@ -262,3 +262,4 @@ npm install @nivo/core @nivo/line @nivo/pie
 If you need more advanced features later, you can always migrate to Chart.js or add it alongside Recharts.
 
 
+

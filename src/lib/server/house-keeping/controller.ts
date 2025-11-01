@@ -12,6 +12,7 @@ import {
 } from "./interface";
 import { houseKeepingService } from "./service";
 import { HouseKeepingStatus } from "./enum";
+import "../facility/entity";
 
 class HouseKeepingController {
   public async createHouseKeeping(
@@ -49,6 +50,7 @@ class HouseKeepingController {
     //   });
     // }
 
+    console.log("+++++++===++++++++======+++++_--++++++++++++++")
     const houseKeeping = await houseKeepingService.createHouseKeeping({
       ...body,
       hotelId: hotelId!,

@@ -22,7 +22,15 @@ const houseKeepingSchema: Schema<IHouseKeeping> = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "Room",
-        required: true,
+        trim: true,
+      },
+    ],
+
+    // ✅ facilityIds is now optional
+    facilityIds: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Facility",
         trim: true,
       },
     ],

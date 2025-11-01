@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, MapPin, Clock, Users, CheckCircle, AlertCircle, Play, X } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Users, CheckCircle, AlertCircle, Play, X, Eye, Building } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store';
 import NewTaskModal from './NewTaskModal';
@@ -14,6 +14,10 @@ export default function HousekeepingBody() {
   const { houseKeepings, fetchedData } = houseKeeping;
   const [showNewTask, setShowNewTask] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [processingCompleteTaskId, setProcessingCompleteTaskId] = useState<string | null>(null);
+  const [processingCancelTaskId, setProcessingCancelTaskId] = useState<string | null>(null);
   const dispatch = useDispatch();
 
   // HTTP hook for marking tasks as complete
@@ -34,10 +38,24 @@ export default function HousekeepingBody() {
     setIsClient(true);
   }, []);
 
+  // Reset processing state when loading completes
+  useEffect(() => {
+    if (!isMarkingComplete && processingCompleteTaskId) {
+      setProcessingCompleteTaskId(null);
+    }
+  }, [isMarkingComplete, processingCompleteTaskId]);
+
+  useEffect(() => {
+    if (!isCancelling && processingCancelTaskId) {
+      setProcessingCancelTaskId(null);
+    }
+  }, [isCancelling, processingCancelTaskId]);
+
   // Function to mark task as complete
   const handleMarkComplete = (taskId: string) => {
     const task = houseKeepings.find(t => t._id === taskId);
     if (task && task.roomIds && task.roomIds.length > 0) {
+      setProcessingCompleteTaskId(taskId);
       const payload = {
         roomIds: task.roomIds.map(room => room._id)
       };
@@ -49,6 +67,7 @@ export default function HousekeepingBody() {
           const resData = res?.data?.data;
           const houseKeeping = resData?.houseKeeping;
           dispatch(houseKeepingActions.updateHouseKeeping(houseKeeping));
+          setProcessingCompleteTaskId(null);
         },
         requestConfig: {
           url: `/hotel/mark-house-cleaning-as-done?houseKeepingId=${taskId}`,
@@ -64,11 +83,13 @@ export default function HousekeepingBody() {
   const handleCancel = (taskId: string) => {
     const task = houseKeepings.find(t => t._id === taskId);
     if (task) {
+      setProcessingCancelTaskId(taskId);
       cancelRequest({
         successRes: (res: any) => {
-     const resData = res?.data?.data;
+          const resData = res?.data?.data;
           const houseKeeping = resData?.houseKeeping;
           dispatch(houseKeepingActions.updateHouseKeeping(houseKeeping));
+          setProcessingCancelTaskId(null);
         },
         requestConfig: {
           url: `/hotel/mark-house-cleaning-as-cancelled?houseKeepingId=${taskId}`,
@@ -302,44 +323,57 @@ export default function HousekeepingBody() {
                         )}
                         
                         {/* Action Buttons */}
-                        {task.status !== HouseKeepingStatus.COMPLETED && task.status !== HouseKeepingStatus.CANCELLED && (
-                          <div className="mt-4 flex justify-end space-x-3">
-                            <button
-                              onClick={() => handleCancel(task._id)}
-                              disabled={isCancelling || isMarkingComplete}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isCancelling ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                  Cancelling...
-                                </>
-                              ) : (
-                                <>
-                                  <X className="w-4 h-4 mr-2" />
-                                  Cancel Task
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleMarkComplete(task._id)}
-                              disabled={isMarkingComplete || isCancelling}
-                              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isMarkingComplete ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                  Marking Complete...
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle className="w-4 h-4 mr-2" />
-                                  Mark as Complete
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        )}
+                        <div className="mt-4 flex justify-end space-x-3">
+                          <button
+                            onClick={() => {
+                              setSelectedTask(task);
+                              setShowViewModal(true);
+                            }}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Details
+                          </button>
+                          
+                          {task.status !== HouseKeepingStatus.COMPLETED && task.status !== HouseKeepingStatus.CANCELLED && (
+                            <>
+                              <button
+                                onClick={() => handleCancel(task._id)}
+                                disabled={processingCancelTaskId === task._id || processingCompleteTaskId === task._id}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {processingCancelTaskId === task._id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Cancelling...
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="w-4 h-4 mr-2" />
+                                    Cancel Task
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleMarkComplete(task._id)}
+                                disabled={processingCompleteTaskId === task._id || processingCancelTaskId === task._id}
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {processingCompleteTaskId === task._id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                    Marking Complete...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                    Mark as Complete
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -378,6 +412,214 @@ export default function HousekeepingBody() {
           onClose={() => setShowNewTask(false)}
           staff={[]}
         />
+
+        {/* View Task Modal */}
+        {showViewModal && selectedTask && (
+          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mr-4">
+                      <Eye className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-secondary-900">
+                        Task Details
+                      </h2>
+                      <p className="text-sm text-secondary-600">
+                        Complete task information
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setSelectedTask(null);
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="space-y-6">
+                  {/* Task Overview */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {selectedTask.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Created: {new Date(selectedTask.createdAt).toLocaleDateString()} at {new Date(selectedTask.createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getStatusStyling(selectedTask.status).bg} ${getStatusStyling(selectedTask.status).text}`}>
+                        {getStatusStyling(selectedTask.status).label}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    {selectedTask.description && (
+                      <div className="mt-4 bg-white rounded-lg p-4 border border-gray-200">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Description:</p>
+                        <p className="text-sm text-gray-900 leading-relaxed">
+                          {selectedTask.description}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Staff Information */}
+                  {selectedTask.staffIds && selectedTask.staffIds.length > 0 && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Assigned Staff ({selectedTask.staffIds.length})
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedTask.staffIds.map((staff: any) => (
+                          <div
+                            key={staff._id}
+                            className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  {staff.firstName} {staff.lastName}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {staff.email}
+                                </p>
+                                {staff.phoneNumber && (
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {staff.phoneNumber}
+                                  </p>
+                                )}
+                                {staff.userRole && (
+                                  <p className="text-xs text-blue-600 mt-2 capitalize">
+                                    {staff.userRole}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rooms Information */}
+                  {selectedTask.roomIds && selectedTask.roomIds.length > 0 && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                          <MapPin className="w-5 h-5 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Assigned Rooms ({selectedTask.roomIds.length})
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {selectedTask.roomIds.map((room: any) => (
+                          <div
+                            key={room._id}
+                            className="p-4 bg-green-50 rounded-lg border border-green-200"
+                          >
+                            <div className="flex items-center">
+                              <MapPin className="w-4 h-4 text-green-600 mr-2" />
+                              <div>
+                                <p className="font-medium text-gray-900">
+                                  Room {room.roomNumber}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Floor {room.floor}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Facilities Information */}
+                  {selectedTask.facilityIds && selectedTask.facilityIds.length > 0 && (
+                    <div className="bg-white rounded-xl border border-gray-200 p-6">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                          <Building className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Assigned Facilities ({selectedTask.facilityIds.length})
+                        </h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {selectedTask.facilityIds.map((facility: any) => (
+                          <div
+                            key={facility._id}
+                            className="p-4 bg-purple-50 rounded-lg border border-purple-200"
+                          >
+                            <div className="flex items-start">
+                              <Building className="w-4 h-4 text-purple-600 mr-2 mt-1" />
+                              <div className="flex-1">
+                                <p className="font-medium text-gray-900">
+                                  {facility.facilityName}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {facility.category} • {facility.location}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Floor {facility.floor} • Capacity: {facility.capacity}
+                                </p>
+                                {facility.description && (
+                                  <p className="text-xs text-gray-400 mt-2 line-clamp-2">
+                                    {facility.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Task ID */}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-xs text-gray-500">
+                      Task ID: <span className="font-mono text-gray-700">{selectedTask._id}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 rounded-b-2xl">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setSelectedTask(null);
+                    }}
+                    className="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors font-medium"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

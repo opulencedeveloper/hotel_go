@@ -183,14 +183,39 @@ export default function Rooms() {
     });
   };
 
-  const filteredRooms = hotelRooms.filter((room) => {
+  const filteredRooms = hotelRooms.filter((room: any) => {
     const matchesSearch =
       room?.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       room?.roomTypeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       statusFilter === "all" || room.roomStatus === statusFilter;
+    
+    // Get the room's roomTypeId - could be string, object, or different field name
+    let roomTypeId = "";
+    if (typeof room.roomTypeId === 'string') {
+      roomTypeId = room.roomTypeId;
+    } else if (room.roomTypeId && typeof room.roomTypeId === 'object') {
+      // If roomTypeId is an object, try to find matching room type by name
+      if ('_id' in room.roomTypeId) {
+        roomTypeId = (room.roomTypeId as any)._id;
+      } else if (room.roomTypeName) {
+        // Match by room type name
+        const matchingType = hotelRoomTypes.find(
+          rt => rt.name === room.roomTypeName || 
+                (room.roomTypeId.name && rt.name === room.roomTypeId.name)
+        );
+        roomTypeId = matchingType?._id || "";
+      }
+    } else if (room.room_type_id) {
+      roomTypeId = room.room_type_id;
+    } else if (room.roomTypeName) {
+      // Fallback: find by name if roomTypeId is not available
+      const matchingType = hotelRoomTypes.find(rt => rt.name === room.roomTypeName);
+      roomTypeId = matchingType?._id || "";
+    }
+    
     const matchesType =
-      typeFilter === "all" || room.roomTypeName === typeFilter;
+      typeFilter === "all" || roomTypeId === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
 

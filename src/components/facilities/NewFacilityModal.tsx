@@ -98,9 +98,9 @@ export default function NewFacilityModal({
          dispatch(facilityActions.addFacility(facility));
         
         // Call onSuccess callback if provided
-        if (onSuccess && res?.data?.data) {
-          onSuccess(facility);
-        }
+        // if (onSuccess && res?.data?.data) {
+        //   onSuccess(facility);
+        // }
       },
       requestConfig: {
         url: '/hotel/create-facility',

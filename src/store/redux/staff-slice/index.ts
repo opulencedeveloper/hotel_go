@@ -1,4 +1,4 @@
-import { StaffRole, StaffStatus } from "@/utils/enum";
+import { StaffRole, StaffShift, StaffStatus } from "@/utils/enum";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 // Define the Staff type
@@ -12,7 +12,7 @@ export interface Staff {
   phoneNumber: string;
   userRole: StaffRole;
   salary: number;
-  shift: string;
+  shift: StaffShift;
   country: string;
   stateOrProvince: string;
   city: string;

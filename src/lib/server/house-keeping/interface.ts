@@ -4,7 +4,8 @@ import { HouseKeepingStatus } from "./enum";
 export interface IHouseKeeping extends Document {
   hotelId: Types.ObjectId;
   staffIds: Types.ObjectId[]; // multiple staff members
-  roomIds: Types.ObjectId[];  // multiple rooms
+  roomIds?: Types.ObjectId[];  // multiple rooms
+  facilityIds?: Types.ObjectId[];  // multiple rooms
   title: string;
   status: HouseKeepingStatus;
   description?: string;
@@ -13,14 +14,16 @@ export interface IHouseKeeping extends Document {
 export interface ICreateHouseKeepingInput {
   hotelId: Types.ObjectId;
   staffIds: Types.ObjectId[];
-  roomIds: Types.ObjectId[];
+  roomIds?: Types.ObjectId[];
+  facilityIds?: Types.ObjectId[];
   title: string;
   description?: string;
 }
 
 export interface ICreateHouseKeepingUserInput {
   staffIds: Types.ObjectId[];
-  roomIds: Types.ObjectId[];
+  roomIds?: Types.ObjectId[];
+  facilityIds?: Types.ObjectId[];
   title: string;
   description?: string;
 }

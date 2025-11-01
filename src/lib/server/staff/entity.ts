@@ -33,7 +33,6 @@ const staffSchema = new Schema<IStaff>(
     email: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
       index: true, // ✅ ensure fast login/lookup
@@ -108,7 +107,7 @@ const staffSchema = new Schema<IStaff>(
 );
 
 // ✅ Compound indexes
-staffSchema.index({ hotelId: 1, email: 1 }, { unique: true }); // prevents duplicate emails in same hotel
+//staffSchema.index({ hotelId: 1, email: 1 }, { unique: true }); // prevents duplicate emails in same hotel
 staffSchema.index({ hotelId: 1, userRole: 1 }); // filter by role within hotel quickly
 staffSchema.index({ hotelId: 1, status: 1, shift: 1 }); // fast filtering in dashboards
 staffSchema.index({ firstName: "text", lastName: "text", city: "text" }); // full-text search support

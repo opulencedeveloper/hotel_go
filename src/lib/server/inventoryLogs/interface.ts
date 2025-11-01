@@ -7,6 +7,7 @@ export interface IInventoryItem {
 }
 
 export interface IInventoryLogs extends Document {
+  _id: Types.ObjectId;
   hotelId: Types.ObjectId;
   staffId: Types.ObjectId;
   destination: InventoryDestination;

@@ -6,12 +6,29 @@ import "../staff/entity";
 import { HouseKeepingStatus } from "./enum";
 
 class HouseKeepingService {
-  public async createHouseKeeping(input: ICreateHouseKeepingInput) {
-    const houseKeeping = new HouseKeeping({ ...input });
-    await houseKeeping.save();
+public async createHouseKeeping(input: ICreateHouseKeepingInput) {
+  const houseKeeping = new HouseKeeping({ ...input });
+  await houseKeeping.save();
 
-    return houseKeeping;
-  }
+  // ✅ Populate related data before returning
+  const populatedHouseKeeping = await houseKeeping.populate([
+    {
+      path: "roomIds",
+      select: "roomNumber floor", // essential room fields
+    },
+    {
+      path: "facilityIds",
+      select: "facilityName category floor capacity status location", // essential facility fields
+    },
+    {
+      path: "staffIds",
+      select: "firstName lastName email phoneNumber userRole", // essential staff fields
+    },
+  ]);
+
+  return populatedHouseKeeping;
+}
+
 
   public async findHouseKeepingByHotelId(hotelId: Types.ObjectId) {
     const houseKeeping = await HouseKeeping.find({ hotelId })
@@ -20,6 +37,10 @@ class HouseKeepingService {
         path: "roomIds", // updated to match schema array
         select: "roomNumber floor", // only essential fields
       })
+       .populate({
+      path: "facilityIds", // ✅ facilities array
+      select: "facilityName category floor capacity status location", // key facility info
+    })
       .populate({
         path: "staffIds", // still an array
         select: "firstName lastName email phoneNumber userRole", // essential staff fields
@@ -45,6 +66,10 @@ class HouseKeepingService {
         path: "roomIds", // updated to match schema array
         select: "roomNumber floor", // only essential fields
       })
+       .populate({
+      path: "facilityIds", // ✅ facilities array
+      select: "facilityName category floor capacity status location", // key facility info
+    })
       .populate({
         path: "staffIds", // still an array
         select: "firstName lastName email phoneNumber userRole", // essential staff fields
