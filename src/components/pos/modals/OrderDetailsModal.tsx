@@ -127,10 +127,10 @@ export default function OrderDetailsModal({
           >
             Close
           </button>
-          <button className="btn-primary">
+          {/* <button className="btn-primary">
             <Printer className="w-4 h-4 mr-2" />
             Print Receipt
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

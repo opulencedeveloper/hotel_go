@@ -90,7 +90,9 @@ const roomSlice = createSlice({
         room._id === roomId ? { ...room, roomStatus: status } : room
       );
     },
+    reset: () => initialState,
   },
+  
 });
 
 export const roomActions = roomSlice.actions;

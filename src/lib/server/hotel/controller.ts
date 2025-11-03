@@ -1,5 +1,9 @@
 import { MessageResponse } from "../utils/enum";
-import { IHotelRegistrationUserInput } from "./interface";
+import {
+  IAddHotelRegistrationUserInput,
+  IHotelRegistrationInput,
+  IHotelRegistrationUserInput,
+} from "./interface";
 import { utils } from "../utils";
 
 import { userService } from "../user/service";
@@ -31,8 +35,7 @@ class HotelController {
       ...body,
     });
 
-    console.log(createdUser.savedUser._id,
-      createdHotel._id)
+    console.log(createdUser.savedUser._id, createdHotel._id);
 
     const updatedUser = await userService.findUserByIdAndUpdateHotelId(
       createdUser.savedUser._id,
@@ -48,7 +51,7 @@ class HotelController {
       });
     }
 
-  await  sendEmailVerificationMail({
+    sendEmailVerificationMail({
       email: body.email,
       otp: createdUser.otp,
       expiryTime: createdUser.expiryTime,
@@ -63,9 +66,29 @@ class HotelController {
     });
   }
 
+  public async addHotel(
+    req: CustomRequest,
+    body: IAddHotelRegistrationUserInput
+  ) {
+    const { ownerId } = req;
 
+    const newHotel = await hotelService.registerHotel({
+      ...body,
+      ownerId: ownerId!,
+    });
 
-   public async addHotelAmenities(body: IAddHotelAmenities, customReq: CustomRequest) {
+    return utils.customResponse({
+      status: 201,
+      message: MessageResponse.Success,
+      description: "Hotel added successfully!",
+      data: { newHotel },
+    });
+  }
+
+  public async addHotelAmenities(
+    body: IAddHotelAmenities,
+    customReq: CustomRequest
+  ) {
     const hotelId = customReq.hotelId;
 
     const updatedHotel = await hotelService.findHotelIdAndUpdateAmenities(
@@ -86,7 +109,7 @@ class HotelController {
       status: 201,
       message: MessageResponse.Success,
       description: "Amenities added successfully!",
-      data: {amenities: updatedHotel.amenities},
+      data: { amenities: updatedHotel.amenities },
     });
   }
 }

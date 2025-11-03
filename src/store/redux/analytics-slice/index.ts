@@ -137,6 +137,7 @@ const analyticsSlice = createSlice({
       state.fetchedScheduledServices = true;
       state.scheduledServices = action.payload;
     },
+     reset: () => initialState,
   },
 });
 

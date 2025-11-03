@@ -25,13 +25,7 @@ const hotelSchema: Schema = new Schema(
       trim: true,
       index: true, // ✅ for filtering hotels by owner/admin
     },
-    licenseKeyId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "LicenseKey",
-      default: null,
-      trim: true,
-      index: true,
-    },
+  
     isActive: { type: Boolean, default: true, index: true }, // ✅ used in most active/inactive filters
   },
   { timestamps: true }

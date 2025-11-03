@@ -60,6 +60,7 @@ const staffSlice = createSlice({
     deleteStaff: (state, action: PayloadAction<string>) => {
       state.staffs = state.staffs.filter((s) => s._id !== action.payload);
     },
+    reset: () => initialState,
   },
 });
 

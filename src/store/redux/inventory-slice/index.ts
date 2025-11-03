@@ -149,6 +149,8 @@ const inventorySlice = createSlice({
     clearInventoryLogs: (state) => {
       state.inventoryLogs = [];
     },
+
+    reset: () => initialState,
   },
 });
 

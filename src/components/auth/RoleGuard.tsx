@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/redux';
-import { UserRole } from '@/lib/auth';
+import { UserRole } from '@/utils/enum';
 
 interface RoleGuardProps {
   children: ReactNode;

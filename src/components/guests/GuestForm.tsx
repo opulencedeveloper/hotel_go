@@ -6,7 +6,7 @@ import { RootState } from '@/store/redux';
 import { useGuestsService } from '@/services/guestsService';
 import { Guest } from '@/store/slices/guestsSlice';
 import { RoleGuard } from '@/components/auth/RoleGuard';
-import { UserRole } from '@/lib/auth';
+import { UserRole } from '@/utils/enum';
 
 interface GuestFormProps {
   guest?: Guest;
@@ -442,7 +442,7 @@ export const GuestForm = ({ guest, onSuccess, onCancel }: GuestFormProps) => {
         </div>
 
         {/* Loyalty Points */}
-        <RoleGuard allowedRoles={['admin', 'manager', 'front_desk']}>
+        <RoleGuard allowedRoles={[UserRole.SuperAdmin, UserRole.Manager, UserRole.FrontDesk]}>
           <div className="border-t pt-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Loyalty Program</h3>
             <div>

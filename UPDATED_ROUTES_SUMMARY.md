@@ -14,7 +14,7 @@ async function handler(request: Request) {
   await connectDB();
 
   // 3. Check if user exists
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!);
+  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
   if (!user.valid) return user.response!;
 
   // 4. Check if hotel exists

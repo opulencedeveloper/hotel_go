@@ -13,7 +13,7 @@ async function handler(request: Request) {
 
   const body: IAddInventoryItemUserInput = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!);
+  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);

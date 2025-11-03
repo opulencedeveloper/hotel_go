@@ -52,6 +52,20 @@ class RoomService {
     return staffs;
   }
 
+
+  public async findRoomByIdAndMarkForCleaning(
+    roomId: string
+  ) {
+
+    const updatedRoom = await Room.findOneAndUpdate(
+      { _id: roomId },
+      { $set: {roomStatus: RoomStatus.MarkForCleaning} },
+      { new: true, runValidators: true }
+    );
+
+    return updatedRoom;
+  }
+
   // public async findRoomByIdAndStatus(
   //   id: Types.ObjectId,
   //   roomStatus: RoomStatus

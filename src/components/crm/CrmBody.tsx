@@ -2,6 +2,7 @@
 
 import { RootState } from "@/store";
 import { useSelector } from "react-redux";
+import FeatureGuard from "@/components/auth/FeatureGuard";
 import { 
   Users, 
   Calendar, 
@@ -71,9 +72,18 @@ export default function CRMBody() {
     : 0;
 
   // Guest demographics
-  const uniqueGuests = new Set(stays.filter(stay => stay.emailAddress).map(stay => stay.emailAddress)).size;
-  const repeatGuests = totalGuests - uniqueGuests;
-  const repeatGuestRate = totalGuests > 0 ? (repeatGuests / totalGuests) * 100 : 0;
+  const guestStaysMap = new Map<string, number>();
+  stays.forEach(stay => {
+    if (stay.emailAddress) {
+      guestStaysMap.set(stay.emailAddress, (guestStaysMap.get(stay.emailAddress) || 0) + 1);
+    }
+  });
+  
+  const uniqueGuests = guestStaysMap.size;
+  const newGuests = Array.from(guestStaysMap.values()).filter(count => count === 1).length;
+  const repeatGuestsCount = uniqueGuests - newGuests;
+  const repeatGuestRate = uniqueGuests > 0 ? (repeatGuestsCount / uniqueGuests) * 100 : 0;
+  const newGuestRate = uniqueGuests > 0 ? (newGuests / uniqueGuests) * 100 : 0;
 
   // Recent stays (last 7 days)
   const recentStays = stays.filter(stay => {
@@ -194,7 +204,7 @@ export default function CRMBody() {
           <h1 className="text-2xl font-bold text-secondary-900">Customer Relationship Management</h1>
           <p className="text-secondary-600">Manage guest relationships and analyze customer data</p>
         </div>
-        <div className="flex space-x-3">
+        {/* <div className="flex space-x-3">
           <button className="btn-secondary flex items-center">
             <Download className="w-4 h-4 mr-2" />
             Export Data
@@ -203,7 +213,7 @@ export default function CRMBody() {
             <Filter className="w-4 h-4 mr-2" />
             Advanced Filters
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Key Metrics Cards */}
@@ -234,18 +244,20 @@ export default function CRMBody() {
           </div>
         </div>
 
-        <div className="card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-secondary-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-secondary-900">{formatPrice(totalRevenue, currency)}</p>
-              <p className="text-xs text-secondary-500">From all stays</p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <DollarSign className="w-6 h-6 text-purple-600" />
+        <FeatureGuard permission="financials.view_revenue">
+          <div className="card">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-secondary-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-secondary-900">{formatPrice(totalRevenue, currency)}</p>
+                <p className="text-xs text-secondary-500">From all stays</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-full">
+                <DollarSign className="w-6 h-6 text-purple-600" />
+              </div>
             </div>
           </div>
-        </div>
+        </FeatureGuard>
 
         <div className="card">
           <div className="flex items-center justify-between">
@@ -275,7 +287,7 @@ export default function CRMBody() {
                 <UserCheck className="w-5 h-5 text-green-600 mr-3" />
                 <div>
                   <p className="font-medium text-secondary-900">Repeat Guests</p>
-                  <p className="text-sm text-secondary-600">{repeatGuests} guests</p>
+                  <p className="text-sm text-secondary-600">{repeatGuestsCount} guests</p>
                 </div>
               </div>
               <div className="text-right">
@@ -289,11 +301,11 @@ export default function CRMBody() {
                 <Users className="w-5 h-5 text-blue-600 mr-3" />
                 <div>
                   <p className="font-medium text-secondary-900">New Guests</p>
-                  <p className="text-sm text-secondary-600">{uniqueGuests} guests</p>
+                  <p className="text-sm text-secondary-600">{newGuests} guests</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-blue-600">{(100 - repeatGuestRate).toFixed(1)}%</p>
+                <p className="text-lg font-bold text-blue-600">{newGuestRate.toFixed(1)}%</p>
                 <p className="text-xs text-secondary-500">New Guest Rate</p>
               </div>
             </div>
@@ -435,86 +447,111 @@ export default function CRMBody() {
             </button>
           </div> */}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-secondary-200">
-                <th className="text-left py-3 px-4 font-medium text-secondary-700">Guest</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-700">Contact</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-700">Stays</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-700">Total Spent</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-700">Last Stay</th>
-                <th className="text-left py-3 px-4 font-medium text-secondary-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.values(guestRevenue).slice(0, 10).map((guest: any) => (
-                <tr key={guest.email} className="border-b border-secondary-100 hover:bg-secondary-50">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-sm font-medium text-primary-600">
-                          {guest.name.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-secondary-900">{guest.name}</p>
-                        <p className="text-sm text-secondary-600">{guest.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => handleEmailClick(guest.email, guest.name)}
-                        className="p-1 text-secondary-400 hover:text-primary-600"
-                        title={`Email ${guest.email}`}
-                      >
-                        <Mail className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handlePhoneClick(guest.phone || '', guest.name)}
-                        className="p-1 text-secondary-400 hover:text-primary-600"
-                        title={`Call ${guest.phone || 'No phone number'}`}
-                        disabled={!guest.phone}
-                      >
-                        <Phone className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {guest.stays} stays
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 font-medium text-secondary-900">
-                    {formatPrice(guest.totalSpent, currency)}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-secondary-600">
-                    {new Date(guest.lastStay).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex space-x-2">
-                      <button 
-                        onClick={() => handleViewGuest(guest)}
-                        className="p-1 text-secondary-400 hover:text-primary-600"
-                        title={`View details for ${guest.name}`}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      {/* <button className="p-1 text-secondary-400 hover:text-primary-600">
-                        <MessageSquare className="w-4 h-4" />
-                      </button>
-                      <button className="p-1 text-secondary-400 hover:text-primary-600">
-                        <Heart className="w-4 h-4" />
-                      </button> */}
-                    </div>
-                  </td>
+        {Object.values(guestRevenue).length === 0 ? (
+          <div className="py-16 px-6">
+            <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
+              {/* Icon Container */}
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full blur-xl opacity-50" />
+                <div className="relative p-6 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full">
+                  <Users className="w-12 h-12 text-primary-600" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl font-semibold text-secondary-900 mb-2">
+                No guests found
+              </h3>
+
+              {/* Description */}
+              <p className="text-secondary-600 mb-6 text-sm leading-relaxed">
+                Guest contact information will appear here once you have stays with guest email addresses. 
+                This directory helps you manage relationships with your guests.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-secondary-200">
+                  <th className="text-left py-3 px-4 font-medium text-secondary-700">Guest</th>
+                  <th className="text-left py-3 px-4 font-medium text-secondary-700">Contact</th>
+                  <th className="text-left py-3 px-4 font-medium text-secondary-700">Stays</th>
+                  <th className="text-left py-3 px-4 font-medium text-secondary-700">Total Spent</th>
+                  <th className="text-left py-3 px-4 font-medium text-secondary-700">Last Stay</th>
+                  <th className="text-left py-3 px-4 font-medium text-secondary-700">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {Object.values(guestRevenue).slice(0, 10).map((guest: any) => (
+                  <tr key={guest.email} className="border-b border-secondary-100 hover:bg-secondary-50">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
+                          <span className="text-sm font-medium text-primary-600">
+                            {guest.name.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-secondary-900">{guest.name}</p>
+                          <p className="text-sm text-secondary-600">{guest.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleEmailClick(guest.email, guest.name)}
+                          className="p-1 text-secondary-400 hover:text-primary-600"
+                          title={`Email ${guest.email}`}
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handlePhoneClick(guest.phone || '', guest.name)}
+                          className="p-1 text-secondary-400 hover:text-primary-600"
+                          title={`Call ${guest.phone || 'No phone number'}`}
+                          disabled={!guest.phone}
+                        >
+                          <Phone className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {guest.stays} stays
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 font-medium text-secondary-900">
+                      {formatPrice(guest.totalSpent, currency)}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-secondary-600">
+                      {new Date(guest.lastStay).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleViewGuest(guest)}
+                          className="p-1 text-secondary-400 hover:text-primary-600"
+                          title={`View details for ${guest.name}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {/* <button className="p-1 text-secondary-400 hover:text-primary-600">
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                        <button className="p-1 text-secondary-400 hover:text-primary-600">
+                          <Heart className="w-4 h-4" />
+                        </button> */}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Guest Details Modal */}

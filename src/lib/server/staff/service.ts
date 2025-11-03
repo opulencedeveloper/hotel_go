@@ -6,9 +6,6 @@ import { StaffRole } from "./enum";
 
 class StaffService {
   public async createStaff(input: ICreateStaffInput) {
-    console.log("-------------->>>>>>", input);
-
-
     const staff = new Staff({ ...input });
     await staff.save();
 
@@ -17,6 +14,12 @@ class StaffService {
 
   public async findStaffsByHotelId(hotelId: Types.ObjectId) {
     const staffs = await Staff.find({ hotelId });
+
+    return staffs;
+  }
+
+  public async findStaffByEmail(email: string) {
+    const staffs = await Staff.findOne({ email });
 
     return staffs;
   }

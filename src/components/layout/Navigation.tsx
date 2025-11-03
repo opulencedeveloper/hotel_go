@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import { getNavigationItems } from "@/lib/auth";
 
 import {
@@ -71,7 +73,8 @@ interface NavigationProps {
 
 export default function Navigation({ sidebarOpen, setSidebarOpen }: NavigationProps) {
   const pathname = usePathname();
-  const navItems = getNavigationItems("admin");
+  const user = useSelector((state: RootState) => state.user);
+  const navItems = getNavigationItems(user?.userRole || null);
 
   return (
     <>

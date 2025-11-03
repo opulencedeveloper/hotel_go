@@ -61,6 +61,7 @@ const scheduledServicesSlice = createSlice({
         (s) => s._id !== action.payload
       );
     },
+    reset: () => initialState,
   },
 });
 

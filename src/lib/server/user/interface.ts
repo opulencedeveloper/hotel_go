@@ -8,7 +8,8 @@ export interface IUser extends Document {
   email: string;
   password: string;
   userRole: UserRole;
-  hotelId?: Types.ObjectId;
+ // hotelId?: Types.ObjectId;
+  licenseKeyId: Types.ObjectId;
   isActive: boolean;
   emailVerified: boolean;
   emailVerificationOtp?: string;

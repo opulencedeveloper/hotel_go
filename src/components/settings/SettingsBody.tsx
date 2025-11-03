@@ -175,8 +175,6 @@ export default function SettingsBody() {
           {activeTab === 'contact' && (
             <ContactSettings 
               settings={{
-                email: settings.email,
-                phone: settings.phone,
                 address: settings.address,
                 website: settings.website
               }}

@@ -13,6 +13,7 @@ export interface ISendEmail {
 
 export interface CustomRequest {
   userId?: Types.ObjectId;
+  ownerId?: Types.ObjectId;
   hotelId?: Types.ObjectId;
   userRole?: UserRole;
   query?: Record<string, any>;

@@ -2,12 +2,13 @@ import { mockRooms, mockRoomTypes } from "@/data/mockData";
 import { RootState } from "@/store";
 import { Room, RoomType } from "@/types";
 import { RoomStatus } from "@/types/room-management/enum";
-import { Bed, Edit, Eye, Search, X } from "lucide-react";
+import { Bed, Edit, Eye, Search, X, Sparkles, MapPin, Layers } from "lucide-react";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useHttp } from "@/hooks/useHttp";
 import { roomActions } from "@/store/redux/room-slice";
 import { roomStatusList } from "@/resources/room-management";
+import FeatureGuard from "@/components/auth/FeatureGuard";
 
 export default function Rooms() {
   // const [rooms, setRooms] = useState<Room[]>(mockRooms);
@@ -23,8 +24,14 @@ export default function Rooms() {
     sendHttpRequest: updateRoomReq, 
     error: editError 
   } = useHttp();
+  const {
+    isLoading: isMarkingForCleaning,
+    sendHttpRequest: markForCleaningReq,
+    error: markForCleaningError,
+  } = useHttp();
 
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [markingRoomId, setMarkingRoomId] = useState<string | null>(null);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<any>(null);
@@ -152,6 +159,32 @@ export default function Rooms() {
     });
   };
 
+  const handleMarkForCleaning = (room: any) => {
+    setMarkingRoomId(room._id);
+    
+    markForCleaningReq({
+      successRes: (res: any) => {
+        const updatedRoom = res?.data?.data?.updatedRoom;
+        
+        // Check if updatedRoom exists
+        if (!updatedRoom || !updatedRoom._id) {
+          console.error('Invalid room data received:', updatedRoom);
+          setMarkingRoomId(null);
+          return;
+        }
+        
+        // Update Redux state
+        dispatch(roomActions.updateRoom(updatedRoom));
+        setMarkingRoomId(null);
+      },
+      requestConfig: {
+        url: `/hotel/mark-room-for-cleaning?roomId=${room._id}`,
+        method: "PATCH",
+        successMessage: "Room marked for cleaning successfully!",
+      },
+    });
+  };
+
   const updateRoomSuccessRes = (res: any) => {
     const updatedRoom = res?.data?.data.updatedRoom;
     
@@ -257,10 +290,12 @@ export default function Rooms() {
             className="px-4 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-full sm:w-40 min-w-0"
           >
             <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="occupied">Occupied</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="cleaning">Cleaning</option>
+            <option value={RoomStatus.Available}>Available</option>
+            <option value={RoomStatus.Occupied}>Occupied</option>
+            <option value={RoomStatus.MarkForCleaning}>Marked for Cleaning</option>
+            <option value={RoomStatus.Maintenance}>Maintenance</option>
+            <option value={RoomStatus.Cleaning}>Cleaning</option>
+            <option value={RoomStatus.Unavailable}>Unavailable</option>
           </select>
 
           <select
@@ -279,83 +314,159 @@ export default function Rooms() {
       </div>
 
       {/* Rooms Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredRooms.map((room) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredRooms.map((room) => {
+          // Get room type name - handle different data structures
+          const getRoomTypeName = () => {
+            // First check if roomTypeName exists directly
+            if (room.roomTypeName) return room.roomTypeName;
+            
+            // Handle roomTypeId as object
+            if (room.roomTypeId && typeof room.roomTypeId === 'object') {
+              // Check if it has a name property directly
+              if ('name' in room.roomTypeId && room.roomTypeId.name) {
+                return room.roomTypeId.name;
+              }
+              // If it has _id, look it up from hotelRoomTypes
+              if ('_id' in room.roomTypeId && (room.roomTypeId as any)._id) {
+                const roomTypeIdString = (room.roomTypeId as any)._id;
+                const roomType = hotelRoomTypes.find(rt => rt._id === roomTypeIdString);
+                return roomType?.name || 'Unknown';
+              }
+            }
+            
+            // Handle roomTypeId as string - look up from hotelRoomTypes
+            const roomTypeIdString = typeof room.roomTypeId === 'string' ? room.roomTypeId : null;
+            if (roomTypeIdString) {
+              const roomType = hotelRoomTypes.find(rt => rt._id === roomTypeIdString);
+              return roomType?.name || 'Unknown';
+            }
+            
+            return 'Unknown';
+          };
+          
+          const roomTypeName = getRoomTypeName();
+          
+          return (
           <div
             key={room._id}
-            className="bg-white rounded-lg border border-secondary-200 p-6 hover:shadow-lg transition-all duration-200"
+            className="group relative bg-gradient-to-br from-white via-gray-50 to-white rounded-2xl border border-gray-200/60 overflow-hidden hover:shadow-2xl hover:shadow-primary-500/10 hover:border-primary-300/50 transition-all duration-500 transform hover:-translate-y-2 hover:scale-[1.02]"
           >
-            <div className="flex items-center mb-4">
-              <Bed className="w-5 h-5 text-primary-600 mr-3" />
-              <span className="text-lg font-semibold text-secondary-900">
-                Room {room.roomNumber}
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-sm text-secondary-600 flex-shrink-0">Type</span>
-                <span 
-                  className="text-sm font-medium text-secondary-900 capitalize truncate min-w-0 flex-1 text-right" 
-                  title={room.roomTypeName}
-                >
-                  {room.roomTypeName}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-secondary-600 flex-shrink-0">Floor</span>
-                <span className="text-sm font-medium text-secondary-900">
-                  {room.floor}
-                </span>
-              </div>
-
-              {room.lastCleaned ? (
-                <div className="text-xs text-secondary-500 truncate" title={`Last cleaned: ${new Date(room.lastCleaned).toLocaleDateString()}`}>
-                  Last cleaned:{" "}
-                  {new Date(room.lastCleaned).toLocaleDateString()}
+            {/* Decorative gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            
+            {/* Header Section with Enhanced Gradient */}
+            <div className="relative bg-gradient-to-r from-primary-500 via-primary-600 to-primary-700 px-5 py-4 shadow-lg">
+              {/* Subtle pattern overlay */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
+                backgroundSize: '20px 20px'
+              }}></div>
+              
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="relative p-2.5 bg-white/20 backdrop-blur-md rounded-lg shadow-lg ring-2 ring-white/30">
+                    <Bed className="w-6 h-6 text-white drop-shadow-lg" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white drop-shadow-md">Room {room.roomNumber}</h3>
+                    <p className="text-xs text-primary-50 font-medium capitalize">{roomTypeName}</p>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-xs text-secondary-500">Last cleaned: Not cleaned since creation</p>
-              )}
-            </div>
-
-            {/* Status Change Section */}
-            <div className="mt-4 pt-4 border-t border-secondary-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-secondary-700">Status</span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(room.roomStatus)}`}>
+                <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg backdrop-blur-sm ring-1 ring-white/20 ${getStatusColor(room.roomStatus)}`}>
                   {getStatusIcon(room.roomStatus)}
-                  <span className="ml-1 capitalize">{room.roomStatus}</span>
+                  <span className="ml-1.5 capitalize">{room.roomStatus}</span>
                 </span>
               </div>
-         
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-2 mt-4">
-              <button
-                onClick={() => handleViewRoom(room)}
-                className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors"
-              >
-                <Eye className="w-3 h-3 inline mr-1" />
-                View
-              </button>
-              <button 
-                onClick={() => handleEditRoom(room)}
-                className="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <Edit className="w-3 h-3 inline mr-1" />
-                Edit
-              </button>
+            {/* Body Section */}
+            <div className="relative p-4">
+              {/* Room Details - Compact Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="group/item flex items-center space-x-2.5 p-2.5 bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-lg border border-blue-200/60 shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-300">
+                  <div className="relative p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md group-hover/item:scale-110 transition-transform duration-300">
+                    <Layers className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wide mb-0.5">Type</p>
+                    <p className="text-sm font-bold text-secondary-900 capitalize truncate" title={roomTypeName}>
+                      {roomTypeName}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="group/item flex items-center space-x-2.5 p-2.5 bg-gradient-to-r from-green-50 to-green-100/50 rounded-lg border border-green-200/60 shadow-sm hover:shadow-md hover:border-green-300 transition-all duration-300">
+                  <div className="relative p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md group-hover/item:scale-110 transition-transform duration-300">
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] text-green-700 font-bold uppercase tracking-wide mb-0.5">Floor</p>
+                    <p className="text-sm font-bold text-secondary-900">{room.floor}</p>
+                  </div>
+                </div>
+
+                <div className={`group/item flex items-center space-x-2.5 p-2.5 rounded-lg border shadow-sm hover:shadow-md transition-all duration-300 col-span-2 ${room.lastCleaned ? 'bg-gradient-to-r from-purple-50 to-purple-100/50 border-purple-200/60 hover:border-purple-300' : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200/60 hover:border-amber-300'}`}>
+                  <div className={`relative p-2 rounded-lg shadow-md group-hover/item:scale-110 transition-transform duration-300 ${room.lastCleaned ? 'bg-gradient-to-br from-purple-500 to-purple-600' : 'bg-gradient-to-br from-amber-500 to-orange-500'}`}>
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-[10px] font-bold uppercase tracking-wide mb-0.5 ${room.lastCleaned ? 'text-purple-700' : 'text-amber-700'}`}>Last Cleaned</p>
+                    <p className={`text-sm font-bold ${room.lastCleaned ? 'text-secondary-900' : 'text-amber-700'}`} title={room.lastCleaned ? new Date(room.lastCleaned).toLocaleDateString() : undefined}>
+                      {room.lastCleaned ? new Date(room.lastCleaned).toLocaleDateString() : 'Not cleaned since creation'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200/60">
+                <button
+                  onClick={() => handleViewRoom(room)}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white text-xs font-bold rounded-lg hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  View
+                </button>
+                <FeatureGuard permission="rooms.mark_for_cleaning">
+                  <button
+                    onClick={() => handleMarkForCleaning(room)}
+                    disabled={markingRoomId === room._id || isMarkingForCleaning}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 via-green-600 to-green-700 text-white text-xs font-bold rounded-lg hover:from-green-600 hover:via-green-700 hover:to-green-800 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-md disabled:hover:scale-100"
+                    title="Mark room for cleaning"
+                  >
+                    {markingRoomId === room._id ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Clean</span>
+                      </>
+                    )}
+                  </button>
+                </FeatureGuard>
+                <FeatureGuard permission="rooms.edit">
+                  <button 
+                    onClick={() => handleEditRoom(room)}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-slate-500 via-slate-600 to-slate-700 text-white text-xs font-bold rounded-lg hover:from-slate-600 hover:via-slate-700 hover:to-slate-800 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    Edit
+                  </button>
+                </FeatureGuard>
+              </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Room Details Modal */}
       {showRoomModal && selectedRoom && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-4" style={{ margin: 0, padding: '1rem', top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
               <div className="flex items-center justify-between">
@@ -573,7 +684,7 @@ export default function Rooms() {
 
       {/* Edit Room Modal */}
       {showEditModal && editingRoom && (
-        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-4" style={{ margin: 0, padding: '1rem', top: 0, left: 0, right: 0, bottom: 0 }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
               <div className="flex items-center justify-between">

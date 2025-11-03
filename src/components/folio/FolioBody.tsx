@@ -15,6 +15,7 @@ import { OrderStatus } from '@/lib/server/order/enum';
 import { PaymentMethod } from '@/utils/enum';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/helper';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 
 interface FolioBodyProps {
   selectedPeriod?: string;
@@ -332,20 +333,21 @@ export default function FolioBody({
         />
 
         {/* Revenue Summary - Accounting Dashboard Style */}
-      <section className="my-6 w-full">
-        <div className="flex flex-col md:flex-row md:space-x-8 w-full">
-          {/* Total Revenue Card */}
-          <div className="flex flex-col justify-center items-center bg-gradient-to-tr from-indigo-50 via-white to-indigo-100 rounded-2xl border border-indigo-200 shadow-md px-8 py-6 mb-5 md:mb-0 flex-1">
-            <div className="flex items-center mb-3">
-              <svg className="w-10 h-10 text-indigo-400 mr-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.104 0-2 .895-2 2s.896 2 2 2 2-.895 2-2-.896-2-2-2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 20C7.03 20 2 17.52 2 15c0-1.38 2.07-2.5 5.18-3.05A6.97 6.97 0 0112 5c1.91 0 3.63.76 4.82 2C19.93 8.5 22 9.62 22 11c0 2.52-5.03 5-10 5z" />
-              </svg>
-              <span className="text-xl md:text-2xl font-bold text-indigo-800 tracking-wide">Total Revenue</span>
+      <FeatureGuard permission="financials.view_revenue">
+        <section className="my-6 w-full">
+          <div className="flex flex-col md:flex-row md:space-x-8 w-full">
+            {/* Total Revenue Card */}
+            <div className="flex flex-col justify-center items-center bg-gradient-to-tr from-indigo-50 via-white to-indigo-100 rounded-2xl border border-indigo-200 shadow-md px-8 py-6 mb-5 md:mb-0 flex-1">
+              <div className="flex items-center mb-3">
+                <svg className="w-10 h-10 text-indigo-400 mr-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.104 0-2 .895-2 2s.896 2 2 2 2-.895 2-2-.896-2-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 20C7.03 20 2 17.52 2 15c0-1.38 2.07-2.5 5.18-3.05A6.97 6.97 0 0112 5c1.91 0 3.63.76 4.82 2C19.93 8.5 22 9.62 22 11c0 2.52-5.03 5-10 5z" />
+                </svg>
+                <span className="text-xl md:text-2xl font-bold text-indigo-800 tracking-wide">Total Revenue</span>
+              </div>
+              <span className="text-3xl md:text-4xl text-indigo-700 font-extrabold tracking-tight ml-0">{formatPrice(totalRevenue, currency)}</span>
+              <span className="text-sm text-gray-400 mt-1">Current period: all paid stays/orders/services included</span>
             </div>
-            <span className="text-3xl md:text-4xl text-indigo-700 font-extrabold tracking-tight ml-0">{formatPrice(totalRevenue, currency)}</span>
-            <span className="text-sm text-gray-400 mt-1">Current period: all paid stays/orders/services included</span>
-          </div>
 
           {/* Stays, Orders & Services Subcards */}
           <div className="flex flex-row flex-1 justify-evenly space-x-4">
@@ -376,6 +378,7 @@ export default function FolioBody({
           </div>
         </div>
       </section>
+      </FeatureGuard>
 
         {/* Service Payment Categories */}
       <ServiceCategories 

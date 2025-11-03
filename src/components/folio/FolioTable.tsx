@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Bed, Printer, Mail, Eye, Clock, CheckCircle, AlertCircle, Utensils, Calendar, Tag } from 'lucide-react';
+import { User, Bed, Printer, Mail, Eye, Clock, CheckCircle, AlertCircle, Utensils, Calendar, Tag, FileText } from 'lucide-react';
 import { formatPrice } from '@/helper';
 
 interface Folio {
@@ -92,6 +92,39 @@ export default function FolioTable({ folios, onViewFolio, currency }: FolioTable
         return <Clock className="w-4 h-4" />;
     }
   };
+
+  if (!isClient) {
+    return null;
+  }
+
+  if (folios.length === 0) {
+    return (
+      <div className="card">
+        <div className="py-16 px-6">
+          <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
+            {/* Icon Container */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-100 to-primary-200 rounded-full blur-xl opacity-50" />
+              <div className="relative p-6 bg-gradient-to-br from-primary-50 to-primary-100 rounded-full">
+                <FileText className="w-12 h-12 text-primary-600" />
+              </div>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-semibold text-secondary-900 mb-2">
+              No folios found
+            </h3>
+
+            {/* Description */}
+            <p className="text-secondary-600 mb-6 text-sm leading-relaxed">
+              There are currently no folios in the system. Folios are automatically created when guests check in, 
+              place orders, or request services. They will appear here once transactions are recorded.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">

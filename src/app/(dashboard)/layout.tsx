@@ -18,6 +18,7 @@ import Navigation from "@/components/layout/Navigation";
 import { ErrorDisplay } from "@/components/common/ErrorDisplay";
 import { LayoutProps } from "@/types";
 import { useRouter } from "next/navigation";
+import PageRouteGuard from "@/components/auth/PageRouteGuard";
 
 export default function Layout({ children }: LayoutProps) {
   const [mounted, setMounted] = useState(false);
@@ -104,14 +105,16 @@ export default function Layout({ children }: LayoutProps) {
   }
 console.log("PAGE LAYOUT");
   return (
-    <div className="min-h-screen bg-secondary-50">
-      <Navigation sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+    <PageRouteGuard>
+      <div className="min-h-screen bg-secondary-50">
+        <Navigation sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <div className="lg:pl-64">
-        <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="lg:pl-64">
+          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-        <main className="p-6">{children}</main>
+          <main className="p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </PageRouteGuard>
   );
 }

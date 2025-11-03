@@ -1,6 +1,7 @@
 'use client';
 
 import { Plus, Settings, Shield, Building } from 'lucide-react';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 
 interface FacilityStats {
   total: number;
@@ -65,13 +66,15 @@ export default function FacilityHeader({
         
         <div className="mt-8 lg:mt-0 lg:ml-8">
           <div className="flex flex-col gap-3">
-            <button 
-              onClick={onAddFacility}
-              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Facility</span>
-            </button>
+            <FeatureGuard permission="facilities.create">
+              <button 
+                onClick={onAddFacility}
+                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Facility</span>
+              </button>
+            </FeatureGuard>
             {/* <button 
               onClick={onMaintenance}
               className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"

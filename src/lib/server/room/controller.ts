@@ -119,6 +119,29 @@ class RoomController {
       data: { updatedRoom },
     });
   }
+
+    public async markRoomForCleaning(roomId: string) {
+
+    const updatedRoom= await roomService.findRoomByIdAndMarkForCleaning(
+   roomId
+    );
+
+    if (!updatedRoom) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "Room not found or deleted!",
+        data: null,
+      });
+    }
+
+    return utils.customResponse({
+      status: 201,
+      message: MessageResponse.Success,
+      description: "Room marked for cleaning successfully!",
+      data: { updatedRoom },
+    });
+  }
 }
 
 export const roomController = new RoomController();

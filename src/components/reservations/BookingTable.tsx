@@ -149,13 +149,13 @@ export default function BookingTable({
                   >
                     <Edit className="w-4 h-4" />
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => onPrintReceipt(booking)}
                     className="text-blue-600 hover:text-blue-900"
                     title="Print Receipt"
                   >
                     <Printer className="w-4 h-4" />
-                  </button>
+                  </button> */}
                   {booking.status === 'confirmed' && (
                     <button
                       onClick={() => onCheckIn(booking.booking_id)}

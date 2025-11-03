@@ -6,6 +6,7 @@ import {
   Car,
   Coffee,
   Edit,
+  Eye,
   Mountain,
   Plus,
   Star,
@@ -21,6 +22,7 @@ import { useHttp } from "@/hooks/useHttp";
 import { useDispatch } from "react-redux";
 import { roomActions } from "@/store/redux/room-slice";
 import ConfirmationDialog from "@/components/common/ConfirmationDialog";
+import FeatureGuard from "@/components/auth/FeatureGuard";
 
 interface ValidationErrors {
   name?: string;
@@ -54,6 +56,7 @@ export default function RoomTypes() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [roomTypeToDelete, setRoomTypeToDelete] = useState<any>(null);
+  const [selectedRoomTypeForDetails, setSelectedRoomTypeForDetails] = useState<any>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
     {}
   );
@@ -473,12 +476,21 @@ export default function RoomTypes() {
 
             <div className="flex justify-end space-x-2 mt-auto pt-4 border-t border-secondary-200">
               <button
-                onClick={() => handleEditClick(type)}
-                className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                onClick={() => setSelectedRoomTypeForDetails(type)}
+                className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded hover:bg-indigo-200 flex items-center transition-colors"
               >
-                <Edit className="w-3 h-3 inline mr-1" />
-                Edit
+                <Eye className="w-3 h-3 inline mr-1" />
+                View Details
               </button>
+              <FeatureGuard permission="rooms.edit_type">
+                <button
+                  onClick={() => handleEditClick(type)}
+                  className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+                >
+                  <Edit className="w-3 h-3 inline mr-1" />
+                  Edit
+                </button>
+              </FeatureGuard>
               {/* <button 
                 onClick={() => handleDeleteClick(type)}
                 disabled={isDeleting}
@@ -1077,6 +1089,141 @@ export default function RoomTypes() {
         isLoading={isDeleting}
         variant="danger"
       />
+
+      {/* Room Type Details Modal */}
+      {selectedRoomTypeForDetails && (
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center z-50 m-0 p-0" style={{ margin: 0, padding: 0, top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-5 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Eye className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">{selectedRoomTypeForDetails.name}</h2>
+                  <p className="text-indigo-100 text-sm mt-1">Room Type Details</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedRoomTypeForDetails(null)}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-gray-50 to-blue-50">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 px-6 py-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-2xl font-bold text-white mb-3">{selectedRoomTypeForDetails.name}</h3>
+                      <div className="flex items-center space-x-6 mt-3">
+                        <div className="flex items-center text-white/90">
+                          <span className="text-lg font-semibold">
+                            {formatPrice(selectedRoomTypeForDetails.price, selectedHotel?.currency)}
+                          </span>
+                          <span className="text-sm ml-2 text-white/80">/night</span>
+                        </div>
+                        <div className="h-6 w-px bg-white/30"></div>
+                        <div className="flex items-center text-white/90">
+                          <span className="text-lg font-semibold">{selectedRoomTypeForDetails.capacity}</span>
+                          <span className="text-sm ml-2 text-white/80">
+                            {selectedRoomTypeForDetails.capacity === 1 ? 'guest' : 'guests'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="p-6 space-y-6">
+                  {/* Description */}
+                  {selectedRoomTypeForDetails.description && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-secondary-700 mb-3 uppercase tracking-wide flex items-center">
+                        <div className="w-1 h-4 bg-indigo-500 rounded-full mr-2"></div>
+                        Description
+                      </h4>
+                      <p className="text-secondary-600 leading-relaxed text-base">{selectedRoomTypeForDetails.description}</p>
+                    </div>
+                  )}
+
+                  {/* Amenities */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-secondary-700 mb-3 uppercase tracking-wide flex items-center">
+                      <div className="w-1 h-4 bg-indigo-500 rounded-full mr-2"></div>
+                      Amenities
+                    </h4>
+                    {selectedRoomTypeForDetails.amenities && selectedRoomTypeForDetails.amenities.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {selectedRoomTypeForDetails.amenities.map((amenity: string, amenityIndex: number) => (
+                          <div
+                            key={amenityIndex}
+                            className="flex items-center space-x-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg px-4 py-3 border border-blue-100 hover:border-indigo-300 transition-colors"
+                          >
+                            <div className="text-indigo-600 flex-shrink-0">
+                              {getAmenityIcon(amenity)}
+                            </div>
+                            <span className="text-sm font-medium text-secondary-700">{amenity}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-secondary-500 text-sm italic bg-gray-50 rounded-lg px-4 py-3">No amenities listed</p>
+                    )}
+                  </div>
+
+                  {/* Details Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-xs text-secondary-500 mb-2 uppercase tracking-wide font-semibold">Room Type ID</p>
+                      <p className="text-sm font-mono text-secondary-900 break-all" title={selectedRoomTypeForDetails._id}>
+                        {selectedRoomTypeForDetails._id}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-xs text-secondary-500 mb-2 uppercase tracking-wide font-semibold">Price</p>
+                      <p className="text-lg font-bold text-indigo-600">
+                        {formatPrice(selectedRoomTypeForDetails.price, selectedHotel?.currency)}
+                        <span className="text-sm font-normal text-secondary-600 ml-1">/night</span>
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-xs text-secondary-500 mb-2 uppercase tracking-wide font-semibold">Capacity</p>
+                      <p className="text-lg font-bold text-secondary-900">
+                        {selectedRoomTypeForDetails.capacity} {selectedRoomTypeForDetails.capacity === 1 ? 'guest' : 'guests'}
+                      </p>
+                    </div>
+                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-xs text-secondary-500 mb-2 uppercase tracking-wide font-semibold">Total Amenities</p>
+                      <p className="text-lg font-bold text-secondary-900">
+                        {selectedRoomTypeForDetails.amenities?.length || 0} {selectedRoomTypeForDetails.amenities?.length === 1 ? 'amenity' : 'amenities'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 px-6 py-4 bg-white">
+              <div className="flex items-center justify-end">
+                <button
+                  onClick={() => setSelectedRoomTypeForDetails(null)}
+                  className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

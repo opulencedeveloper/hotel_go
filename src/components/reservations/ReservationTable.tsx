@@ -6,7 +6,7 @@ import { RootState } from '@/store/redux';
 import { Reservation } from '@/store/slices/reservationsSlice';
 import { useReservationsService } from '@/services/reservationsService';
 import { RoleGuard } from '@/components/auth/RoleGuard';
-import { UserRole } from '@/lib/auth';
+import { UserRole } from '@/utils/enum';
 import StatusBadge from '@/components/common/StatusBadge';
 
 interface ReservationTableProps {
@@ -100,7 +100,7 @@ export const ReservationTable = ({ reservations, onEdit, onView }: ReservationTa
             <span className="text-sm text-gray-500">
               {selectedReservations.length} selected
             </span>
-            <RoleGuard allowedRoles={['admin', 'manager']}>
+            <RoleGuard allowedRoles={[UserRole.SuperAdmin, UserRole.Manager]}>
               <button
                 onClick={() => {/* Handle bulk actions */}}
                 disabled={selectedReservations.length === 0}
@@ -203,7 +203,7 @@ export const ReservationTable = ({ reservations, onEdit, onView }: ReservationTa
                       View
                     </button>
                     
-                    <RoleGuard allowedRoles={['admin', 'manager', 'front_desk']}>
+                    <RoleGuard allowedRoles={[UserRole.SuperAdmin, UserRole.Manager, UserRole.FrontDesk]}>
                       <button
                         onClick={() => onEdit?.(reservation)}
                         className="text-indigo-600 hover:text-indigo-900"
@@ -213,7 +213,7 @@ export const ReservationTable = ({ reservations, onEdit, onView }: ReservationTa
                     </RoleGuard>
 
                     {reservation.status === 'confirmed' && (
-                      <RoleGuard allowedRoles={['admin', 'manager', 'front_desk']}>
+                      <RoleGuard allowedRoles={[UserRole.SuperAdmin, UserRole.Manager, UserRole.FrontDesk]}>
                         <button
                           onClick={() => handleCheckIn(reservation.id)}
                           disabled={isLoading}
@@ -225,7 +225,7 @@ export const ReservationTable = ({ reservations, onEdit, onView }: ReservationTa
                     )}
 
                     {reservation.status === 'checked-in' && (
-                      <RoleGuard allowedRoles={['admin', 'manager', 'front_desk']}>
+                      <RoleGuard allowedRoles={[UserRole.SuperAdmin, UserRole.Manager, UserRole.FrontDesk]}>
                         <button
                           onClick={() => handleCheckOut(reservation.id)}
                           disabled={isLoading}
@@ -237,7 +237,7 @@ export const ReservationTable = ({ reservations, onEdit, onView }: ReservationTa
                     )}
 
                     {reservation.status !== 'checked-out' && reservation.status !== 'cancelled' && (
-                      <RoleGuard allowedRoles={['admin', 'manager']}>
+                      <RoleGuard allowedRoles={[UserRole.SuperAdmin, UserRole.Manager]}>
                         <button
                           onClick={() => handleCancel(reservation.id)}
                           disabled={isLoading}

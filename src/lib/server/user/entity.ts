@@ -31,17 +31,24 @@ const userSchema = new Schema<IUser>(
       enum: Object.values(UserRole),
       index: true, // 🔹 Enables role-based filtering
     },
+      licenseKeyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "LicenseKey",
+      default: null,
+      trim: true,
+      index: true,
+    },
     password: {
       type: String,
       required: true,
       trim: true,
      // select: false, // 🔒 Security: don’t include password in queries by default
     },
-    hotelId: {
-      type: Schema.Types.ObjectId,
-      ref: "Hotel",
-      default: null,
-    },
+    // hotelId: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Hotel",
+    //   default: null,
+    // },
     isActive: {
       type: Boolean,
       default: true,

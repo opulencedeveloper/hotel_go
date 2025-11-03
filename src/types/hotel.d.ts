@@ -5,6 +5,8 @@ export interface HotelSliceParams {
   currency: string;
   amenities: string[];
   createdAt: string;
+  email?: string;
+  phoneNo?: string;
 }
 
 

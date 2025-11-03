@@ -8,15 +8,15 @@ async function handler(request: Request) {
   if (!auth.valid) return auth.response!;
 
   await connectDB();
-
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!);
+console.log("authauthauth", auth)
+  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
   if (!hotelExist.valid) return user.response!;
 
   return await userController.fetchUserDetails(
-    { userId: auth.userId },
+    { ownerId: auth.ownerId! },
     user.user!
   );
 }

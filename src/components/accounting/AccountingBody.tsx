@@ -13,6 +13,7 @@ import RevenueBreakdown from './RevenueBreakdown';
 import OpenFoliosTable from './OpenFoliosTable';
 import RecentTransactions from './RecentTransactions';
 import ViewTransactionsModal from './modals/ViewTransactionsModal';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 
 interface AccountingBodyProps {
   selectedPeriod?: string;
@@ -502,32 +503,34 @@ export default function AccountingBody({
               
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <PieChart className="w-6 h-6 text-green-600" />
-                      <h3 className="text-lg font-semibold text-green-800">Revenue Breakdown</h3>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-green-700">Rooms</span>
-                        <span className="font-medium text-green-900">{formatPrice(revenues.rooms, currency)}</span>
+                  <FeatureGuard permission="financials.view_revenue">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <PieChart className="w-6 h-6 text-green-600" />
+                        <h3 className="text-lg font-semibold text-green-800">Revenue Breakdown</h3>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-green-700">Food & Beverage</span>
-                        <span className="font-medium text-green-900">{formatPrice(revenues.f_and_b, currency)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-green-700">Other Services</span>
-                        <span className="font-medium text-green-900">{formatPrice(revenues.other, currency)}</span>
-                      </div>
-                      <div className="border-t border-green-300 pt-3">
+                      <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="font-semibold text-green-800">Total Revenue</span>
-                          <span className="font-bold text-green-900">{formatPrice(totalRevenue, currency)}</span>
+                          <span className="text-green-700">Rooms</span>
+                          <span className="font-medium text-green-900">{formatPrice(revenues.rooms, currency)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-green-700">Food & Beverage</span>
+                          <span className="font-medium text-green-900">{formatPrice(revenues.f_and_b, currency)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-green-700">Other Services</span>
+                          <span className="font-medium text-green-900">{formatPrice(revenues.other, currency)}</span>
+                        </div>
+                        <div className="border-t border-green-300 pt-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold text-green-800">Total Revenue</span>
+                            <span className="font-bold text-green-900">{formatPrice(totalRevenue, currency)}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </FeatureGuard>
                   
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                     <div className="flex items-center space-x-2 mb-4">

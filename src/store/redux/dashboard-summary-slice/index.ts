@@ -57,12 +57,7 @@ const dashboardSummarySlice = createSlice({
     },
 
     // ✅ Reset dashboard data
-    resetDashboardData: (state) => {
-      state.dashboardSummary = null;
-      state.quickSummary = null;
-      state.fetchedDashboardSummary = false;
-       state.fetchedQuickSummary = false;
-    },
+    resetDashboardData: (state) => initialState,
   },
 });
 

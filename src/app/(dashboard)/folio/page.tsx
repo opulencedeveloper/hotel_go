@@ -6,8 +6,6 @@ import PageLoadingSpinner from "@/components/ui/PageLoadingSpinner";
 import { useHttp } from "@/hooks/useHttp";
 import { RootState } from "@/store";
 import { analyticsActions } from "@/store/redux/analytics-slice";
-import { orderActions } from "@/store/redux/order-slice";
-import { stayActions } from "@/store/redux/stay-slice";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -25,8 +23,6 @@ export default function FolioPage() {
      const resData = res?.data?.data;
  
      const { stays, rooms, orders, scheduledServices } = resData;
-
-     console.log("folio", resData);
  
      dispatch(analyticsActions.setRooms(rooms));
      dispatch(analyticsActions.setStays(stays));

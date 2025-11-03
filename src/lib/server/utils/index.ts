@@ -6,6 +6,8 @@ import { cookies } from "next/headers";
 import { MessageResponse } from "./enum";
 import { NextResponse } from "next/server";
 import { CustomHttpResponse, DecodedToken, Handler } from "./interface";
+import { UserRole } from "../user/enum";
+import { UserType } from "@/utils/enum";
 
 class Utils {
   public toSentenceCase = (text: string) => {
@@ -87,7 +89,7 @@ class Utils {
         process.env.JWT_SECRET!
       ) as DecodedToken;
 
-      if (!decodedToken?.userId || !decodedToken?.userRole) {
+      if (!decodedToken?.userId || !decodedToken?.userRole || !decodedToken?.userType || !decodedToken?.ownerId) {
         return {
           valid: false,
           response: utils.customResponse({
@@ -99,13 +101,17 @@ class Utils {
         };
       }
 
+      console.log("decodedTokendecodedTokendecodedTokendecodedToken", decodedToken)
+
       return {
         valid: true,
         userId: mongoose.Types.ObjectId.createFromHexString(
           decodedToken.userId
         ),
+        ownerId: decodedToken?.ownerId,
         hotelId: decodedToken.hotelId,
-        userRole: decodedToken.userRole,
+        userRole: decodedToken.userRole as UserRole,
+        userType: decodedToken?.userType as UserType
       };
     } catch (err) {
       return {

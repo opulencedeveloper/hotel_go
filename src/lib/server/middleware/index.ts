@@ -5,6 +5,8 @@ import { Types } from "mongoose";
 import { UserRole } from "../user/enum";
 import { MessageResponse } from "../utils/enum";
 import { hotelService } from "../hotel/service";
+import { UserType } from "@/utils/enum";
+import { staffService } from "../staff/service";
 
 export default class GeneralMiddleware {
   static async hotelExist(hotelId: Types.ObjectId) {
@@ -207,9 +209,17 @@ export default class GeneralMiddleware {
     };
   }
 
-  static async doesUserExist(userId: Types.ObjectId) {
-    const user = await userService.findUserByIdWithoutPassword(userId!);
+  static async doesUserExist(userId: Types.ObjectId, userRole: UserType) {
+    let user = null;
 
+    if (userRole === UserType.Owner) {
+      user = await userService.findUserByIdWithoutPassword(userId!);
+    }
+
+    if (userRole === UserType.Staff) {
+      user = await staffService.findStaffById(userId!.toString());
+    }
+console.log("user-user-user", user)
     if (!user) {
       return {
         valid: false,

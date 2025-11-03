@@ -2,6 +2,7 @@ import { Document, Types } from "mongoose";
 import { StaffRole, StaffShift, StaffStatus } from "./enum";
 
 export interface IStaff extends Document {
+  _id: Types.ObjectId;
   hotelId: Types.ObjectId;
   firstName: string;
   lastName: string;

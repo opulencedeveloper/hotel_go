@@ -52,6 +52,7 @@ const hotelServicesSlice = createSlice({
     deleteHotelService: (state, action: PayloadAction<string>) => {
       state.allHotelServices = state.allHotelServices.filter((s) => s._id !== action.payload);
     },
+    reset: () => initialState,
   },
 });
 

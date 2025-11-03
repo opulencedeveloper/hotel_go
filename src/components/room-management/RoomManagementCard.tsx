@@ -3,6 +3,7 @@ import { Bed, DollarSign, Plus, Star } from "lucide-react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { RoomStatus } from "@/types/room-management/enum";
+import FeatureGuard from "@/components/auth/FeatureGuard";
 
 export default function RoomManagementCard({addRoom, addRoomType, addRatePlan} : RoomManagementCardProps) {
   const room = useSelector((state: RootState) => state.room);
@@ -55,20 +56,24 @@ export default function RoomManagementCard({addRoom, addRoomType, addRatePlan} :
             
             <div className="mt-8 lg:mt-0 lg:ml-8">
               <div className="flex flex-col gap-3">
-                <button 
-                  onClick={addRoom}
-                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Room</span>
-                </button>
-                <button 
-                  onClick={addRoomType}
-                  className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
-                >
-                  <Star className="w-4 h-4" />
-                  <span>Add Room Type</span>
-                </button>
+                <FeatureGuard permission="rooms.create">
+                  <button 
+                    onClick={addRoom}
+                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Room</span>
+                  </button>
+                </FeatureGuard>
+                <FeatureGuard permission="rooms.create_type">
+                  <button 
+                    onClick={addRoomType}
+                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+                  >
+                    <Star className="w-4 h-4" />
+                    <span>Add Room Type</span>
+                  </button>
+                </FeatureGuard>
                 {/* <button 
                   onClick={addRatePlan}
                   className="bg-white text-blue-600 hover:bg-blue-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"

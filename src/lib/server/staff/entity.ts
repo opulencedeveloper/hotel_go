@@ -28,7 +28,7 @@ const staffSchema = new Schema<IStaff>(
     dashboardAccessPassword: {
       type: String,
       trim: true,
-      select: false, // ✅ exclude sensitive data from normal queries
+    //  select: false, // ✅ exclude sensitive data from normal queries
     },
     email: {
       type: String,

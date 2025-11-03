@@ -81,6 +81,8 @@ const houseKeepingSlice = createSlice({
         (hk) => hk._id !== action.payload
       );
     },
+
+    reset: () => initialState,
   },
 });
 

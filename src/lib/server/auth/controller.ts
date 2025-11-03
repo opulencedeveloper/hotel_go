@@ -3,31 +3,58 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 import { MessageResponse } from "../utils/enum";
-import {  IValidateEmail, IVerifyEmail } from "../utils/interface";
+import {
+  CustomRequest,
+  IValidateEmail,
+  IVerifyEmail,
+} from "../utils/interface";
 import { authService } from "./service";
 import { utils } from "../utils";
 import { userService } from "../user/service";
-import { sendEmailVerificationMail, sendForgotPasswordEmail } from "../utils/email";
+import {
+  sendEmailVerificationMail,
+  sendForgotPasswordEmail,
+} from "../utils/email";
 import { UserRole } from "../user/enum";
 import { IForgotPasswordUserInput, ILogin } from "./interface";
 import { comparePassCode } from "../utils/auth";
+import { UserType } from "@/utils/enum";
+import { hotelService } from "../hotel/service";
+import { staffService } from "../staff/service";
 const jwtSecret = process.env.JWT_SECRET || "";
 const tokenExpiry = process.env.TOKEN_EXPIRY || "";
 
 // Helper function to get permissions for a role
 const getPermissionsForRole = (userRole: string): string[] => {
   const rolePermissions: Record<string, string[]> = {
-    admin: ['*'],
-    manager: ['reservations.*', 'guests.*', 'rooms.*', 'staff.*', 'dashboard.*', 'reports.*'],
-    front_desk: ['reservations.*', 'guests.*', 'rooms.view', 'dashboard.view'],
-    housekeeping: ['rooms.view', 'rooms.update', 'dashboard.view'],
-    kitchen: ['kitchen.*', 'dashboard.view'],
-    maintenance: ['rooms.view', 'rooms.update', 'maintenance.*', 'dashboard.view'],
-    accounting: ['reservations.view', 'guests.view', 'reports.*', 'dashboard.view'],
-    security: ['security.*', 'dashboard.view'],
-    guest_services: ['guests.*', 'reservations.view', 'dashboard.view']
+    admin: ["*"],
+    manager: [
+      "reservations.*",
+      "guests.*",
+      "rooms.*",
+      "staff.*",
+      "dashboard.*",
+      "reports.*",
+    ],
+    front_desk: ["reservations.*", "guests.*", "rooms.view", "dashboard.view"],
+    housekeeping: ["rooms.view", "rooms.update", "dashboard.view"],
+    kitchen: ["kitchen.*", "dashboard.view"],
+    maintenance: [
+      "rooms.view",
+      "rooms.update",
+      "maintenance.*",
+      "dashboard.view",
+    ],
+    accounting: [
+      "reservations.view",
+      "guests.view",
+      "reports.*",
+      "dashboard.view",
+    ],
+    security: ["security.*", "dashboard.view"],
+    guest_services: ["guests.*", "reservations.view", "dashboard.view"],
   };
-  
+
   return rolePermissions[userRole] || [];
 };
 
@@ -47,13 +74,13 @@ class AuthController {
       });
     }
 
-      if(userOtpValidity.emailVerified) {
-       return utils.customResponse({
-      status: 400,
-      message: MessageResponse.Error,
-      description: "Email already verified!",
-      data: null,
-    });
+    if (userOtpValidity.emailVerified) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Email already verified!",
+        data: null,
+      });
     }
 
     if (userOtpValidity.emailVerificationOtpExpiration !== undefined) {
@@ -87,7 +114,7 @@ class AuthController {
         status: 200,
         message: MessageResponse.Success,
         description: "Verification successful",
-        data: null
+        data: null,
       });
     } else {
       return utils.customResponse({
@@ -99,8 +126,9 @@ class AuthController {
     }
   }
 
-
-    public async changePasswordWithForgotPasswordOtp(body: IForgotPasswordUserInput) {
+  public async changePasswordWithForgotPasswordOtp(
+    body: IForgotPasswordUserInput
+  ) {
     const email = body.email;
     const otp = body.otp;
     const password = body.password;
@@ -115,7 +143,6 @@ class AuthController {
         data: null,
       });
     }
-
 
     if (userOtpValidity.emailVerificationOtpExpiration !== undefined) {
       const currentDate = new Date();
@@ -133,7 +160,11 @@ class AuthController {
         });
       }
 
-      const userExists = await authService.changePasswordWithForgotpasswordRequest({email, password});
+      const userExists =
+        await authService.changePasswordWithForgotpasswordRequest({
+          email,
+          password,
+        });
 
       if (!userExists) {
         return utils.customResponse({
@@ -148,7 +179,7 @@ class AuthController {
         status: 200,
         message: MessageResponse.Success,
         description: "Password changed successfully",
-        data: null
+        data: null,
       });
     } else {
       return utils.customResponse({
@@ -172,13 +203,13 @@ class AuthController {
       });
     }
 
-    if(user.emailVerified) {
-       return utils.customResponse({
-      status: 400,
-      message: MessageResponse.Error,
-      description: "Email already verified!",
-      data: null,
-    });
+    if (user.emailVerified) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Email already verified!",
+        data: null,
+      });
     }
 
     const email = user.email;
@@ -188,7 +219,12 @@ class AuthController {
 
     await authService.saveOtp({ email, otp });
 
-    sendEmailVerificationMail({ email, otp, firstName, expiryTime: "2 minutes" });
+    sendEmailVerificationMail({
+      email,
+      otp,
+      firstName,
+      expiryTime: "2 minutes",
+    });
 
     return utils.customResponse({
       status: 200,
@@ -198,9 +234,7 @@ class AuthController {
     });
   }
 
-
-
-    public async forgotPassword(body: IValidateEmail) {
+  public async forgotPassword(body: IValidateEmail) {
     const user = await userService.findUserByEmail(body.email);
 
     if (!user) {
@@ -212,13 +246,13 @@ class AuthController {
       });
     }
 
-     if(user.userRole !== UserRole.SuperAdmin) {
-       return utils.customResponse({
-      status: 400,
-      message: MessageResponse.Error,
-      description: "Please notify admin to chnage password!",
-      data: null,
-    });
+    if (user.userRole !== UserRole.SuperAdmin) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Please notify admin to chnage password!",
+        data: null,
+      });
     }
 
     const email = user.email;
@@ -265,7 +299,12 @@ class AuthController {
 
       await authService.saveOtp({ email, otp });
 
-      sendEmailVerificationMail({ email, otp, firstName, expiryTime: "2 minutes" });
+      sendEmailVerificationMail({
+        email,
+        otp,
+        firstName,
+        expiryTime: "2 minutes",
+      });
 
       return utils.customResponse({
         status: 200,
@@ -275,9 +314,20 @@ class AuthController {
       });
     }
 
+    const hotelExist = await hotelService.findHotelByOwnerId(userExists._id);
+
+    if (!hotelExist) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: `Hotel not found`,
+        data: null,
+      });
+    }
+
     const match = await comparePassCode(password, userExists.password);
 
-    console.log("Values:",password, userExists);
+    console.log("Values:", password, userExists);
 
     if (!match) {
       return utils.customResponse({
@@ -289,11 +339,13 @@ class AuthController {
     }
 
     const token = jwt.sign(
-      { 
-        userId: userExists._id, 
+      {
+        userId: userExists._id,
+        ownerId: userExists._id,
         userRole: userExists.userRole,
+        userType: UserType.Owner,
         email: userExists.email,
-        hotelId: userExists.hotelId?.toString() || null
+        hotelId: hotelExist._id?.toString() || null,
       },
       jwtSecret,
       {
@@ -301,13 +353,13 @@ class AuthController {
       }
     );
 
-      cookies().set("auth_token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-  });
+    cookies().set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
 
     // Create response with user data
     const response = utils.customResponse({
@@ -322,7 +374,7 @@ class AuthController {
           email: userExists.email,
           role: userExists.userRole,
           permissions: getPermissionsForRole(userExists.userRole),
-          hotelId: userExists.hotelId?.toString() || null,
+          hotelId: hotelExist._id?.toString() || null,
         },
       },
     });
@@ -330,17 +382,226 @@ class AuthController {
     // Set httpOnly cookies for security
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
     };
 
     // Add cookies to response headers
-    response.headers.set('Set-Cookie', [
-      `auth-token=${token}; ${Object.entries(cookieOptions).map(([key, value]) => `${key}=${value}`).join('; ')}`,
-      `refresh-token=${token}; ${Object.entries({...cookieOptions, maxAge: 30 * 24 * 60 * 60}).map(([key, value]) => `${key}=${value}`).join('; ')}`
-    ].join(', '));
+    response.headers.set(
+      "Set-Cookie",
+      [
+        `auth-token=${token}; ${Object.entries(cookieOptions)
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")}`,
+        `refresh-token=${token}; ${Object.entries({
+          ...cookieOptions,
+          maxAge: 30 * 24 * 60 * 60,
+        })
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")}`,
+      ].join(", ")
+    );
+
+    return response;
+  }
+
+    public async staffLogIn(body: ILogin) {
+    const { password, email } = body;
+
+    const staffExists = await staffService.findStaffByEmail(email);
+
+    if (!staffExists) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Wrong user credentials!",
+        data: null,
+      });
+    }
+
+    console.log("staffExists", staffExists)
+
+       const match = comparePassCode(password, staffExists.dashboardAccessPassword ?? "");
+
+
+    if (!match) {
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Wrong user credentials!",
+        data: null,
+      });
+    }
+
+
+    const hotelExist = await hotelService.findHotelById(staffExists.hotelId);
+
+    if (!hotelExist) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: `Hotel not found`,
+        data: null,
+      });
+    }
+
+ 
+
+    const token = jwt.sign(
+      {
+        userId: staffExists._id,
+        ownerId: hotelExist.ownerId,
+        userRole: staffExists.userRole,
+        userType: UserType.Staff,
+        email: hotelExist.email,
+        hotelId: hotelExist._id?.toString() || null,
+      },
+      jwtSecret,
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    cookies().set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+
+    // Create response with user data
+    const response = utils.customResponse({
+      status: 200,
+      message: MessageResponse.Success,
+      description: "Logged in successfully",
+      data: {
+        user: {
+          id: staffExists._id.toString(),
+          firstName: staffExists.firstName,
+          lastName: staffExists.lastName,
+          email: staffExists.email,
+          role: staffExists.userRole,
+          permissions: getPermissionsForRole(staffExists.userRole),
+          hotelId: hotelExist._id?.toString() || null,
+        },
+      },
+    });
+
+    // Set httpOnly cookies for security
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    };
+
+    // Add cookies to response headers
+    response.headers.set(
+      "Set-Cookie",
+      [
+        `auth-token=${token}; ${Object.entries(cookieOptions)
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")}`,
+        `refresh-token=${token}; ${Object.entries({
+          ...cookieOptions,
+          maxAge: 30 * 24 * 60 * 60,
+        })
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")}`,
+      ].join(", ")
+    );
+
+    return response;
+  }
+
+  public async switchHotel(customReq: CustomRequest) {
+    const { hotelId } = customReq;
+console.log("------+------------------", hotelId)
+    const hotelExist = await hotelService.findHotelById(hotelId!);
+
+    if (!hotelExist) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: `Hotel not found`,
+        data: null,
+      });
+    }
+
+    console.log("hotelExist.ownerId", hotelExist);
+
+    const userExists = await userService.findUserById(hotelExist.ownerId);
+
+    if (!userExists) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: `User not found`,
+        data: null,
+      });
+    }
+
+        cookies().delete("auth_token");
+        
+    const token = jwt.sign(
+      {
+        userId: hotelExist.ownerId,
+        ownerId: hotelExist.ownerId,
+        userRole: UserRole.SuperAdmin,
+        userType: UserType.Owner,
+        email: userExists.email,
+        hotelId: hotelExist._id?.toString() || null,
+      },
+      jwtSecret,
+      {
+        expiresIn: "30d",
+      }
+    );
+
+    cookies().set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    });
+
+    // Create response with user data
+    const response = utils.customResponse({
+      status: 200,
+      message: MessageResponse.Success,
+      description: "Hotel switched successfully",
+      data: null,
+    });
+
+    // Set httpOnly cookies for security
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict" as const,
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    };
+
+    // Add cookies to response headers
+    response.headers.set(
+      "Set-Cookie",
+      [
+        `auth-token=${token}; ${Object.entries(cookieOptions)
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")}`,
+        `refresh-token=${token}; ${Object.entries({
+          ...cookieOptions,
+          maxAge: 30 * 24 * 60 * 60,
+        })
+          .map(([key, value]) => `${key}=${value}`)
+          .join("; ")}`,
+      ].join(", ")
+    );
 
     return response;
   }

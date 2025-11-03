@@ -109,6 +109,37 @@ export default function FacilityGrid({ facilities, onViewFacility, onEditFacilit
     }
   };
 
+  if (!isClient) {
+    return null;
+  }
+
+  if (facilities.length === 0) {
+    return (
+      <div className="py-16 px-6">
+        <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
+          {/* Icon Container */}
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-green-200 rounded-full blur-xl opacity-50" />
+            <div className="relative p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-full">
+              <Building className="w-12 h-12 text-green-600" />
+            </div>
+          </div>
+
+          {/* Title */}
+          <h3 className="text-xl font-semibold text-secondary-900 mb-2">
+            No facilities found
+          </h3>
+
+          {/* Description */}
+          <p className="text-secondary-600 mb-6 text-sm leading-relaxed">
+            Start by adding your first facility to the system. Facilities can include pools, gyms, 
+            restaurants, business centers, and other hotel amenities that guests can access.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {facilities.map((facility) => (

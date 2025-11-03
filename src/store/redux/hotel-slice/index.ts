@@ -33,6 +33,11 @@ const hotelSlice = createSlice({
         selectedHotel.amenities = action.payload;
       }
     },
+
+    addHotel: (state, action: PayloadAction<HotelSliceParams>) => {
+      state.hotels.push(action.payload);
+    },
+    reset: () => initialState,
   },
 });
 

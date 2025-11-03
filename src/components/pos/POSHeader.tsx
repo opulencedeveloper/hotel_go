@@ -14,17 +14,17 @@ export default function POSHeader({ onNewOrder }: POSHeaderProps) {
         <p className="text-secondary-600">Manage restaurant, bar, and mini-bar sales</p>
       </div>
       <div className="flex space-x-2 mt-4 sm:mt-0">
-        <button className="btn-secondary">
+        {/* <button className="btn-secondary">
           <Printer className="w-4 h-4 mr-2" />
           Print Receipt
-        </button>
-        <button 
+        </button> */}
+        {/* <button 
           onClick={onNewOrder}
           className="btn-primary"
         >
           <Receipt className="w-4 h-4 mr-2" />
           New Order
-        </button>
+        </button> */}
       </div>
     </div>
   );

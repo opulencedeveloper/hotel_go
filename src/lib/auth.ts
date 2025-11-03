@@ -1,5 +1,7 @@
 // Authentication and user management utilities
 import Cookies from 'js-cookie';
+import { UserRole } from '@/utils/enum';
+import { getNavigationItemsByRole, canAccessRoute as checkRouteAccess, hasPermission as checkPermission } from './rbac';
 
 export interface User {
   id: string;
@@ -15,60 +17,27 @@ export interface User {
   lastLogin?: string;
 }
 
-export type UserRole = 
-  | 'super_admin'
-  | 'admin' 
-  | 'manager' 
-  | 'front_desk' 
-  | 'housekeeping' 
-  | 'kitchen' 
-  | 'maintenance' 
-  | 'accounting' 
-  | 'security' 
-  | 'guest_services';
-
 export interface LoginCredentials {
   email: string;
   password: string;
   rememberMe?: boolean;
 }
 
-
-// Navigation items - All users have access to all features
-export const getNavigationItems = (userRole: UserRole) => {
-  return [
-    { name: 'Dashboard', href: '/dashboard', icon: 'Home', description: 'Property overview & KPIs' },
-    { name: 'Stay Management', href: '/stays', icon: 'Calendar', description: 'Reservations, bookings & walk-ins' },
-    { name: 'Front Desk', href: '/front-desk', icon: 'UserCheck', description: 'Check-in/out operations' },
-    //{ name: 'Stay History', href: '/front-desk/history', icon: 'Clock', description: 'Complete stay history & records' },
-    { name: 'Room Management', href: '/room-management', icon: 'Bed', description: 'Rooms, types & rates' },
-    { name: 'Services', href: '/services', icon: 'Star', description: 'Spa, events & amenities' },
-    { name: 'Facilities', href: '/facilities', icon: 'Building', description: 'Hotel amenities & infrastructure' },
-    { name: 'Folio & Payments', href: '/folio', icon: 'CreditCard', description: 'Guest billing & payments' },
-    { name: 'POS & F&B', href: '/pos', icon: 'ShoppingCart', description: 'Point of sale system' },
-    { name: 'Kitchen & Restaurant', href: '/kitchen', icon: 'ChefHat', description: 'Kitchen operations' },
-    { name: 'Housekeeping', href: '/housekeeping', icon: 'Wrench', description: 'Room maintenance' },
-    { name: 'Staff & Payroll', href: '/staff', icon: 'Users', description: 'Employee management' },
-  //  { name: 'Yield & Rate Management', href: '/yield', icon: 'TrendingUp', description: 'Dynamic pricing' },
-    { name: 'Accounting & Finance', href: '/accounting', icon: 'Calculator', description: 'Financial management' },
-   { name: 'CRM & Loyalty', href: '/crm', icon: 'Heart', description: 'Guest relationships' },
-    { name: 'Procurement & Inventory', href: '/procurement', icon: 'Truck', description: 'Supply management' },
-   { name: 'Business Analytics', href: '/analytics', icon: 'PieChart', description: 'Data insights' },
-   // { name: 'Reports & Dashboards', href: '/reports', icon: 'Download', description: 'Report generation' },
-    { name: 'Security & Access Control', href: '/security', icon: 'Lock', description: 'User permissions' },
-   // { name: 'Backup & Data Recovery', href: '/backup', icon: 'Archive', description: 'Data protection' },
-    { name: 'Property Settings', href: '/settings', icon: 'Settings', description: 'System configuration' },
-  ];
+// Navigation items - Filtered by role
+export const getNavigationItems = (userRole: UserRole | null) => {
+  return getNavigationItemsByRole(userRole);
 };
 
-// Check if user has permission for a specific action - All users have full access
-export const hasPermission = (user: User, permission: string): boolean => {
-  return true;
+// Check if user has permission for a specific action
+export const hasPermission = (user: User | null, permission: string): boolean => {
+  if (!user) return false;
+  return checkPermission(user.role, permission);
 };
 
-// Check if user can access a specific route - All users have full access
-export const canAccessRoute = (user: User, route: string): boolean => {
-  return true;
+// Check if user can access a specific route
+export const canAccessRoute = (user: User | null, route: string): boolean => {
+  if (!user) return false;
+  return checkRouteAccess(user.role, route);
 };
 
 // Real authentication function
@@ -130,16 +99,15 @@ export const getUserById = async (id: string): Promise<User | null> => {
 // Get role display name
 export const getRoleDisplayName = (role: UserRole): string => {
   const roleNames: Record<UserRole, string> = {
-    super_admin: 'Super Administrator',
-    admin: 'System Administrator',
-    manager: 'Hotel Manager',
-    front_desk: 'Front Desk Agent',
-    housekeeping: 'Housekeeping Staff',
-    kitchen: 'Kitchen Staff',
-    maintenance: 'Maintenance Staff',
-    accounting: 'Accounting Staff',
-    security: 'Security Staff',
-    guest_services: 'Guest Services'
+    [UserRole.SuperAdmin]: 'Super Administrator',
+    [UserRole.Manager]: 'Hotel Manager',
+    [UserRole.FrontDesk]: 'Front Desk Agent',
+    [UserRole.HouseKeeping]: 'Housekeeping Staff',
+    [UserRole.Kitchen]: 'Kitchen Staff',
+    [UserRole.Maintenance]: 'Maintenance Staff',
+    [UserRole.Accounting]: 'Accounting Staff',
+    [UserRole.Security]: 'Security Staff',
+    [UserRole.GuestServices]: 'Guest Services'
   };
   
   return roleNames[role];

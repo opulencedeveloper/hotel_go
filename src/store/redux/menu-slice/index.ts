@@ -50,6 +50,9 @@ const menuSlice = createSlice({
     deleteMenu: (state, action: PayloadAction<string>) => {
       state.menus = state.menus.filter((menu) => menu._id !== action.payload);
     },
+
+
+    reset: () => initialState,
   },
 });
 

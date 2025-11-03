@@ -1,5 +1,5 @@
 // Screen-level access control - All users have full access
-import { UserRole } from './auth';
+import { UserRole } from '@/utils/enum';
 
 // Check if user can access a specific screen - All users have access to all screens
 export const canAccessScreen = (userRole: UserRole, screen: string): boolean => {

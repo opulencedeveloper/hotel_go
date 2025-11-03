@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/store/ReduxProvider";
 import ClientProvider from "@/components/ui/ClientProvider";
 import { NotificationProvider } from "@/components/notifications/NotificationSystem";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Toaster } from "sonner";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "HotelGo - Hotel Management System",
@@ -22,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <ErrorBoundary>
           <ReduxProvider>
             <NotificationProvider>

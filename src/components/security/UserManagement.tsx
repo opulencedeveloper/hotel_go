@@ -24,16 +24,16 @@ export default function UserManagement({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-secondary-200">
-      <div className="p-6 border-b border-secondary-200">
-        <div className="flex items-center justify-between">
+      <div className="p-4 sm:p-6 border-b border-secondary-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h2 className="text-xl font-semibold text-secondary-900">
             User Management
           </h2>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:space-x-4 sm:space-y-0">
             <select
               value={selectedRole}
               onChange={(e) => onRoleFilterChange(e.target.value)}
-              className="border border-secondary-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              className="w-full sm:w-auto border border-secondary-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors min-w-0 sm:min-w-[150px]"
             >
               <option value="all">All Roles</option>
               {staffRoleOptions.map((status) => (
@@ -44,9 +44,9 @@ export default function UserManagement({
             </select>
             <button
               onClick={onAddUser}
-              className="flex items-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+              className="w-full sm:w-auto flex items-center justify-center sm:justify-start space-x-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm font-medium">Add User</span>
             </button>
           </div>

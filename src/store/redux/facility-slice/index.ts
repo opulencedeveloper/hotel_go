@@ -56,6 +56,8 @@ const facilitySlice = createSlice({
         (facility) => facility._id !== action.payload
       );
     },
+
+    reset: () => initialState,
   },
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useHttp } from "@/hooks/useHttp";
 import PageLoadingSpinner from "@/components/ui/PageLoadingSpinner";
 import { ErrorDisplay } from "@/components/common/ErrorDisplay";
@@ -41,6 +41,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { dashboardSummaryActions } from "@/store/redux/dashboard-summary-slice";
 import { formatPrice } from '@/helper';
+import FeatureGuard from "@/components/auth/FeatureGuard";
 
 export default function ProductionDashboard() {
   const [mounted, setMounted] = useState(false);
@@ -51,7 +52,14 @@ export default function ProductionDashboard() {
   const dashSummary = useSelector((state: RootState) => state.dashboardSummary);
   const hotel = useSelector((state: RootState) => state.hotel);
   const { fetchedDashboardSummary, fetchedQuickSummary, dashboardSummary, quickSummary } = dashSummary;
-  const selectedHotel = hotel?.hotels?.find((h) => h._id === hotel.selectedHotelId);
+  
+  // Memoize selectedHotel to ensure it updates when hotel state changes
+  const selectedHotelId = useMemo(() => hotel.selectedHotelId, [hotel.selectedHotelId]);
+  const selectedHotel = useMemo(
+    () => hotel?.hotels?.find((h) => h._id === selectedHotelId),
+    [hotel.hotels, selectedHotelId]
+  );
+  
   const dispatch = useDispatch();
 
   // Calculate occupancy rate properly using available data
@@ -99,8 +107,15 @@ export default function ProductionDashboard() {
     sendHttpRequest: fetchData,
   } = useHttp();
 
+  // Track previous hotel ID to detect changes
+  const prevHotelIdRef = useRef<string | null>(null);
+
+  // Initial mount effect
   useEffect(() => {
     setMounted(true);
+    // Store initial hotel ID
+    prevHotelIdRef.current = selectedHotelId;
+    
     if(!fetchedQuickSummary) {
       fetchQuickSummary();
     }
@@ -111,6 +126,26 @@ export default function ProductionDashboard() {
       fetchDetailedStats(selectedPeriod);
     }
   }, []);
+
+  // Refetch data when hotel changes (but not on initial mount)
+  useEffect(() => {
+    if (mounted && selectedHotelId && prevHotelIdRef.current !== null && prevHotelIdRef.current !== selectedHotelId) {
+      // Reset detailed stats when hotel changes
+      setDetailedStats(null);
+      
+      // Refetch all dashboard data for the new hotel
+      fetchQuickSummary();
+      fetchDashboardSummary();
+      fetchDetailedStats(selectedPeriod);
+      
+      // Update the ref to track the new hotel
+      prevHotelIdRef.current = selectedHotelId;
+    } else if (mounted && selectedHotelId && prevHotelIdRef.current === null) {
+      // On initial mount, just store the hotel ID
+      prevHotelIdRef.current = selectedHotelId;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedHotelId, mounted]);
 
   const fetchQuickSummary = async () => {
     try {
@@ -313,22 +348,24 @@ export default function ProductionDashboard() {
           </div>
 
           {/* Today's Revenue */}
-          <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-green-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-green-100 rounded-xl">
-                  <DollarSign className="w-6 h-6 text-green-600" />
+          <FeatureGuard permission="financials.view_revenue">
+            <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-green-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-green-100 rounded-xl">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Today's Revenue</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-2">{formatPrice(dashboardSummary?.revenue?.today || 0, selectedHotel?.currency)}</p>
+                  <p className="text-xs text-gray-500">Total revenue today</p>
                 </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">Today's Revenue</p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">{formatPrice(dashboardSummary?.revenue?.today || 0, selectedHotel?.currency)}</p>
-                <p className="text-xs text-gray-500">Total revenue today</p>
-              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-green-600"></div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-green-600"></div>
-          </div>
+          </FeatureGuard>
 
           {/* Today's Arrivals */}
           <div className="group relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
@@ -462,74 +499,76 @@ export default function ProductionDashboard() {
           </div>
 
           {/* Revenue Analytics */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Revenue Analytics</h3>
-              <div className="p-2 bg-green-100 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-green-600" />
+          <FeatureGuard permission="financials.view_revenue">
+            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Revenue Analytics</h3>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <BarChart3 className="w-5 h-5 text-green-600" />
+                </div>
               </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <span className="font-medium text-gray-900">Today</span>
+                  </div>
+                  <span className="text-xl font-bold text-green-600">{formatPrice(dashboardSummary.revenue?.today || 0, selectedHotel?.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium text-gray-900">This Week</span>
+                  </div>
+                  <span className="text-xl font-bold text-blue-600">{formatPrice(dashboardSummary.revenue?.thisWeek || 0, selectedHotel?.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <span className="font-medium text-gray-900">This Month</span>
+                  </div>
+                  <span className="text-xl font-bold text-purple-600">{formatPrice(dashboardSummary.revenue?.thisMonth || 0, selectedHotel?.currency)}</span>
+                </div>
+              </div>
+              
+              {/* Revenue Breakdown by Source */}
+              {dashboardSummary.revenue?.bySource && (
+                <div className="mt-6 pt-6 border-t border-secondary-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Revenue by Source (Today)</h4>
+                  <p className="text-xs text-gray-500 mb-4">Stay revenue calculated as: nights × room rate</p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">Stay Revenue</span>
+                        <span className="text-xs text-gray-500">Room bookings</span>
+                      </div>
+                      <span className="text-sm font-semibold text-blue-600">
+                        {formatPrice(dashboardSummary.revenue.bySource.roomRevenue || 0, selectedHotel?.currency)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">Food & Beverage</span>
+                        <span className="text-xs text-gray-500">Orders & services</span>
+                      </div>
+                      <span className="text-sm font-semibold text-orange-600">
+                        {formatPrice(dashboardSummary.revenue.bySource.foodRevenue || 0, selectedHotel?.currency)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">Scheduled Services</span>
+                        <span className="text-xs text-gray-500">Pre-booked services</span>
+                      </div>
+                      <span className="text-sm font-semibold text-indigo-600">
+                        {formatPrice(dashboardSummary.revenue.bySource.serviceRevenue || 0, selectedHotel?.currency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <span className="font-medium text-gray-900">Today</span>
-                </div>
-                <span className="text-xl font-bold text-green-600">{formatPrice(dashboardSummary.revenue?.today || 0, selectedHotel?.currency)}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium text-gray-900">This Week</span>
-                </div>
-                <span className="text-xl font-bold text-blue-600">{formatPrice(dashboardSummary.revenue?.thisWeek || 0, selectedHotel?.currency)}</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-purple-600" />
-                  <span className="font-medium text-gray-900">This Month</span>
-                </div>
-                <span className="text-xl font-bold text-purple-600">{formatPrice(dashboardSummary.revenue?.thisMonth || 0, selectedHotel?.currency)}</span>
-              </div>
-            </div>
-            
-            {/* Revenue Breakdown by Source */}
-            {dashboardSummary.revenue?.bySource && (
-              <div className="mt-6 pt-6 border-t border-secondary-200">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Revenue by Source (Today)</h4>
-                <p className="text-xs text-gray-500 mb-4">Stay revenue calculated as: nights × room rate</p>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Stay Revenue</span>
-                      <span className="text-xs text-gray-500">Room bookings</span>
-                    </div>
-                    <span className="text-sm font-semibold text-blue-600">
-                      {formatPrice(dashboardSummary.revenue.bySource.roomRevenue || 0, selectedHotel?.currency)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Food & Beverage</span>
-                      <span className="text-xs text-gray-500">Orders & services</span>
-                    </div>
-                    <span className="text-sm font-semibold text-orange-600">
-                      {formatPrice(dashboardSummary.revenue.bySource.foodRevenue || 0, selectedHotel?.currency)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-indigo-50 rounded-lg">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">Scheduled Services</span>
-                      <span className="text-xs text-gray-500">Pre-booked services</span>
-                    </div>
-                    <span className="text-sm font-semibold text-indigo-600">
-                      {formatPrice(dashboardSummary.revenue.bySource.serviceRevenue || 0, selectedHotel?.currency)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          </FeatureGuard>
 
           {/* Staff Performance */}
           <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300">

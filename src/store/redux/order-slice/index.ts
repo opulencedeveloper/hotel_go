@@ -68,6 +68,8 @@ const orderSlice = createSlice({
     deleteOrder: (state, action: PayloadAction<string>) => {
       state.orders = state.orders.filter((order) => order._id !== action.payload);
     },
+
+    reset: () => initialState,
   },
 });
 

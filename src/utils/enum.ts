@@ -150,3 +150,11 @@ export enum HouseKeepingStatus {
   COMPLETED = "completed",
   CANCELLED = "cancelled",
 }
+
+
+export enum UserType {
+  Owner = "owner",
+  Staff = "staff"
+}
+
+

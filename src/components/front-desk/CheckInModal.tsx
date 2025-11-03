@@ -160,13 +160,13 @@ export default function CheckInModal({
 
             {/* Actions */}
             <div className="flex space-x-3">
-              <button
+              {/* <button
                 onClick={() => onPrintReceipt('checkin', selectedGuest)}
                 className="btn-secondary flex-1"
               >
                 <Printer className="w-4 h-4 mr-2" />
                 Print Receipt
-              </button>
+              </button> */}
               <button
                 onClick={onClose}
                 className="btn-primary flex-1"

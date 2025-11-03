@@ -15,7 +15,6 @@ export interface IHotel extends Document {
   country: string;
   amenities?: string[];
   postalCode: string;
-  licenseKeyId: Types.ObjectId;
   ownerId: Types.ObjectId;
   currency: string;
   agreeToTerms: boolean;
@@ -52,6 +51,18 @@ export interface IHotelRegistrationInput {
   address: string;
   currency: string;
   ownerId: Types.ObjectId;
+  agreeToTerms: boolean;
+  postalCode: string;
+}
+
+export interface IAddHotelRegistrationUserInput {
+  hotelName: string;
+  country: string;
+  state: string;
+  city: string;
+  phone: string;
+  address: string;
+  currency: string;
   agreeToTerms: boolean;
   postalCode: string;
 }

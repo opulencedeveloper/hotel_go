@@ -151,6 +151,43 @@ class RoomValidator {
       }),
     };
   }
+
+    public markRoomForCleaning(req: Request) {
+      const schema = Joi.object({
+        roomId: Joi.string()
+          .required()
+          .custom((value, helpers) => {
+            if (!Types.ObjectId.isValid(value)) {
+              return helpers.error("any.invalid");
+            }
+            return value;
+          })
+          .messages({
+            "any.required": "Room ID is required.",
+            "any.invalid": "Room ID must be a valid ObjectId.",
+          }),
+      });
+  
+      // Extract facilityId from query params if not in body
+      const { searchParams } = new URL(req.url);
+      const roomId = searchParams.get("roomId");
+  
+      const { error, value } = schema.validate({ roomId }, { convert: true });
+  
+      if (!error) {
+        return { valid: true, value, roomId };
+      }
+  
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 400,
+          message: MessageResponse.Error,
+          description: error.details[0].message,
+          data: null,
+        }),
+      };
+    }
 }
 
 export const roomValidator = new RoomValidator();

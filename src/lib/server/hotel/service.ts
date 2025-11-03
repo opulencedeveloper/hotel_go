@@ -4,7 +4,7 @@ import { IHotelRegistrationInput } from "./interface";
 import { utils } from "../utils";
 
 const visibleValues =
-  "hotelName _id totalRooms totalRoomsOccupied address currency totalRoomsInMaintenance amenities";
+  "hotelName _id ownerId email phoneNo totalRooms totalRoomsOccupied address currency totalRoomsInMaintenance amenities";
 
 class HotelService {
   public async registerHotel(input: IHotelRegistrationInput) {
@@ -17,8 +17,14 @@ class HotelService {
     return savedHotel;
   }
 
-  public async findHotelByOwnerId(ownerId: Types.ObjectId) {
+  public async findHotelsByOwnerId(ownerId: Types.ObjectId) {
     const hotel = await Hotel.find({ ownerId }).select(visibleValues);
+
+    return hotel;
+  }
+
+    public async findHotelByOwnerId(ownerId: Types.ObjectId) {
+    const hotel = await Hotel.findOne({ ownerId }).select(visibleValues);
 
     return hotel;
   }

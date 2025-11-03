@@ -2,18 +2,30 @@
 
 import { useState } from 'react';
 import { X, Plus } from 'lucide-react';
-
-interface Role {
-  role_id: string;
-  name: string;
-}
+import { UserRole } from '@/utils/enum';
 
 interface AddUserModalProps {
   isOpen: boolean;
-  roles: Role[];
+  roles?: any[]; // Keep for backward compatibility, but not used
   onClose: () => void;
   onSubmit: (formData: any) => void;
 }
+
+// Helper function to get user-friendly labels for roles
+const getRoleLabel = (role: UserRole): string => {
+  const labels: Record<UserRole, string> = {
+    [UserRole.SuperAdmin]: 'Super Admin',
+    [UserRole.Manager]: 'Manager',
+    [UserRole.FrontDesk]: 'Front Desk',
+    [UserRole.HouseKeeping]: 'Housekeeping',
+    [UserRole.Kitchen]: 'Kitchen',
+    [UserRole.Maintenance]: 'Maintenance',
+    [UserRole.Accounting]: 'Accounting',
+    [UserRole.Security]: 'Security',
+    [UserRole.GuestServices]: 'Guest Services',
+  };
+  return labels[role] || role;
+};
 
 export default function AddUserModal({
   isOpen,
@@ -29,7 +41,6 @@ export default function AddUserModal({
     role: '',
     department: '',
     status: 'active',
-    permissions: [] as string[],
     notes: ''
   });
 
@@ -46,7 +57,6 @@ export default function AddUserModal({
       role: '',
       department: '',
       status: 'active',
-      permissions: [] as string[],
       notes: ''
     });
   };
@@ -134,9 +144,9 @@ export default function AddUserModal({
                 className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">Select role</option>
-                {roles.map(role => (
-                  <option key={role.role_id} value={role.role_id}>
-                    {role.name}
+                {Object.values(UserRole).map(role => (
+                  <option key={role} value={role}>
+                    {getRoleLabel(role)}
                   </option>
                 ))}
               </select>
@@ -181,37 +191,6 @@ export default function AddUserModal({
             
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-secondary-700 mb-2">
-                Permissions
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {['dashboard', 'reservations', 'rooms', 'guests', 'reports', 'settings', 'admin', 'security'].map(permission => (
-                  <label key={permission} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.permissions.includes(permission)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({
-                            ...formData,
-                            permissions: [...formData.permissions, permission]
-                          });
-                        } else {
-                          setFormData({
-                            ...formData,
-                            permissions: formData.permissions.filter(p => p !== permission)
-                          });
-                        }
-                      }}
-                      className="mr-2 rounded border-secondary-300"
-                    />
-                    <span className="text-sm text-secondary-700 capitalize">{permission}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-secondary-700 mb-2">
                 Notes
               </label>
               <textarea
@@ -241,7 +220,7 @@ export default function AddUserModal({
               <div>
                 <span className="text-secondary-600">Role:</span>
                 <span className="font-medium text-secondary-900 ml-1">
-                  {formData.role ? roles.find(r => r.role_id === formData.role)?.name || 'Unknown' : 'Not selected'}
+                  {formData.role ? getRoleLabel(formData.role as UserRole) : 'Not selected'}
                 </span>
               </div>
               <div>
@@ -253,12 +232,6 @@ export default function AddUserModal({
                   {formData.status}
                 </span>
               </div>
-            </div>
-            <div className="mt-2">
-              <span className="text-secondary-600">Permissions:</span>
-              <span className="font-medium text-secondary-900 ml-1">
-                {formData.permissions.length > 0 ? formData.permissions.join(', ') : 'None selected'}
-              </span>
             </div>
           </div>
           

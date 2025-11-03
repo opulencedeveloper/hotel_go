@@ -370,9 +370,9 @@ export default function StayHistory() {
                       <button className="text-primary-600 hover:text-primary-700 p-1" title="View Details">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="text-secondary-600 hover:text-secondary-700 p-1" title="Print Receipt">
+                      {/* <button className="text-secondary-600 hover:text-secondary-700 p-1" title="Print Receipt">
                         <Printer className="w-4 h-4" />
-                      </button>
+                      </button> */}
                       {getStatusDisplay(stay)}
                     </div>
                   </td>

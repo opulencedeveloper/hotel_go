@@ -2,6 +2,7 @@
 
 import { DollarSign, Receipt, Calculator, PieChart } from 'lucide-react';
 import { formatPrice } from '@/helper';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 
 interface FinancialOverviewCardsProps {
   totalRevenue: number;
@@ -19,7 +20,8 @@ export default function FinancialOverviewCards({
   currency,
 }: FinancialOverviewCardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <FeatureGuard permission="financials.view_revenue">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div className="bg-white rounded-lg p-6 shadow-sm border border-secondary-200">
         <div className="flex items-center justify-between">
           <div>
@@ -72,6 +74,7 @@ export default function FinancialOverviewCards({
         </div>
       </div>
     </div>
+    </FeatureGuard>
   );
 }
 

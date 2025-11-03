@@ -1,5 +1,5 @@
 import Joi from "joi";
-import { IHotelRegistrationUserInput } from "./interface";
+import { IAddHotelRegistrationUserInput, IHotelRegistrationInput, IHotelRegistrationUserInput } from "./interface";
 import { utils } from "../utils";
 import { MessageResponse } from "../utils/enum";
 import { countries, currencyOptions } from "@/resources/auth";
@@ -93,6 +93,98 @@ class HotelValidator {
         "any.only": "You must agree to the terms and conditions",
         "any.required": "Agreeing to terms is required",
       }),
+    })
+      .custom((value, helpers) => {
+        const selectedCountry = countries.find((c) => c.name === value.country);
+
+        if (!selectedCountry) {
+          return helpers.error("any.custom", {
+            customMessage: "Invalid country selection.",
+          });
+        }
+
+        return value;
+      })
+      .messages({
+        "any.custom": "{{#customMessage}}",
+      });
+
+    const { error } = schema.validate(body);
+
+    if (error) {
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 400,
+          message: MessageResponse.Error,
+          description:
+            error.details[0].context?.customMessage || error.details[0].message,
+          data: null,
+        }),
+      };
+    }
+
+    return {
+      valid: true,
+    };
+  }
+
+
+
+    public addHotel(body: IAddHotelRegistrationUserInput) {
+    console.log(body);
+    const validCountryNames = countries.map((c) => c.name);
+    const validCurrencyValues = currencyOptions.map((c) => c.value);
+
+     const schema = Joi.object<IHotelRegistrationInput>({
+      hotelName: Joi.string().required().messages({
+        "string.base": "Hotel name must be text",
+        "any.required": "Hotel name is required.",
+      }),
+
+         phone: Joi.string()
+        .pattern(/^\+?[0-9\s\-()]{7,20}$/)
+        .required()
+        .messages({
+          "string.pattern.base":
+            "Please enter a valid phone number (e.g., +2348012345678 or +1 234 567 8900)",
+          "any.required": "Phone number is required",
+        }),
+
+      address: Joi.string().required().messages({
+        "any.required": "Address is required",
+      }),
+
+      city: Joi.string().required().messages({
+        "any.required": "City is required",
+      }),
+
+      state: Joi.string().required().messages({
+        "any.required": "State is required",
+      }),
+
+      postalCode: Joi.string().optional().allow("", null),
+
+      country: Joi.string()
+        .valid(...validCountryNames)
+        .required()
+        .messages({
+          "any.only": "Please select a valid country from the list",
+          "any.required": "Country is required",
+        }),
+
+      currency: Joi.string()
+        .valid(...validCurrencyValues)
+        .required()
+        .messages({
+          "any.only": "Please select a valid currency",
+          "any.required": "Currency is required",
+        }),
+            agreeToTerms: Joi.boolean().valid(true).required().messages({
+        "any.only": "You must agree to the terms and conditions",
+        "any.required": "Agreeing to terms is required",
+      }),
+
     })
       .custom((value, helpers) => {
         const selectedCountry = countries.find((c) => c.name === value.country);

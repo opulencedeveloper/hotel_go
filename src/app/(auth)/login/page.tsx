@@ -311,7 +311,7 @@ export default function LoginPage() {
 
 
               {/* Footer */}
-              <div className="mt-8 text-center">
+              <div className="mt-8 space-y-4 text-center">
                 <p className="text-sm text-blue-200">
                   Don't have an account?{" "}
                   <Link
@@ -321,6 +321,15 @@ export default function LoginPage() {
                     Register your hotel
                   </Link>
                 </p>
+                <div className="pt-4 border-t border-white/20">
+                  <Link
+                    href="/staff-login"
+                    className="inline-flex items-center justify-center w-full py-2 px-4 text-sm font-medium text-blue-200 hover:text-white border border-white/20 rounded-lg hover:bg-white/10 transition-all"
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Staff Login
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

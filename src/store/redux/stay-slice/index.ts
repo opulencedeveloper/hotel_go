@@ -75,6 +75,8 @@ const staySlice = createSlice({
     deleteStay: (state, action: PayloadAction<string>) => {
       state.stays = state.stays.filter((stay) => stay._id !== action.payload);
     },
+
+    reset: () => initialState,
   },
 });
 

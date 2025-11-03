@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { User, LoginCredentials, authenticateUser, getUserById } from '@/lib/auth';
 import { tokenStorage } from '@/lib/auth-storage';
+import { hasPermission as checkRBACPermission, canAccessRoute as checkRBACRouteAccess } from '@/lib/rbac';
+import { UserRole } from '@/utils/enum';
 
 interface AuthState {
   user: User | null;
@@ -115,30 +117,17 @@ export const selectIsLoading = (state: { auth: AuthState }) => state.auth.isLoad
 export const selectError = (state: { auth: AuthState }) => state.auth.error;
 export const selectIsAuthenticated = (state: { auth: AuthState }) => state.auth.isAuthenticated;
 
-// Helper functions
+// Helper functions - Use RBAC system
 export const hasPermission = (user: User | null, permission: string): boolean => {
   if (!user) return false;
-  if (user.permissions.includes('*')) return true;
-  return user.permissions.some(p => 
-    p === permission || 
-    p.endsWith('.*') && permission.startsWith(p.slice(0, -2))
-  );
+  // Use RBAC system based on user role
+  return checkRBACPermission(user.role as UserRole, permission);
 };
 
 export const canAccessRoute = (user: User | null, route: string): boolean => {
   if (!user) return false;
-  const routeKey = route.replace('/', '').replace('-', '_');
-  
-  if (user.permissions.includes('*')) return true;
-  
-  return user.permissions.some(permission => {
-    if (permission === '*') return true;
-    if (permission.endsWith('.*')) {
-      const basePermission = permission.slice(0, -2);
-      return routeKey.includes(basePermission);
-    }
-    return routeKey.includes(permission);
-  });
+  // Use RBAC system based on user role
+  return checkRBACRouteAccess(user.role as UserRole, route);
 };
 
 export default authSlice.reducer;
