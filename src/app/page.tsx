@@ -6,19 +6,8 @@ import { connectDB } from "@/lib/server/utils/db";
 // Force dynamic rendering since we use headers() and IP geolocation
 export const dynamic = 'force-dynamic';
 
-// Country to currency mapping
-const getCurrencyFromCountry = (countryCode: string): string => {
-  const countryToCurrency: { [key: string]: string } = {
-    'NG': 'NGN', 'GH': 'GHS', 'ZA': 'ZAR', 'KE': 'KES', 'UG': 'UGX', 'TZ': 'TZS',
-    'GB': 'GBP', 'FR': 'EUR', 'DE': 'EUR', 'IT': 'EUR', 'ES': 'EUR', 'PT': 'EUR',
-    'US': 'USD', 'CA': 'CAD', 'MX': 'MXN', 'BR': 'BRL', 'AR': 'ARS', 'CL': 'CLP',
-    'JP': 'JPY', 'CN': 'CNY', 'KR': 'KRW', 'IN': 'INR', 'PK': 'PKR', 'BD': 'BDT',
-    'ID': 'IDR', 'TH': 'THB', 'VN': 'VND', 'PH': 'PHP', 'MY': 'MYR', 'SG': 'SGD',
-    'AE': 'AED', 'SA': 'SAR', 'QA': 'QAR', 'KW': 'KWD', 'BH': 'BHD', 'OM': 'OMR',
-    'AU': 'AUD', 'NZ': 'NZD',
-  };
-  return countryToCurrency[countryCode] || 'USD';
-};
+import { getFlutterwaveCurrency, isFlutterwaveSupportedCurrency } from '@/lib/utils/flutterwave-currencies';
+import { logger } from '@/lib/utils/logger';
 
 // Map timezone to country (most reliable for localhost/dev)
 const getCountryFromTimezone = (timezone: string): string | null => {
@@ -51,141 +40,57 @@ const getCountryFromTimezone = (timezone: string): string | null => {
   return timezoneToCountry[timezone] || null;
 };
 
-// Detect user's country from request headers/IP/timezone
+// Detect user's country from cookie (set by middleware)
+// In production, middleware handles all detection. This function just reads the cookie.
 async function detectUserCountry(): Promise<string> {
   try {
-    const headersList = headers();
     const { cookies } = await import('next/headers');
     const cookieStore = cookies();
     
-    // Method 1: Check cookie set by client-side timezone detection or manual override
+    // Read country from cookie (set by middleware)
     const cookieCountry = cookieStore.get('user-country')?.value;
+    
     if (cookieCountry) {
-      console.log('✅ Detected country from cookie:', cookieCountry);
+      logger.debug('Detected country from cookie', { country: cookieCountry });
       return cookieCountry.toUpperCase();
     }
+
+    // Fallback: If cookie doesn't exist (shouldn't happen in production)
+    // This can happen during development or if middleware didn't run
+    logger.warn('Country cookie not found. Middleware should have set it.');
     
-    // Check for manual override via query parameter (for testing)
-    const url = headersList.get('referer') || '';
-    if (url.includes('country=')) {
-      try {
-        const urlObj = new URL(url);
-        const countryParam = urlObj.searchParams.get('country');
-        if (countryParam && countryParam.length === 2) {
-          console.log('✅ Using country from query parameter:', countryParam);
-          cookieStore.set('user-country', countryParam.toUpperCase(), {
-            maxAge: 60 * 60 * 24,
-            path: '/',
-          });
-          return countryParam.toUpperCase();
-        }
-      } catch (e) {
-        // Ignore URL parsing errors
-      }
-    }
-    
-    // Method 2: Try IP geolocation with client IP
-    const forwardedFor = headersList.get('x-forwarded-for');
-    const realIp = headersList.get('x-real-ip');
-    const clientIp = forwardedFor?.split(',')[0] || realIp || null;
-
-    console.log('🌍 Detecting country - Client IP:', clientIp || 'not available');
-
-    if (clientIp && clientIp !== '::1' && clientIp !== '127.0.0.1' && !clientIp.startsWith('192.168.') && !clientIp.startsWith('10.')) {
-      try {
-        console.log('🌍 Trying IP geolocation with client IP:', clientIp);
-        const geoResponse = await fetch(`https://ipapi.co/${clientIp}/json/`, {
-          headers: { 'Accept': 'application/json' },
-          next: { revalidate: 0 },
-        });
-        if (geoResponse.ok) {
-          const geoData = await geoResponse.json();
-          console.log('🌍 IP geolocation response:', geoData);
-          if (geoData.country_code) {
-            const countryCode = geoData.country_code.toUpperCase();
-            console.log('✅ Detected country from IP:', countryCode);
-            return countryCode;
-          }
-        }
-      } catch (error) {
-        console.warn('⚠️ IP geolocation with client IP failed:', error);
-      }
-    }
-
-    // Method 3: Try generic IP geolocation (detects server location, works for localhost too)
-    try {
-      console.log('🌍 Trying generic IP geolocation (server IP)...');
-      const geoResponse = await fetch('https://ipapi.co/json/', {
-        headers: { 'Accept': 'application/json' },
-        next: { revalidate: 0 },
-      });
-      if (geoResponse.ok) {
-        const geoData = await geoResponse.json();
-        console.log('🌍 Generic IP geolocation response:', JSON.stringify(geoData, null, 2));
-        if (geoData.country_code) {
-          const countryCode = geoData.country_code.toUpperCase();
-          console.log('✅ Detected country from generic IP:', countryCode);
-          
-          // Save to cookie for future requests
-          if (cookieCountry !== countryCode) {
-            try {
-              cookieStore.set('user-country', countryCode, {
-                maxAge: 60 * 60 * 24, // 1 day
-                path: '/',
-              });
-            } catch (e) {
-              // Ignore cookie errors
-            }
-          }
-          
-          return countryCode;
-        }
-      } else {
-        const errorText = await geoResponse.text();
-        console.warn('⚠️ Generic IP geolocation failed:', geoResponse.status, errorText);
-      }
-    } catch (error) {
-      console.warn('⚠️ Generic IP geolocation exception:', error);
-    }
-
-    // Method 4: Try Accept-Language header (less reliable)
-    const acceptLanguage = headersList.get('accept-language');
-    if (acceptLanguage) {
-      console.log('🌍 Trying Accept-Language:', acceptLanguage);
-      const localeParts = acceptLanguage.split(',')[0].split('-');
-      if (localeParts.length > 1) {
-        const countryCode = localeParts[localeParts.length - 1].toUpperCase();
-        if (countryCode && countryCode.length === 2) {
-          console.log('✅ Detected country from Accept-Language:', countryCode);
-          return countryCode;
-        }
-      }
-    }
-
-    console.warn('⚠️ All country detection methods failed, defaulting to US');
-    return 'US'; // Default to US
+    // Default to US as fallback
+    return 'US';
   } catch (error) {
-    console.error('❌ Error detecting country:', error);
+    logger.error('Error reading country cookie', { error: error instanceof Error ? error.message : 'Unknown error' });
     return 'US';
   }
 }
 
 // Fetch exchange rate - try Flutterwave first (if key available), then fallback to free APIs
 async function fetchExchangeRate(currency: string): Promise<number> {
+  // Validate currency is supported by Flutterwave
+  if (!isFlutterwaveSupportedCurrency(currency)) {
+    logger.warn('Currency not supported by Flutterwave, defaulting to USD', { currency });
+    return 1; // USD rate
+  }
+
   if (currency === 'USD') {
-    console.log('💵 Currency is USD, returning rate 1');
     return 1;
   }
 
   const flutterwaveKey = process.env.FLUTTERWAVE_SECRET_KEY || process.env.NEXT_PUBLIC_FLUTTERWAVE_SECRET_KEY;
   
-  console.log('💱 Fetching exchange rate for:', currency);
-  console.log('🔑 Flutterwave key available:', flutterwaveKey ? 'Yes' : 'No');
+  if (!flutterwaveKey) {
+    logger.warn('Flutterwave API key not found, using fallback APIs', { currency });
+  }
 
   // Try Flutterwave first (if API key is available)
   if (flutterwaveKey) {
     try {
-      console.log('🔄 Calling Flutterwave API...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch('https://api.flutterwave.com/v3/rates', {
         method: 'POST',
         headers: {
@@ -197,56 +102,77 @@ async function fetchExchangeRate(currency: string): Promise<number> {
           to: currency,
           amount: 1,
         }),
+        signal: controller.signal,
         next: { revalidate: 0 }, // Don't cache
       });
 
-      console.log('📡 Flutterwave response status:', response.status);
+      clearTimeout(timeoutId);
 
       // Check content type before parsing JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const errorText = await response.text();
-        console.error('❌ Flutterwave API returned non-JSON response:', errorText.substring(0, 500));
+        logger.error('Flutterwave API returned non-JSON response', {
+          status: response.status,
+          contentType,
+          errorPreview: errorText.substring(0, 200),
+        });
         throw new Error(`Flutterwave API returned ${contentType || 'unknown content type'}`);
       }
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📊 Flutterwave response data:', JSON.stringify(data, null, 2));
 
         if (data.status === 'success' && data.data) {
           let rate = 1;
 
-          if (data.data.destination && data.data.destination.amount) {
+          // Flutterwave rates API returns different structures
+          // Try multiple ways to extract the rate
+          if (data.data.destination && data.data.source) {
+            const sourceAmount = parseFloat(data.data.source.amount) || 1;
+            const destAmount = parseFloat(data.data.destination.amount) || 1;
+            
+            // If source is 1 USD, destination is the exchange rate
+            if (Math.abs(sourceAmount - 1) < 0.01 && destAmount > 0) {
+              rate = destAmount;
+            } else if (sourceAmount > 0 && destAmount > 0) {
+              // Calculate rate from ratio
+              rate = destAmount / sourceAmount;
+            }
+          } else if (data.data.destination && data.data.destination.amount) {
             rate = parseFloat(data.data.destination.amount);
           } else if (data.data.rate) {
             rate = parseFloat(data.data.rate);
-          } else if (data.data.destination && data.data.source) {
-            const sourceAmount = parseFloat(data.data.source.amount) || 1;
-            const destAmount = parseFloat(data.data.destination.amount) || 1;
-            if (sourceAmount > 0) {
-              rate = destAmount / sourceAmount;
-            }
           }
 
-          if (rate && rate > 0 && isFinite(rate) && rate !== 1) {
-            console.log(`✅ Flutterwave rate USD to ${currency}:`, rate);
+          // Validate and return rate
+          if (rate && rate > 0 && isFinite(rate)) {
+            logger.debug('Flutterwave exchange rate fetched', { currency, rate });
             return rate;
           } else {
-            console.warn('⚠️ Invalid rate from Flutterwave:', rate);
+            logger.warn('Invalid rate from Flutterwave', { currency, rate, responseData: data.data });
           }
         } else {
-          console.warn('⚠️ Flutterwave response not success:', data);
+          logger.warn('Flutterwave response not successful', { currency, status: data.status });
         }
       } else {
         const errorText = await response.text();
-        console.error('❌ Flutterwave API error:', response.status, errorText);
+        logger.error('Flutterwave API error', {
+          status: response.status,
+          currency,
+          errorPreview: errorText.substring(0, 200),
+        });
       }
-    } catch (error) {
-      console.error('❌ Flutterwave API exception:', error);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        logger.warn('Flutterwave API timeout', { currency });
+      } else {
+        logger.error('Flutterwave API exception', {
+          currency,
+          error: error.message || 'Unknown error',
+        });
+      }
     }
-  } else {
-    console.warn('⚠️ Flutterwave key not found, trying free APIs...');
   }
 
   // Fallback to free APIs (no API key required)
@@ -262,13 +188,16 @@ async function fetchExchangeRate(currency: string): Promise<number> {
       if (data.rates && data.rates[currency]) {
         const rate = parseFloat(data.rates[currency]);
         if (rate && rate > 0 && isFinite(rate)) {
-          console.log(`✓ Free API rate USD to ${currency}:`, rate);
+          logger.debug('Exchange rate from free API', { currency, rate, source: 'exchangerate-api' });
           return rate;
         }
       }
     }
   } catch (error) {
-    console.warn('Free API (exchangerate-api) failed, trying alternative:', error);
+    logger.warn('Free API (exchangerate-api) failed', {
+      currency,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 
   // Try alternative free API
@@ -284,17 +213,24 @@ async function fetchExchangeRate(currency: string): Promise<number> {
       if (data.usd && data.usd[currencyKey]) {
         const rate = parseFloat(data.usd[currencyKey]);
         if (rate && rate > 0 && isFinite(rate)) {
-          console.log(`✓ Alternative free API rate USD to ${currency}:`, rate);
+          logger.debug('Exchange rate from alternative free API', {
+            currency,
+            rate,
+            source: 'fawazahmed0',
+          });
           return rate;
         }
       }
     }
   } catch (error) {
-    console.warn('Alternative free API failed:', error);
+    logger.warn('Alternative free API failed', {
+      currency,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 
   // If all APIs fail, return 1 (will show USD prices)
-  console.warn(`⚠️ All exchange rate APIs failed for ${currency}. Using USD rates.`);
+  logger.warn('All exchange rate APIs failed, using USD rates', { currency });
   return 1;
 }
 
@@ -329,7 +265,9 @@ async function fetchPricingPlans() {
       color: plan.color,
     })) : [];
   } catch (error) {
-    console.error('Error fetching pricing plans:', error);
+    logger.error('Error fetching pricing plans', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
     return [];
   }
 }
@@ -337,18 +275,22 @@ async function fetchPricingPlans() {
 export default async function HomePage() {
   // Fetch pricing plans
   const pricingPlans = await fetchPricingPlans();
-  console.log('📦 Fetched pricing plans:', pricingPlans.length);
   
   // Detect user's country and currency
   const countryCode = await detectUserCountry();
-  console.log('📍 Detected country code:', countryCode);
   
-  const userCurrency = getCurrencyFromCountry(countryCode);
-  console.log('💰 Mapped currency:', userCurrency);
+  // Get Flutterwave-supported currency (defaults to USD if not supported)
+  const userCurrency = getFlutterwaveCurrency(countryCode);
   
   // Fetch exchange rate from Flutterwave
   const exchangeRate = await fetchExchangeRate(userCurrency);
-  console.log('💱 Exchange rate:', exchangeRate);
+  
+  logger.info('Pricing page loaded', {
+    plansCount: pricingPlans.length,
+    country: countryCode,
+    currency: userCurrency,
+    exchangeRate,
+  });
   
   // Convert prices on server
   const convertedPlans = pricingPlans.map((plan: any) => {
@@ -356,8 +298,6 @@ export default async function HomePage() {
     
     const convertedQuarterly = plan.price.quarterly ? Math.round(plan.price.quarterly * exchangeRate) : null;
     const convertedYearly = plan.price.yearly ? Math.round(plan.price.yearly * exchangeRate) : null;
-    
-    console.log(`💵 Plan ${plan.name}: USD ${plan.price.yearly} -> ${userCurrency} ${convertedYearly} (rate: ${exchangeRate})`);
     
     return {
       ...plan,
@@ -369,8 +309,6 @@ export default async function HomePage() {
       _originalPrice: plan.price,
     };
   });
-  
-  console.log('✅ Final currency info:', { userCurrency, exchangeRate, countryCode });
   
   return (
     <HomePageBody 

@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authMiddleware, apiAuthMiddleware } from './middleware/auth';
+import { geoMiddleware } from './middleware/geo';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Handle API routes
+  // Skip geo detection for API routes and static files
   if (pathname.startsWith('/api/')) {
     return apiAuthMiddleware(request);
   }
 
-  // Handle page routes
+  // For homepage, run geo detection first, then auth
+  if (pathname === '/') {
+    const geoResponse = geoMiddleware(request);
+    // If geo middleware returns a redirect or modified response, use it
+    // Otherwise, continue with auth middleware
+    return geoResponse;
+  }
+
+  // Handle other page routes with auth
   return authMiddleware(request);
 }
 
