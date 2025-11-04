@@ -5,9 +5,44 @@ import { logger } from "@/lib/utils/logger";
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
-// Flutterwave API timeout (8 seconds - optimized for serverless environments like Vercel)
-// Vercel Hobby plan has 10s timeout, Pro has 60s. We use 8s to leave buffer for processing.
-const FLUTTERWAVE_API_TIMEOUT = 8000;
+// Flutterwave API timeout (5 seconds - optimized for serverless environments like Vercel)
+// Vercel Hobby plan has 10s timeout, Pro has 60s. We use 5s to leave buffer for processing.
+const FLUTTERWAVE_API_TIMEOUT = 5000;
+
+// In-memory cache for exchange rates (5 minutes TTL)
+// Note: This cache is per-instance in serverless, but helps with burst requests
+const rateCache = new Map<string, { rate: number; timestamp: number; currency: string }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+function getCachedRate(currency: string): number | null {
+  const cached = rateCache.get(currency);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.rate;
+  }
+  if (cached) {
+    rateCache.delete(currency); // Remove expired entry
+  }
+  return null;
+}
+
+function setCachedRate(currency: string, rate: number): void {
+  rateCache.set(currency, {
+    rate,
+    timestamp: Date.now(),
+    currency,
+  });
+  
+  // Clean up old entries periodically (keep cache size manageable)
+  if (rateCache.size > 100) {
+    const now = Date.now();
+    const entries = Array.from(rateCache.entries());
+    for (const [key, value] of entries) {
+      if (now - value.timestamp >= CACHE_TTL) {
+        rateCache.delete(key);
+      }
+    }
+  }
+}
 
 async function handler(request: Request) {
   try {
@@ -34,6 +69,27 @@ async function handler(request: Request) {
           rate: 1,
           from: 'USD',
           to: 'USD',
+        },
+      });
+    }
+
+    // Check cache first
+    const cachedRate = getCachedRate(currency);
+    if (cachedRate !== null) {
+      logger.info('Exchange rate retrieved from cache', {
+        currency,
+        rate: cachedRate,
+      });
+      return utils.customResponse({
+        status: 200,
+        message: MessageResponse.Success,
+        description: "Exchange rate retrieved successfully from cache",
+        data: {
+          currency: currency,
+          rate: cachedRate,
+          from: 'USD',
+          to: currency,
+          source: 'cache',
         },
       });
     }
@@ -126,6 +182,9 @@ async function handler(request: Request) {
             }
 
             if (rate && rate > 0 && isFinite(rate)) {
+              // Cache the rate for future requests
+              setCachedRate(currency, rate);
+              
               logger.info('Exchange rate retrieved from Flutterwave', {
                 currency,
                 rate,
