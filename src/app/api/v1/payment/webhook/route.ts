@@ -30,15 +30,56 @@ async function handler(request: Request) {
       }
     }
 
-    const webhookData = JSON.parse(body);
+    // Parse webhook data with error handling
+    let webhookData: any;
+    try {
+      webhookData = JSON.parse(body);
+    } catch (parseError) {
+      console.error('❌ Failed to parse webhook body as JSON:', parseError);
+      console.error('Raw body:', body.substring(0, 500));
+      return utils.customResponse({
+        status: 400,
+        message: MessageResponse.Error,
+        description: "Invalid webhook payload format",
+        data: null,
+      });
+    }
+
     const { event, data } = webhookData;
 
-    console.log('📥 Flutterwave webhook received:', event, data?.id);
+    // Enhanced logging for debugging
+    console.log('📥 Flutterwave webhook received');
+    console.log('Event:', event || 'undefined');
+    console.log('Data:', data ? JSON.stringify(data, null, 2).substring(0, 500) : 'undefined');
+    console.log('Transaction ID:', data?.id || data?.transaction_id || 'undefined');
+    console.log('Status:', data?.status || 'undefined');
+    console.log('Tx Ref:', data?.tx_ref || 'undefined');
+
+    // Handle different webhook event formats
+    // Flutterwave can send different event types and formats
+    if (!event || !data) {
+      console.warn('⚠️ Webhook missing event or data:', { event, hasData: !!data });
+      // Still acknowledge the webhook to prevent retries
+      return utils.customResponse({
+        status: 200,
+        message: MessageResponse.Success,
+        description: "Webhook received but missing event/data",
+        data: null,
+      });
+    }
 
     // Only process successful payment events
-    if (event === 'charge.completed' && data?.status === 'successful') {
-      const transactionId = data.id?.toString() || data.tx_ref;
-      const txRef = data.tx_ref;
+    // Flutterwave can send: 'charge.completed', 'transaction.completed', etc.
+    const isChargeCompleted = event === 'charge.completed' || event === 'transaction.completed';
+    const isSuccessful = data?.status === 'successful' || data?.status === 'success';
+    
+    if (isChargeCompleted && isSuccessful) {
+      // Flutterwave can send transaction ID in different fields
+      const transactionId = data.id?.toString() || 
+                           data.transaction_id?.toString() || 
+                           data.flw_ref?.toString() ||
+                           data.tx_ref;
+      const txRef = data.tx_ref || data.txRef;
       
       // Extract licenseKeyId from tx_ref
       let licenseKeyId: string | null = null;
@@ -149,11 +190,12 @@ async function handler(request: Request) {
       }
     }
 
-    // For other events, just acknowledge
+    // For other events, log and acknowledge
+    console.log(`ℹ️ Webhook event not processed: ${event} (status: ${data?.status || 'unknown'})`);
     return utils.customResponse({
       status: 200,
       message: MessageResponse.Success,
-      description: "Webhook received",
+      description: "Webhook received but event not processed",
       data: null,
     });
   } catch (error) {

@@ -3,6 +3,7 @@ import { MessageResponse } from "@/lib/server/utils/enum";
 import { connectDB } from "@/lib/server/utils/db";
 import { licenseKeyService } from "@/lib/server/license-key/service";
 import { PaymentStatus } from "@/utils/enum";
+import Plan from "@/lib/server/plan/entity";
 
 interface VerifyPaymentBody {
   transaction_id?: string;
@@ -81,7 +82,16 @@ async function handler(request: Request) {
         billingPeriod as 'yearly' | 'quarterly'
       );
 
-      console.log(`✅ License activated - ID: ${activatedLicense._id}, Key: ${activatedLicense.licenceKey}, Expires: ${activatedLicense.expiresAt}`);
+      // Fetch plan name for better UX
+      let planName = 'Your Plan';
+      try {
+        const plan = await Plan.findById(activatedLicense.planId).lean();
+        if (plan && plan.name) {
+          planName = plan.name;
+        }
+      } catch (error) {
+        // Ignore plan fetch errors, use default name
+      }
 
       return utils.customResponse({
         status: 200,
@@ -91,6 +101,7 @@ async function handler(request: Request) {
           licenseKey: activatedLicense.licenceKey,
           expiresAt: activatedLicense.expiresAt,
           billingPeriod: activatedLicense.billingPeriod,
+          planName: planName,
         },
       });
     }
@@ -107,6 +118,17 @@ async function handler(request: Request) {
 
     // License already activated
     if (license.paymentStatus === PaymentStatus.PAID) {
+      // Fetch plan name for better UX
+      let planName = 'Your Plan';
+      try {
+        const plan = await Plan.findById(license.planId).lean();
+        if (plan && plan.name) {
+          planName = plan.name;
+        }
+      } catch (error) {
+        // Ignore plan fetch errors, use default name
+      }
+
       return utils.customResponse({
         status: 200,
         message: MessageResponse.Success,
@@ -115,6 +137,7 @@ async function handler(request: Request) {
           licenseKey: license.licenceKey,
           expiresAt: license.expiresAt,
           billingPeriod: license.billingPeriod,
+          planName: planName,
         },
       });
     }

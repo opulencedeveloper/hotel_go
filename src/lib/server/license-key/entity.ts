@@ -14,9 +14,9 @@ const licenceSchema = new Schema<ILicence>(
     paymentStatus: {
       type: String,
       enum: Object.values(PaymentStatus),
-      required: true, // always required
-      default: PaymentStatus.PENDING, // default value
-      index: true, // useful for filtering payment states
+      required: true,
+      default: PaymentStatus.PENDING,
+      index: true,
       trim: true,
     },
     planId: {
@@ -26,30 +26,29 @@ const licenceSchema = new Schema<ILicence>(
       index: true,
       trim: true,
     },
-
     expiresAt: {
       type: Date,
       default: null,
       trim: true,
     },
-
     licenceKey: {
       type: String,
       unique: true,
-      sparse: true, // ✅ allows multiple nulls
+      sparse: true, // ✅ allows multiple nulls, unique: true automatically creates index
       default: null,
       trim: true,
+      // Note: unique: true automatically creates index, no need for schema.index()
     },
-     email: {
+    email: {
       type: String,
       required: true,
       trim: true,
       lowercase: true,
-      index: true, // ✅ Efficient lookup by email
+      index: true,
     },
     billingPeriod: {
       type: String,
-      enum: ['yearly', 'quarterly'],
+      enum: ["yearly", "quarterly"],
       default: null,
       trim: true,
     },
@@ -61,24 +60,22 @@ const licenceSchema = new Schema<ILicence>(
     },
   },
   {
-    timestamps: true, // ✅ adds createdAt / updatedAt
+    timestamps: true,
   }
 );
 
 /**
- * 🧩 Virtual Property
- * Returns true if the license has expired.
+ * ✅ Compound Indexes
  */
-// licenceSchema.virtual("isExpired").get(function (this: ILicence) {
-//   return this.expiresAt ? new Date() > this.expiresAt : false;
-// });
-
-// ✅ Indexes
 licenceSchema.index({ planId: 1, userId: 1 });
 licenceSchema.index({ expiresAt: 1 });
-licenceSchema.index({ licenceKey: 1 });
 
-// ✅ Mongoose Configs
+// ❌ REMOVE this line to prevent duplicate index conflict
+// licenceSchema.index({ licenceKey: 1 });
+
+/**
+ * ✅ Mongoose Config
+ */
 licenceSchema.set("versionKey", false);
 licenceSchema.set("toJSON", { virtuals: true });
 licenceSchema.set("toObject", { virtuals: true });
