@@ -153,7 +153,7 @@ async function handler(request: Request) {
           // Fetch exchange rate using GET request to transfers/rates endpoint
           // Flutterwave uses GET with query parameters, not POST
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout (optimized for serverless)
           
           const rateResponse = await fetch(
             `https://api.flutterwave.com/v3/transfers/rates?amount=${usdPrice}&destination_currency=${targetCurrency}&source_currency=USD`,
@@ -340,7 +340,7 @@ async function handler(request: Request) {
           if (error instanceof Error && error.name === 'AbortError') {
             logger.error('Flutterwave API request timeout', {
               currency: targetCurrency,
-              timeout: 20000,
+              timeout: 8000,
             });
             return utils.customResponse({
               status: 504,

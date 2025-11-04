@@ -5,8 +5,9 @@ import { logger } from "@/lib/utils/logger";
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
-// Flutterwave API timeout (20 seconds - increased for slow responses)
-const FLUTTERWAVE_API_TIMEOUT = 20000;
+// Flutterwave API timeout (8 seconds - optimized for serverless environments like Vercel)
+// Vercel Hobby plan has 10s timeout, Pro has 60s. We use 8s to leave buffer for processing.
+const FLUTTERWAVE_API_TIMEOUT = 8000;
 
 async function handler(request: Request) {
   try {
@@ -194,11 +195,12 @@ async function handler(request: Request) {
           logger.error('Flutterwave API request timeout', {
             currency,
             timeout: FLUTTERWAVE_API_TIMEOUT,
+            environment: process.env.VERCEL ? 'production' : 'development',
           });
           return utils.customResponse({
             status: 504,
             message: MessageResponse.Error,
-            description: "Request to Flutterwave API timed out",
+            description: "Exchange rate service temporarily unavailable. Please try again in a moment.",
             data: null,
           });
         }

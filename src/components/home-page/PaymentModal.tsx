@@ -185,7 +185,7 @@ export default function PaymentModal({
       },
     });
     
-    // Fallback: Reset loading state if request takes too long or fails (25 seconds - longer than server timeout)
+    // Fallback: Reset loading state if request takes too long or fails (12 seconds - longer than server timeout)
     timeoutId = setTimeout(() => {
       if (isMounted && !rateSuccessfullyFetched) {
         setIsLoadingRate(false);
@@ -195,7 +195,7 @@ export default function PaymentModal({
         // Reset currency to USD when rate fetch times out
         setSelectedCurrency('USD');
       }
-    }, 25000); // 25 second timeout (longer than API timeout of 20 seconds)
+    }, 12000); // 12 second timeout (longer than API timeout of 8 seconds)
     
     return () => {
       isMounted = false;
