@@ -4,6 +4,7 @@ import { connectDB } from "@/lib/server/utils/db";
 import { licenseKeyService } from "@/lib/server/license-key/service";
 import { PaymentStatus } from "@/utils/enum";
 import Plan from "@/lib/server/plan/entity";
+import { sendLicenseKeyEmail } from "@/lib/server/utils/email";
 
 interface VerifyPaymentBody {
   transaction_id?: string;
@@ -93,6 +94,21 @@ async function handler(request: Request) {
         // Ignore plan fetch errors, use default name
       }
 
+      // Send license key email to user
+      try {
+        await sendLicenseKeyEmail({
+          email: activatedLicense.email,
+          licenseKey: activatedLicense.licenceKey || '',
+          planName: planName,
+          expiresAt: activatedLicense.expiresAt || new Date(),
+          billingPeriod: (activatedLicense.billingPeriod || 'yearly') as 'yearly' | 'quarterly',
+        });
+        console.log(`📧 License key email sent to ${activatedLicense.email}`);
+      } catch (emailError) {
+        console.error('❌ Failed to send license key email:', emailError);
+        // Don't fail the verification if email fails - license is already activated
+      }
+
       return utils.customResponse({
         status: 200,
         message: MessageResponse.Success,
@@ -127,6 +143,23 @@ async function handler(request: Request) {
         }
       } catch (error) {
         // Ignore plan fetch errors, use default name
+      }
+
+      // If license key exists but email hasn't been sent (edge case), send it now
+      if (license.licenceKey && license.email) {
+        try {
+          await sendLicenseKeyEmail({
+            email: license.email,
+            licenseKey: license.licenceKey,
+            planName: planName,
+            expiresAt: license.expiresAt || new Date(),
+            billingPeriod: (license.billingPeriod || 'yearly') as 'yearly' | 'quarterly',
+          });
+          console.log(`📧 License key email resent to ${license.email}`);
+        } catch (emailError) {
+          console.error('❌ Failed to resend license key email:', emailError);
+          // Don't fail if email fails
+        }
       }
 
       return utils.customResponse({

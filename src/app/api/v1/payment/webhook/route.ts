@@ -11,8 +11,29 @@ async function handler(request: Request) {
   try {
     await connectDB();
 
+    // Log all headers for debugging
+    const headers: { [key: string]: string } = {};
+    request.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log('📋 Webhook headers:', JSON.stringify(headers, null, 2));
+
     // Get the raw body for signature verification
     const body = await request.text();
+    console.log('📦 Raw body length:', body.length);
+    console.log('📦 Raw body (first 1000 chars):', body.substring(0, 1000));
+    
+    // Handle empty body (Flutterwave test/verification requests)
+    if (!body || body.trim().length === 0) {
+      console.log('ℹ️ Empty webhook body - likely a test/verification request from Flutterwave');
+      return utils.customResponse({
+        status: 200,
+        message: MessageResponse.Success,
+        description: "Webhook received (test/verification)",
+        data: null,
+      });
+    }
+
     const signature = request.headers.get('verif-hash');
 
     // Verify webhook signature (Flutterwave sends verif-hash header)
@@ -34,6 +55,7 @@ async function handler(request: Request) {
     let webhookData: any;
     try {
       webhookData = JSON.parse(body);
+      console.log('✅ Parsed webhook data:', JSON.stringify(webhookData, null, 2).substring(0, 1000));
     } catch (parseError) {
       console.error('❌ Failed to parse webhook body as JSON:', parseError);
       console.error('Raw body:', body.substring(0, 500));
@@ -45,27 +67,66 @@ async function handler(request: Request) {
       });
     }
 
-    const { event, data } = webhookData;
+    // Flutterwave can send webhooks in different formats:
+    // 1. { event: "charge.completed", data: {...} }
+    // 2. Direct data object: { id: "...", status: "...", ... }
+    // 3. Array of events: [{ event: "...", data: {...} }]
+    
+    let event: string | undefined;
+    let data: any;
+    
+    // Check if it's the standard format
+    if (webhookData.event && webhookData.data) {
+      event = webhookData.event;
+      data = webhookData.data;
+    }
+    // Check if it's a direct data object (some Flutterwave webhooks send data directly)
+    else if (webhookData.id || webhookData.tx_ref || webhookData.status) {
+      event = 'charge.completed'; // Assume it's a charge completion
+      data = webhookData;
+    }
+    // Check if it's an array
+    else if (Array.isArray(webhookData) && webhookData.length > 0) {
+      const firstItem = webhookData[0];
+      event = firstItem.event || 'charge.completed';
+      data = firstItem.data || firstItem;
+    }
+    // Otherwise, try to extract from root level
+    else {
+      event = webhookData.event;
+      data = webhookData.data || webhookData;
+    }
 
     // Enhanced logging for debugging
     console.log('📥 Flutterwave webhook received');
-    console.log('Event:', event || 'undefined');
-    console.log('Data:', data ? JSON.stringify(data, null, 2).substring(0, 500) : 'undefined');
-    console.log('Transaction ID:', data?.id || data?.transaction_id || 'undefined');
+    console.log('Extracted Event:', event || 'undefined');
+    console.log('Extracted Data:', data ? JSON.stringify(data, null, 2).substring(0, 500) : 'undefined');
+    console.log('Transaction ID:', data?.id || data?.transaction_id || data?.flw_ref || 'undefined');
     console.log('Status:', data?.status || 'undefined');
-    console.log('Tx Ref:', data?.tx_ref || 'undefined');
+    console.log('Tx Ref:', data?.tx_ref || data?.txRef || 'undefined');
 
     // Handle different webhook event formats
     // Flutterwave can send different event types and formats
-    if (!event || !data) {
-      console.warn('⚠️ Webhook missing event or data:', { event, hasData: !!data });
+    if (!data) {
+      console.warn('⚠️ Webhook missing data after parsing:', { 
+        event, 
+        hasData: !!data,
+        webhookDataKeys: Object.keys(webhookData || {}),
+        webhookDataType: typeof webhookData
+      });
       // Still acknowledge the webhook to prevent retries
       return utils.customResponse({
         status: 200,
         message: MessageResponse.Success,
-        description: "Webhook received but missing event/data",
+        description: "Webhook received but missing data",
         data: null,
       });
+    }
+    
+    // If event is missing but we have data, assume it's a charge.completed event
+    if (!event && data) {
+      event = 'charge.completed';
+      console.log('ℹ️ Event not found, defaulting to charge.completed');
     }
 
     // Only process successful payment events
