@@ -278,42 +278,14 @@ export default async function HomePage() {
   // Detect user's country and currency
   const countryCode = await detectUserCountry();
   
-  // Get Flutterwave-supported currency (defaults to USD if not supported)
-  const userCurrency = getFlutterwaveCurrency(countryCode);
-  
-  // Fetch exchange rate from Flutterwave
-  const exchangeRate = await fetchExchangeRate(userCurrency);
-  
   logger.info('Pricing page loaded', {
     plansCount: pricingPlans.length,
-    country: countryCode,
-    currency: userCurrency,
-    exchangeRate,
   });
   
-  // Convert prices on server
-  const convertedPlans = pricingPlans.map((plan: any) => {
-    if (!plan.price) return plan;
-    
-    const convertedQuarterly = plan.price.quarterly ? Math.round(plan.price.quarterly * exchangeRate) : null;
-    const convertedYearly = plan.price.yearly ? Math.round(plan.price.yearly * exchangeRate) : null;
-    
-    return {
-      ...plan,
-      price: {
-        quarterly: convertedQuarterly,
-        yearly: convertedYearly,
-      },
-      // Store original USD prices for reference
-      _originalPrice: plan.price,
-    };
-  });
-  
+  // Pass plans as-is without currency conversion - show USD values from API
   return (
     <HomePageBody 
-      initialPricingPlans={convertedPlans}
-      serverCurrency={userCurrency}
-      serverExchangeRate={exchangeRate}
+      initialPricingPlans={pricingPlans}
     />
   );
 }

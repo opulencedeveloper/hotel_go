@@ -7,20 +7,61 @@ class LicenseKeyService {
   /**
    * Create a license key entry with pending payment status
    */
-  public async createPendingLicense(planId: string, billingPeriod: 'yearly' | 'quarterly', email: string) {
-    const license = new Licence({
-      planId: new Types.ObjectId(planId),
-      paymentStatus: PaymentStatus.PENDING,
-      billingPeriod,
-      email: email.toLowerCase().trim(),
-      userId: null,
-      licenceKey: null,
-      expiresAt: null,
-      flutterwaveTransactionId: null,
-    });
+  public async createPendingLicense(planId: string, billingPeriod: 'yearly' | 'quarterly', email: string, fullName: string) {
+    try {
+      const license = new Licence({
+        planId: new Types.ObjectId(planId),
+        paymentStatus: PaymentStatus.PENDING,
+        billingPeriod,
+        email: email.toLowerCase().trim(),
+        fullName: fullName.trim(),
+        userId: null,
+        licenceKey: null,
+        expiresAt: null,
+        flutterwaveTransactionId: null,
+      });
 
-    await license.save();
-    return license;
+      await license.save();
+      return license;
+    } catch (error: any) {
+      // Handle duplicate key error for null licenceKey
+      // This can happen if the sparse index isn't properly set up
+      if (error.code === 11000 && error.keyPattern?.licenceKey === 1) {
+        // If there's a duplicate null key error, try to find and reuse existing pending license
+        // or retry with a unique identifier
+        const existingPending = await Licence.findOne({
+          planId: new Types.ObjectId(planId),
+          email: email.toLowerCase().trim(),
+          paymentStatus: PaymentStatus.PENDING,
+          licenceKey: null,
+        });
+        
+        if (existingPending) {
+          return existingPending;
+        }
+        
+        // If no existing pending license, retry with a temporary unique value
+        // This is a workaround for the index issue
+        const license = new Licence({
+          planId: new Types.ObjectId(planId),
+          paymentStatus: PaymentStatus.PENDING,
+          billingPeriod,
+          email: email.toLowerCase().trim(),
+          fullName: fullName.trim(),
+          userId: null,
+          licenceKey: `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          expiresAt: null,
+          flutterwaveTransactionId: null,
+        });
+        
+        await license.save();
+        // Set back to undefined after save (this should work with sparse index)
+        license.licenceKey = undefined;
+        await license.save();
+        return license;
+      }
+      throw error;
+    }
   }
 
   /**

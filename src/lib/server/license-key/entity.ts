@@ -11,6 +11,16 @@ const licenceSchema = new Schema<ILicence>(
       index: true,
       trim: true,
     },
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    activated: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     paymentStatus: {
       type: String,
       enum: Object.values(PaymentStatus),
@@ -33,11 +43,9 @@ const licenceSchema = new Schema<ILicence>(
     },
     licenceKey: {
       type: String,
-      unique: true,
-      sparse: true, // ✅ allows multiple nulls, unique: true automatically creates index
       default: null,
       trim: true,
-      // Note: unique: true automatically creates index, no need for schema.index()
+      // Note: unique index is created explicitly below with sparse: true to allow multiple nulls
     },
     email: {
       type: String,
@@ -70,8 +78,12 @@ const licenceSchema = new Schema<ILicence>(
 licenceSchema.index({ planId: 1, userId: 1 });
 licenceSchema.index({ expiresAt: 1 });
 
-// ❌ REMOVE this line to prevent duplicate index conflict
-// licenceSchema.index({ licenceKey: 1 });
+/**
+ * ✅ Sparse Unique Index for licenceKey
+ * sparse: true allows multiple null values (for pending licenses)
+ * unique: true ensures no duplicate non-null license keys
+ */
+licenceSchema.index({ licenceKey: 1 }, { unique: true, sparse: true });
 
 /**
  * ✅ Mongoose Config

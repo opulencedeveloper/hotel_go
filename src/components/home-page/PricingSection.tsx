@@ -21,11 +21,6 @@ interface PricingPlan {
 
 interface PricingSectionProps {
   initialPricingPlans?: any[];
-  userCurrency: string;
-  exchangeRate: number;
-  isLoadingRate: boolean;
-  formatPrice: (amount: number, currency?: string) => string;
-  convertPrice: (usdAmount: number) => number;
 }
 
 type PricingCard = {
@@ -37,11 +32,6 @@ type PricingCard = {
 
 export default function PricingSection({
   initialPricingPlans = [],
-  userCurrency,
-  exchangeRate,
-  isLoadingRate,
-  formatPrice,
-  convertPrice
 }: PricingSectionProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'yearly' | 'quarterly'>('yearly');
@@ -50,20 +40,21 @@ export default function PricingSection({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; billingPeriod: 'yearly' | 'quarterly' } | null>(null);
 
-  // Debug: Log currency changes
-  useEffect(() => {
-    console.log('🔄 PricingSection currency updated:', {
-      userCurrency,
-      exchangeRate,
-      isLoadingRate
-    });
-  }, [userCurrency, exchangeRate, isLoadingRate]);
-
   const {
     isLoading: isFetchingPlans,
     sendHttpRequest: fetchPlansRequest,
     error: plansError,
   } = useHttp();
+
+  // Format price as USD
+  const formatPrice = (amount: number): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   // Default color mapping for plans
   const getPlanColor = (planName: string, apiColor?: string): string => {
@@ -282,7 +273,7 @@ export default function PricingSection({
                 <div className="mb-6 min-w-0">
                   <div className="flex items-baseline flex-wrap gap-x-2">
                     <span className="text-xl sm:text-2xl md:text-3xl font-light text-gray-900 tracking-tight break-words min-w-0">
-                      {formatPrice(price, userCurrency)}
+                      {formatPrice(price)}
                     </span>
                     <span className="text-gray-500 text-sm sm:text-base font-light whitespace-nowrap">
                       /{billingPeriod === 'yearly' ? 'year' : 'quarter'}
@@ -357,8 +348,15 @@ export default function PricingSection({
             }}
             planId={selectedPlan.id}
             planName={selectedPlan.name}
-            currency={userCurrency}
+            currency="USD"
             billingPeriod={selectedPlan.billingPeriod}
+            usdPrice={
+              pricingPlans.find((p) => p._id === selectedPlan.id)?.price
+                ? (selectedPlan.billingPeriod === 'yearly'
+                    ? pricingPlans.find((p) => p._id === selectedPlan.id)?.price?.yearly || 0
+                    : pricingPlans.find((p) => p._id === selectedPlan.id)?.price?.quarterly || 0)
+                : 0
+            }
           />
         )}
       </div>

@@ -1,9 +1,12 @@
-import { NextRequest } from "next/server";
 import { utils } from "@/lib/server/utils";
 import { MessageResponse } from "@/lib/server/utils/enum";
+import { logger } from "@/lib/utils/logger";
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
+
+// Flutterwave API timeout (20 seconds - increased for slow responses)
+const FLUTTERWAVE_API_TIMEOUT = 20000;
 
 async function handler(request: Request) {
   try {
@@ -36,10 +39,23 @@ async function handler(request: Request) {
 
     const flutterwaveKey = process.env.FLUTTERWAVE_SECRET_KEY || process.env.NEXT_PUBLIC_FLUTTERWAVE_SECRET_KEY;
 
-    // Try Flutterwave first (if API key is available)
-    if (flutterwaveKey) {
+    // Use Flutterwave API (required)
+    if (!flutterwaveKey) {
+      return utils.customResponse({
+        status: 500,
+        message: MessageResponse.Error,
+        description: "Flutterwave API key not configured",
+        data: null,
+      });
+    }
+
+    try {
+      // Flutterwave transfers/rates endpoint
+      // When amount=1 USD, the destination.amount is the exchange rate
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), FLUTTERWAVE_API_TIMEOUT);
+
       try {
-        // Flutterwave uses GET request to transfers/rates endpoint with query parameters
         const response = await fetch(
           `https://api.flutterwave.com/v3/transfers/rates?amount=1&destination_currency=${currency}&source_currency=USD`,
           {
@@ -48,8 +64,28 @@ async function handler(request: Request) {
               'Authorization': `Bearer ${flutterwaveKey}`,
               'Content-Type': 'application/json',
             },
+            signal: controller.signal,
           }
         );
+
+        clearTimeout(timeoutId);
+
+        // Check content type to ensure we got JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          logger.error('Flutterwave API returned non-JSON response', {
+            currency,
+            contentType,
+            responsePreview: text.substring(0, 200),
+          });
+          return utils.customResponse({
+            status: 500,
+            message: MessageResponse.Error,
+            description: "Flutterwave API returned invalid response format",
+            data: null,
+          });
+        }
 
         if (response.ok) {
           const data = await response.json();
@@ -57,20 +93,45 @@ async function handler(request: Request) {
           if (data.status === 'success' && data.data) {
             let rate = 1;
 
-            // Extract rate from Flutterwave response
-            if (data.data.destination && data.data.destination.amount) {
-              rate = parseFloat(data.data.destination.amount);
-            } else if (data.data.rate) {
-              rate = parseFloat(data.data.rate);
-            } else if (data.data.destination && data.data.source) {
-              const sourceAmount = parseFloat(data.data.source.amount) || 1;
-              const destAmount = parseFloat(data.data.destination.amount) || 1;
+            // Flutterwave transfers/rates returns:
+            // - data.source.amount: source amount (1 USD)
+            // - data.destination.amount: converted amount in destination currency
+            // When source amount is 1, destination.amount is the exchange rate
+            // Example: If 1 USD = 1500 NGN, destination.amount will be 1500
+            
+            if (data.data.source && data.data.destination) {
+              const sourceAmount = parseFloat(String(data.data.source.amount)) || 1;
+              const destAmount = parseFloat(String(data.data.destination.amount)) || 1;
+              
+              // Log the raw response for debugging
+              logger.info('Flutterwave rate response structure', {
+                currency,
+                sourceAmount,
+                destAmount,
+                sourceCurrency: data.data.source?.currency,
+                destCurrency: data.data.destination?.currency,
+                fullResponse: JSON.stringify(data.data).substring(0, 200),
+              });
+              
               if (sourceAmount > 0) {
+                // Calculate rate: destination amount / source amount
+                // Since we're querying with amount=1 USD, destAmount is the rate
                 rate = destAmount / sourceAmount;
               }
+            } else if (data.data.destination && data.data.destination.amount !== undefined) {
+              rate = parseFloat(String(data.data.destination.amount));
+            } else if (data.data.rate) {
+              rate = parseFloat(String(data.data.rate));
             }
 
             if (rate && rate > 0 && isFinite(rate)) {
+              logger.info('Exchange rate retrieved from Flutterwave', {
+                currency,
+                rate,
+                from: 'USD',
+                to: currency,
+                meaning: `1 USD = ${rate} ${currency}`,
+              });
               return utils.customResponse({
                 status: 200,
                 message: MessageResponse.Success,
@@ -83,87 +144,85 @@ async function handler(request: Request) {
                   source: 'flutterwave',
                 },
               });
+            } else {
+              logger.error('Invalid rate extracted from Flutterwave', {
+                currency,
+                rate,
+                hasDestination: !!data.data.destination,
+                hasSource: !!data.data.source,
+                responseData: JSON.stringify(data.data).substring(0, 300),
+              });
+              return utils.customResponse({
+                status: 500,
+                message: MessageResponse.Error,
+                description: "Invalid exchange rate received from Flutterwave",
+                data: null,
+              });
             }
+          } else {
+            logger.error('Flutterwave API returned unsuccessful response', {
+              currency,
+              status: data.status,
+              message: data.message,
+            });
+            return utils.customResponse({
+              status: 500,
+              message: MessageResponse.Error,
+              description: data.message || "Flutterwave API returned unsuccessful response",
+              data: null,
+            });
           }
+        } else {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          logger.error('Flutterwave API error response', {
+            currency,
+            status: response.status,
+            statusText: response.statusText,
+            errorMessage: errorData.message,
+          });
+          return utils.customResponse({
+            status: response.status,
+            message: MessageResponse.Error,
+            description: errorData.message || `Flutterwave API error: ${response.statusText}`,
+            data: null,
+          });
         }
-      } catch (error) {
-        console.warn('Flutterwave API error, trying fallback:', error);
+      } catch (fetchError: unknown) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          logger.error('Flutterwave API request timeout', {
+            currency,
+            timeout: FLUTTERWAVE_API_TIMEOUT,
+          });
+          return utils.customResponse({
+            status: 504,
+            message: MessageResponse.Error,
+            description: "Request to Flutterwave API timed out",
+            data: null,
+          });
+        }
+        
+        throw fetchError;
       }
-    }
-
-    // Fallback to free APIs (no API key required)
-    
-    // Try exchangerate-api.com (free, no key required)
-    try {
-      const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
-        headers: { 'Accept': 'application/json' },
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Error fetching exchange rate from Flutterwave', {
+        currency,
+        error: errorMessage,
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.rates && data.rates[currency]) {
-          const rate = parseFloat(data.rates[currency]);
-          if (rate && rate > 0 && isFinite(rate)) {
-            return utils.customResponse({
-              status: 200,
-              message: MessageResponse.Success,
-              description: "Exchange rate retrieved successfully from free API",
-              data: {
-                currency: currency,
-                rate: rate,
-                from: 'USD',
-                to: currency,
-                source: 'exchangerate-api',
-              },
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Free API (exchangerate-api) failed, trying alternative:', error);
+      return utils.customResponse({
+        status: 500,
+        message: MessageResponse.Error,
+        description: `Failed to fetch exchange rate from Flutterwave: ${errorMessage}`,
+        data: null,
+      });
     }
-
-    // Try alternative free API
-    try {
-      const response = await fetch(
-        `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`,
-        { headers: { 'Accept': 'application/json' } }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const currencyKey = currency.toLowerCase();
-        if (data.usd && data.usd[currencyKey]) {
-          const rate = parseFloat(data.usd[currencyKey]);
-          if (rate && rate > 0 && isFinite(rate)) {
-            return utils.customResponse({
-              status: 200,
-              message: MessageResponse.Success,
-              description: "Exchange rate retrieved successfully from free API",
-              data: {
-                currency: currency,
-                rate: rate,
-                from: 'USD',
-                to: currency,
-                source: 'fawazahmed0',
-              },
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('Alternative free API failed:', error);
-    }
-
-    // If all APIs fail
-    return utils.customResponse({
-      status: 500,
-      message: MessageResponse.Error,
-      description: "Failed to fetch exchange rate from all available sources",
-      data: null,
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Internal error in exchange rate handler', {
+      error: errorMessage,
     });
-  } catch (error) {
-    console.error('Error fetching exchange rate:', error);
     return utils.customResponse({
       status: 500,
       message: MessageResponse.Error,

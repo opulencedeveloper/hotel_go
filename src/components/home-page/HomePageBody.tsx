@@ -11,30 +11,11 @@ import { testimonials } from './pricingData';
 
 interface HomePageBodyProps {
   initialPricingPlans?: any[];
-  serverCurrency?: string;
-  serverExchangeRate?: number;
 }
 
 export default function HomePageBody({ 
   initialPricingPlans = [],
-  serverCurrency = 'USD',
-  serverExchangeRate = 1,
 }: HomePageBodyProps) {
-  // Format price with currency (server-provided currency)
-  const formatPrice = (amount: number, currency: string = serverCurrency): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Convert function (no-op since prices are already converted on server)
-  const convertPrice = (amount: number): number => {
-    return amount; // Prices are already converted on server
-  };
-
   return (
     <>
       <div className="min-h-screen bg-white">
@@ -43,11 +24,6 @@ export default function HomePageBody({
         <FeaturesSection />
         <PricingSection
           initialPricingPlans={initialPricingPlans}
-          userCurrency={serverCurrency}
-          exchangeRate={serverExchangeRate}
-          isLoadingRate={false}
-          formatPrice={formatPrice}
-          convertPrice={convertPrice}
         />
         <TestimonialsSection testimonials={testimonials} />
         <CTASection />
