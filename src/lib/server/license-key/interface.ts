@@ -14,3 +14,10 @@ export interface ILicence extends Document {
   billingPeriod?: "yearly" | "quarterly" | null;
   flutterwaveTransactionId?: string | null;
 }
+
+export interface IActivateLicenceKey {
+  licenceKey: string;
+}
+
+
+

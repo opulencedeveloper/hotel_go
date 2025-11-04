@@ -18,6 +18,8 @@ async function handler(request: Request) {
 
   await connectDB();
 
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
 
   const user = await GeneralMiddleware.doesUserExist(
     auth.userId!,
@@ -28,7 +30,9 @@ async function handler(request: Request) {
   const validationResponse = authValidator.switchHotel(request);
   if (!validationResponse.valid) return validationResponse.response!;
 
-  return await authController.switchHotel({ hotelId: new Types.ObjectId(validationResponse.hotelId!) });
+  return await authController.switchHotel({
+    hotelId: new Types.ObjectId(validationResponse.hotelId!),
+  });
 }
 
 export const POST = utils.withErrorHandling(handler);

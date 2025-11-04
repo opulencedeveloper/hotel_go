@@ -20,16 +20,25 @@ async function handler(request: Request) {
 
   const body: ICreateStaffPasswordUserInput = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
+
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
-    if (!hotelExist.valid) return user.response!;
+  if (!hotelExist.valid) return user.response!;
 
   const validationResponse = staffValidator.createStaffPassword(body, request);
   if (!validationResponse.valid) return validationResponse.response!;
 
-  return await staffController.createStaffPassword({...body, staffId: validationResponse.staffId!});
+  return await staffController.createStaffPassword({
+    ...body,
+    staffId: validationResponse.staffId!,
+  });
 }
 
 export const POST = utils.withErrorHandling(handler);

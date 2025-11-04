@@ -7,6 +7,7 @@ import { MessageResponse } from "../utils/enum";
 import { hotelService } from "../hotel/service";
 import { UserType } from "@/utils/enum";
 import { staffService } from "../staff/service";
+import { licenseKeyService } from "../license-key/service";
 
 export default class GeneralMiddleware {
   static async hotelExist(hotelId: Types.ObjectId) {
@@ -235,6 +236,89 @@ export default class GeneralMiddleware {
     return {
       valid: true,
       user,
+    };
+  }
+
+
+  static async hasLicenseKey(ownerId: Types.ObjectId) {
+    const user = await userService.findUserByIdWithoutPassword(ownerId);
+    
+    if (!user) {
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 404,
+          message: MessageResponse.Error,
+          description: "User does not exist!",
+          data: null,
+        }),
+      };
+    }
+
+    // Check if user has a license key ID
+    if (!user.licenseKeyId) {
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 403,
+          message: MessageResponse.InvaldLicenseId,
+          description: "No license key associated with this user!",
+          data: null,
+        }),
+      };
+    }
+
+    // Find the license by ID
+    const license = await licenseKeyService.findLicenseById(user.licenseKeyId.toString());
+    
+    if (!license) {
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 404,
+          message: MessageResponse.InvaldLicenseId,
+          description: "License key not found!",
+          data: null,
+        }),
+      };
+    }
+
+    // Check if license is activated
+    if (!license.activated) {
+      return {
+        valid: false,
+        response: utils.customResponse({
+          status: 403,
+          message: MessageResponse.InvaldLicenseId,
+          description: "License key has not been activated. Please submit your license key to activate your account.",
+          data: null,
+        }),
+      };
+    }
+
+    // Check if license has expired
+    if (license.expiresAt) {
+      const now = new Date();
+      const expirationDate = new Date(license.expiresAt);
+      
+      if (expirationDate < now) {
+        return {
+          valid: false,
+          response: utils.customResponse({
+            status: 403,
+            message: MessageResponse.ExpiredLicenseId,
+            description: `License key has expired on ${expirationDate.toLocaleDateString()}. Please renew your subscription.`,
+            data: null,
+          }),
+        };
+      }
+    }
+
+    // License is valid and not expired
+    return {
+      valid: true,
+      user,
+      license,
     };
   }
 }

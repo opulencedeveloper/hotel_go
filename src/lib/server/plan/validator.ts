@@ -43,6 +43,11 @@ class PlanValidator {
         "any.required": "Multi-property field is required.",
       }),
 
+       maxRoom: Joi.number().min(1).allow(null).messages({
+        "number.base": "Max room must be a number.",
+        "number.min": "Max room must be at least 1.",
+      }),
+
       description: Joi.string().required().messages({
         "string.base": "Description must be text.",
         "any.required": "Description is required.",

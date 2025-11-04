@@ -17,6 +17,10 @@ class PlanService {
     // This is required for passing data to Client Components in Next.js
     return await Plan.find().lean();
   }
+
+  public async findPlanById(planId: string) {
+    return await Plan.findById(planId);
+  }
 }
 
 export const planService = new PlanService();

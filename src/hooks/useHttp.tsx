@@ -6,12 +6,15 @@ import axios from "@/lib/axios";
 import { toast } from "sonner";
 import { getAuthSessionInfo, removeAuthSessionInfo } from "@/utils/auth";
 import { HttpRequestConfigProps } from "@/types/http";
+import { MessageResponse } from "@/utils/enum";
+import { useSubscribeModal } from "@/contexts/SubscribeModalContext";
 
 export const useHttp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
+  const { showSubscribeModal } = useSubscribeModal();
 
   const sendHttpRequest = useCallback(
     async ({ successRes, requestConfig }: HttpRequestConfigProps) => {
@@ -69,12 +72,36 @@ export const useHttp = () => {
           errorMessage = error.response.data?.description;
         }
 
-        if (error.response?.status === 401) {
-          errorMessage = "Session expired!";
-          router.replace("/login");
-          setError("Session expired!");
-          toast.error("Session expired!");
+        // Check for license errors (only for non-GET authenticated requests)
+        const isAuthenticated = getAuthSessionInfo().isAuthenticated;
+        const isNonGetRequest = requestConfig.method?.toUpperCase() !== 'GET';
+        const responseMessage = error?.response?.data?.message;
 
+        console.log("isAuthenticatedisAuthenticated", isAuthenticated)
+
+        // Check if it's a license error (invalid or expired)
+        if (
+          (responseMessage === MessageResponse.InvaldLicenseId ||
+            responseMessage === MessageResponse.ExpiredLicenseId)
+        ) {
+          // Show subscription modal instead of toast
+          const description = error?.response?.data?.description || errorMessage;
+          showSubscribeModal(responseMessage, description);
+          setError(errorMessage);
+          return; // Don't show toast for license errors, modal handles it
+        }
+
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          // Only redirect to login if it's not a license error
+          if (
+            responseMessage !== MessageResponse.InvaldLicenseId &&
+            responseMessage !== MessageResponse.ExpiredLicenseId
+          ) {
+            errorMessage = "Session expired!";
+            router.replace("/login");
+            setError("Session expired!");
+            toast.error("Session expired!");
+          }
         }
 
         setError(errorMessage);
@@ -83,7 +110,7 @@ export const useHttp = () => {
         setIsLoading(false);
       }
     },
-    [router]
+    [router, showSubscribeModal]
   );
 
   return {

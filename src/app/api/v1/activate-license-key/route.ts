@@ -1,10 +1,14 @@
-import { authValidator } from "@/lib/server/auth/validator";
 import { hotelController } from "@/lib/server/hotel/controller";
-import { IHotelRegistrationInput } from "@/lib/server/hotel/interface";
 import { hotelValidator } from "@/lib/server/hotel/validator";
+import { licenceKeyController } from "@/lib/server/license-key/controller";
+import { IActivateLicenceKey } from "@/lib/server/license-key/interface";
+import { licenceKeyValidator } from "@/lib/server/license-key/validator";
 import GeneralMiddleware from "@/lib/server/middleware";
 import { roomController } from "@/lib/server/room/controller";
-import { IAddRoomUserInput } from "@/lib/server/room/interface";
+import {
+  IAddHotelAmenities,
+  IAddRoomUserInput,
+} from "@/lib/server/room/interface";
 import { roomValidator } from "@/lib/server/room/validator";
 import { userController } from "@/lib/server/user/controller";
 import { utils } from "@/lib/server/utils";
@@ -16,21 +20,25 @@ async function handler(request: Request) {
 
   await connectDB();
 
-  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
-  if (!licenceKey.valid) return licenceKey.response!;
-
-  const body: IHotelRegistrationInput = await request.json();
+  const body: IActivateLicenceKey = await request.json();
 
   const user = await GeneralMiddleware.doesUserExist(
     auth.userId!,
     auth.userType!
   );
+
   if (!user.valid) return user.response!;
 
-  const validationResponse = hotelValidator.addHotel(body);
+  const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
+
+  if (!hotelExist.valid) return user.response!;
+
+  const validationResponse = licenceKeyValidator.activateLicenceKey(body);
   if (!validationResponse.valid) return validationResponse.response!;
 
-  return await hotelController.addHotel({ ownerId: auth.ownerId }, body);
+  return await licenceKeyController.activateLicenceKey(body, {
+    ownerId: auth.ownerId,
+  });
 }
 
-export const POST = utils.withErrorHandling(handler);
+export const PATCH = utils.withErrorHandling(handler);

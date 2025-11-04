@@ -3,7 +3,7 @@ import { RootState } from "@/store";
 import { Room, RoomType } from "@/types";
 import { RoomStatus } from "@/types/room-management/enum";
 import { Bed, Edit, Eye, Search, X, Sparkles, MapPin, Layers } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useHttp } from "@/hooks/useHttp";
 import { roomActions } from "@/store/redux/room-slice";
@@ -184,6 +184,31 @@ export default function Rooms() {
       },
     });
   };
+
+  // Reset markingRoomId when error occurs or request completes
+  useEffect(() => {
+    // If there's an error and loading has stopped, reset the marking state
+    if (markForCleaningError && !isMarkingForCleaning && markingRoomId) {
+      setMarkingRoomId(null);
+    }
+  }, [markForCleaningError, isMarkingForCleaning, markingRoomId]);
+
+  // Reset markingRoomId when loading completes (as fallback for edge cases)
+  // This ensures the loading state is cleared even if error state isn't properly set
+  useEffect(() => {
+    if (!isMarkingForCleaning && markingRoomId) {
+      // Small delay to allow successRes callback to run first
+      const timeoutId = setTimeout(() => {
+        // If markingRoomId is still set, it means successRes wasn't called (error occurred)
+        // This is a fallback to ensure the loading state is always cleared
+        if (markingRoomId) {
+          setMarkingRoomId(null);
+        }
+      }, 200);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isMarkingForCleaning, markingRoomId]);
 
   const updateRoomSuccessRes = (res: any) => {
     const updatedRoom = res?.data?.data.updatedRoom;

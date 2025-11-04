@@ -2,7 +2,10 @@ import { hotelController } from "@/lib/server/hotel/controller";
 import { hotelValidator } from "@/lib/server/hotel/validator";
 import GeneralMiddleware from "@/lib/server/middleware";
 import { roomController } from "@/lib/server/room/controller";
-import { IAddHotelAmenities, IAddRoomUserInput } from "@/lib/server/room/interface";
+import {
+  IAddHotelAmenities,
+  IAddRoomUserInput,
+} from "@/lib/server/room/interface";
 import { roomValidator } from "@/lib/server/room/validator";
 import { userController } from "@/lib/server/user/controller";
 import { utils } from "@/lib/server/utils";
@@ -14,9 +17,15 @@ async function handler(request: Request) {
 
   await connectDB();
 
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
+
   const body: IAddHotelAmenities = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
 
   if (!user.valid) return user.response!;
 
@@ -27,7 +36,9 @@ async function handler(request: Request) {
   const validationResponse = hotelValidator.addHotelAmenities(body);
   if (!validationResponse.valid) return validationResponse.response!;
 
-  return await hotelController.addHotelAmenities(body, { hotelId: auth.hotelId });
+  return await hotelController.addHotelAmenities(body, {
+    hotelId: auth.hotelId,
+  });
 }
 
 export const PATCH = utils.withErrorHandling(handler);

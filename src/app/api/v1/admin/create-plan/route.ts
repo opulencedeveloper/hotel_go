@@ -1,18 +1,27 @@
+import GeneralMiddleware from "@/lib/server/middleware";
 import { planController } from "@/lib/server/plan/controller";
 import { ICreatePlan } from "@/lib/server/plan/interface";
 import { planValidator } from "@/lib/server/plan/validator";
 import { utils } from "@/lib/server/utils";
 import { connectDB } from "@/lib/server/utils/db";
 
-
 async function handler(request: Request) {
+  const auth = utils.verifyAuth();
+  if (!auth.valid) return auth.response!;
+
   await connectDB();
 
   const body: ICreatePlan = await request.json();
 
+  const user = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!user.valid) return user.response!;
+
   const validationResponse = planValidator.createPlan(body);
- if (!validationResponse.valid) return validationResponse.response!;
- 
+  if (!validationResponse.valid) return validationResponse.response!;
+
+  const licenceKey = planValidator.createPlan(body);
+  if (!licenceKey.valid) return licenceKey.response!;
+
   return await planController.createPlan(body);
 }
 

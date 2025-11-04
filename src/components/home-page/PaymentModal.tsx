@@ -105,12 +105,12 @@ export default function PaymentModal({
         // Clear timeout since we got a response
         if (timeoutId) clearTimeout(timeoutId);
         
-        console.log('Exchange rate API response:', res);
+        // Exchange rate API response received
         
         // Check if response indicates an error
         if (res?.data?.message && res.data.message.toLowerCase() !== 'success') {
           // API returned an error message
-          console.log('API returned error message:', res.data.message);
+          // API returned error message
           setIsLoadingRate(false);
           setRateError('Unable to fetch exchange rate. Showing USD equivalent. You can still proceed with payment.');
           setExchangeRate(1);
@@ -120,11 +120,11 @@ export default function PaymentModal({
         }
         
         const rateData = res?.data?.data;
-        console.log('Rate data extracted:', rateData);
+        // Rate data extracted from response
         
         // Check if data exists
         if (!rateData) {
-          console.log('No rate data in response');
+          // No rate data in response
           setIsLoadingRate(false);
           setRateError('Invalid response from exchange rate API. Showing USD equivalent. You can still proceed with payment.');
           setExchangeRate(1);
@@ -137,26 +137,36 @@ export default function PaymentModal({
         const source = rateData?.source;
         const currencyFromResponse = rateData?.currency;
         
-        console.log('Rate validation:', { rate, source, currencyFromResponse, selectedCurrency, usdPrice });
+        // Validating rate data
         
-        // Validate that rate came from Flutterwave and matches selected currency
+        // Validate that rate is valid and matches selected currency
         if (rate && typeof rate === 'number' && rate > 0 && isFinite(rate)) {
-          // Only accept rates from Flutterwave and ensure currency matches
-          if ((source === 'flutterwave' || !source) && 
-              (!currencyFromResponse || currencyFromResponse.toUpperCase() === selectedCurrency.toUpperCase())) {
+          // Accept rates from Flutterwave, cache, or estimated sources
+          // Ensure currency matches selected currency
+          const isValidSource = source === 'flutterwave' || source === 'cache' || source === 'cache-expired' || source === 'estimated' || !source;
+          const currencyMatches = !currencyFromResponse || currencyFromResponse.toUpperCase() === selectedCurrency.toUpperCase();
+          
+          if (isValidSource && currencyMatches) {
             // Store the rate - this is the rate for 1 USD to selected currency
             // Example: rate = 1500 means 1 USD = 1500 NGN
             // So for $100 USD, converted price = 100 * 1500 = 150,000 NGN
-            console.log('Rate successfully fetched and validated:', rate);
-            console.log('USD Price:', usdPrice);
-            console.log('Expected converted price:', usdPrice * rate);
+            // Rate successfully fetched and validated
+            
+            // Set warning message if rate is from cache-expired or estimated
+            if (source === 'cache-expired') {
+              setRateError('Using cached rate (may be slightly outdated)');
+            } else if (source === 'estimated') {
+              setRateError('Using estimated rate (may not be accurate)');
+            } else {
+              setRateError('');
+            }
+            
             setExchangeRate(rate);
             setIsLoadingRate(false);
-            setRateError('');
             setRateSuccessfullyFetched(true); // Mark that rate was successfully fetched
           } else {
-            // If rate didn't come from Flutterwave or currency mismatch, reject it
-            console.log('Rate rejected: source or currency mismatch', { source, currencyFromResponse, selectedCurrency });
+            // If rate source is invalid or currency mismatch, reject it
+            // Rate rejected: source or currency mismatch
             setExchangeRate(1);
             setIsLoadingRate(false);
             setRateError('');
@@ -168,7 +178,7 @@ export default function PaymentModal({
           }
         } else {
           // Invalid rate, default to 1 (will show USD amount)
-          console.log('Rate is invalid:', rate);
+          // Rate is invalid
           setExchangeRate(1);
           setIsLoadingRate(false);
           setRateError('');
@@ -214,8 +224,26 @@ export default function PaymentModal({
                           rateFetchError.includes('Gateway Timeout') ||
                           rateFetchError.includes('Request timed out');
       
+      const networkError = rateFetchError.includes('Network error') ||
+                          rateFetchError.includes('network') ||
+                          rateFetchError.includes('503') ||
+                          rateFetchError.includes('Unable to connect') ||
+                          rateFetchError.includes('check your internet connection') ||
+                          rateFetchError.includes('fetch failed') ||
+                          rateFetchError.includes('ECONNREFUSED') ||
+                          rateFetchError.includes('ENOTFOUND');
+      
       setIsLoadingRate(false);
       setRateSuccessfullyFetched(false);
+      
+      // Set specific error message based on error type
+      if (networkError) {
+        setRateError('Network error: Unable to connect to exchange rate service. Please check your internet connection and try again.');
+      } else if (timeoutError) {
+        setRateError('Exchange rate service timed out. Please try again.');
+      } else {
+        setRateError(rateFetchError || 'Failed to fetch exchange rate. Showing USD equivalent. You can still proceed with payment.');
+      }
       
       if (timeoutError) {
         setRateError('Rate fetch timed out. Showing USD equivalent. You can still proceed with payment.');
@@ -343,14 +371,7 @@ export default function PaymentModal({
     // So $100 USD × 1500 = 150,000 NGN
     const converted = usdAmount * exchangeRate;
     
-    console.log('Price conversion:', {
-      usdAmount,
-      exchangeRate,
-      converted,
-      selectedCurrency,
-      rateSuccessfullyFetched,
-      isLoadingRate
-    });
+    // Price conversion completed
     
     // Round based on currency type
     // Currencies that typically don't use decimal places

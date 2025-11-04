@@ -12,18 +12,30 @@ async function handler(request: Request) {
 
   await connectDB();
 
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
+
   const body: IMarkHouseKeepingUserInputAsComplete = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
   if (!hotelExist.valid) return user.response!;
 
-  const validationResponse = houseKeepingValidator.markAsCompleted(body, request);
+  const validationResponse = houseKeepingValidator.markAsCompleted(
+    body,
+    request
+  );
   if (!validationResponse.valid) return validationResponse.response!;
 
-  return await houseKeepingController.markRoomsAsCleaned({...body, houseKeepingId: new Types.ObjectId(validationResponse.houseKeepingId!)});
+  return await houseKeepingController.markRoomsAsCleaned({
+    ...body,
+    houseKeepingId: new Types.ObjectId(validationResponse.houseKeepingId!),
+  });
 }
 
 export const PUT = utils.withErrorHandling(handler);

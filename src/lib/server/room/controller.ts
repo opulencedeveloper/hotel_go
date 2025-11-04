@@ -10,11 +10,89 @@ import { CustomRequest } from "../utils/interface";
 import { hotelService } from "../hotel/service";
 import { roomService } from "./service";
 import { roomTypeService } from "../roomType/service";
+import { userService } from "../user/service";
+import { licenseKeyService } from "../license-key/service";
+import { planService } from "../plan/service";
 
 class RoomController {
   public async addRoom(body: IAddRoomUserInput, customReq: CustomRequest) {
-    const hotelId = customReq.hotelId;
+    const {hotelId, ownerId} = customReq;
 
+    // Find user by ownerId
+    const user = await userService.findUserById(ownerId!);
+
+    if (!user) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "User not found!",
+        data: null,
+      });
+    }
+
+    // Check if user has a license key
+    if (!user.licenseKeyId) {
+      return utils.customResponse({
+        status: 403,
+        message: MessageResponse.Error,
+        description: "No license key associated with this user. Please activate a license key first.",
+        data: null,
+      });
+    }
+
+    // Find license by licenseKeyId
+    const license = await licenseKeyService.findLicenseById(
+      user.licenseKeyId.toString()
+    );
+
+    if (!license) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "License key not found!",
+        data: null,
+      });
+    }
+
+    // Get planId from license
+    if (!license.planId) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "Plan not found for this license!",
+        data: null,
+      });
+    }
+
+    // Find plan by planId
+    const plan = await planService.findPlanById(license.planId.toString());
+
+    if (!plan) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "Plan not found!",
+        data: null,
+      });
+    }
+
+    // Check if maxRoom is set (null means unlimited)
+    if (plan.maxRoom !== null) {
+      // Count existing rooms for this hotel - optimized query
+      const currentRoomCount = await roomService.countRoomsByHotelId(hotelId!);
+
+      // Check if adding this room would exceed the limit
+      if (currentRoomCount >= plan.maxRoom) {
+        return utils.customResponse({
+          status: 403,
+          message: MessageResponse.Error,
+          description: `You have reached the maximum number of rooms (${plan.maxRoom}) allowed by your current plan. Please upgrade your plan to add more rooms.`,
+          data: null,
+        });
+      }
+    }
+
+    // Check if room number already exists
     const roomNoExist = await roomService.findRoomByRoomNoAndHotelId(
       body.roomNumber,
       hotelId!.toString()
@@ -28,6 +106,8 @@ class RoomController {
         data: null,
       });
     }
+
+    // Check if room type exists
     const roomTypeExist = await roomTypeService.findHotelRoomTypeById(
       body.roomTypeId
     );
@@ -41,6 +121,7 @@ class RoomController {
       });
     }
 
+    // Proceed with room creation
     const addedRoom = await roomService.createRoom({
       ...body,
       hotelId: hotelId!,

@@ -8,6 +8,8 @@ import { utils } from "../utils";
 
 import { userService } from "../user/service";
 import { hotelService } from "./service";
+import { licenseKeyService } from "../license-key/service";
+import { planService } from "../plan/service";
 import { sendEmailVerificationMail } from "../utils/email";
 import { IAddHotelAmenities } from "../room/interface";
 import { CustomRequest } from "../utils/interface";
@@ -72,6 +74,75 @@ class HotelController {
   ) {
     const { ownerId } = req;
 
+    // Find user by ownerId
+    const user = await userService.findUserById(ownerId!);
+
+    if (!user) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "User not found!",
+        data: null,
+      });
+    }
+
+    // Check if user has a license key
+    if (!user.licenseKeyId) {
+      return utils.customResponse({
+        status: 403,
+        message: MessageResponse.Error,
+        description: "No license key associated with this user. Please activate a license key first.",
+        data: null,
+      });
+    }
+
+    // Find license by licenseKeyId
+    const license = await licenseKeyService.findLicenseById(
+      user.licenseKeyId.toString()
+    );
+
+    if (!license) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "License key not found!",
+        data: null,
+      });
+    }
+
+    // Get planId from license
+    if (!license.planId) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "Plan not found for this license!",
+        data: null,
+      });
+    }
+
+    // Find plan by planId
+    const plan = await planService.findPlanById(license.planId.toString());
+
+    if (!plan) {
+      return utils.customResponse({
+        status: 404,
+        message: MessageResponse.Error,
+        description: "Plan not found!",
+        data: null,
+      });
+    }
+
+    // Check if multiProperty is true
+    if (!plan.multiProperty) {
+      return utils.customResponse({
+        status: 403,
+        message: MessageResponse.Error,
+        description: "Your current plan does not support multiple properties. Please upgrade your plan to add multiple properties.",
+        data: null,
+      });
+    }
+
+    // Proceed with hotel creation
     const newHotel = await hotelService.registerHotel({
       ...body,
       ownerId: ownerId!,

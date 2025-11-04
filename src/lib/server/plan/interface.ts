@@ -9,6 +9,7 @@ export interface IPrice {
 export interface IPlan extends Document {
   name: PlanName;
   price: IPrice | null; // ✅ can be null
+  maxRoom: number | null;
   rooms: string;
   multiProperty: boolean;
   description: string;
@@ -20,6 +21,7 @@ export interface ICreatePlan {
   name: PlanName;
   price: IPrice | null; // ✅ can be null
   rooms: string;
+  maxRoom: number | null;
   multiProperty: boolean;
   description: string;
   features: string[];

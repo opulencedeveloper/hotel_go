@@ -12,7 +12,12 @@ const planSchema = new Schema<IPlan>(
       unique: true,
       index: true, // 🔹 Enables quick lookup by name
     },
-
+  maxRoom: {
+      type: Number,
+      default: null, // ✅ can be null for unlimited or enterprise
+      min: 0,
+      index: true,
+    },
     price: {
       type: {
         quarterly: {

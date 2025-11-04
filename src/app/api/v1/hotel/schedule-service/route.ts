@@ -19,20 +19,27 @@ async function handler(request: Request) {
 
   await connectDB();
 
-  console.log("Hererrer")
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
 
   const body: ICreateScheduledServiceUserInput = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
-    if (!hotelExist.valid) return user.response!;
+  if (!hotelExist.valid) return user.response!;
 
-  const validationResponse = scheduleSeviceValidator.createScheduleService(body);
+  const validationResponse =
+    scheduleSeviceValidator.createScheduleService(body);
   if (!validationResponse.valid) return validationResponse.response!;
 
-  return await scheduleServiceController.createScheduleService(body, { hotelId: auth.hotelId });
+  return await scheduleServiceController.createScheduleService(body, {
+    hotelId: auth.hotelId,
+  });
 }
 
 export const POST = utils.withErrorHandling(handler);

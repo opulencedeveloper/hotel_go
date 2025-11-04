@@ -7,7 +7,12 @@ class LicenseKeyService {
   /**
    * Create a license key entry with pending payment status
    */
-  public async createPendingLicense(planId: string, billingPeriod: 'yearly' | 'quarterly', email: string, fullName: string) {
+  public async createPendingLicense(
+    planId: string,
+    billingPeriod: "yearly" | "quarterly",
+    email: string,
+    fullName: string
+  ) {
     try {
       const license = new Licence({
         planId: new Types.ObjectId(planId),
@@ -35,11 +40,11 @@ class LicenseKeyService {
           paymentStatus: PaymentStatus.PENDING,
           licenceKey: null,
         });
-        
+
         if (existingPending) {
           return existingPending;
         }
-        
+
         // If no existing pending license, retry with a temporary unique value
         // This is a workaround for the index issue
         const license = new Licence({
@@ -49,11 +54,13 @@ class LicenseKeyService {
           email: email.toLowerCase().trim(),
           fullName: fullName.trim(),
           userId: null,
-          licenceKey: `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          licenceKey: `TEMP-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
           expiresAt: null,
           flutterwaveTransactionId: null,
         });
-        
+
         await license.save();
         // Set back to undefined after save (this should work with sparse index)
         license.licenceKey = undefined;
@@ -71,18 +78,18 @@ class LicenseKeyService {
     // Generate a unique license key format: HOTELGO-XXXX-XXXX-XXXX-XXXX
     const segments = [];
     for (let i = 0; i < 4; i++) {
-      const segment = Crypto.randomBytes(2).toString('hex').toUpperCase();
+      const segment = Crypto.randomBytes(2).toString("hex").toUpperCase();
       segments.push(segment);
     }
-    return `HOTELGO-${segments.join('-')}`;
+    return `HOTELGO-${segments.join("-")}`;
   }
 
   /**
    * Calculate expiration date based on billing period
    */
-  public calculateExpirationDate(billingPeriod: 'yearly' | 'quarterly'): Date {
+  public calculateExpirationDate(billingPeriod: "yearly" | "quarterly"): Date {
     const now = new Date();
-    if (billingPeriod === 'yearly') {
+    if (billingPeriod === "yearly") {
       // Add 1 year
       return new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
     } else {
@@ -98,11 +105,11 @@ class LicenseKeyService {
     licenseId: string,
     userId: string | null,
     flutterwaveTransactionId: string,
-    billingPeriod: 'yearly' | 'quarterly'
+    billingPeriod: "yearly" | "quarterly"
   ) {
     // Generate unique license key
     let licenseKey = this.generateLicenseKey();
-    
+
     // Ensure uniqueness (check if key already exists)
     let existingLicense = await Licence.findOne({ licenceKey: licenseKey });
     let attempts = 0;
@@ -113,7 +120,9 @@ class LicenseKeyService {
     }
 
     if (existingLicense) {
-      throw new Error('Failed to generate unique license key after multiple attempts');
+      throw new Error(
+        "Failed to generate unique license key after multiple attempts"
+      );
     }
 
     const expiresAt = this.calculateExpirationDate(billingPeriod);
@@ -138,6 +147,19 @@ class LicenseKeyService {
     return license;
   }
 
+  public async activateLicenceKey(licenceKey: string, ownerId: Types.ObjectId) {
+    const licence = await Licence.findOneAndUpdate(
+      {
+        licenceKey,
+        activated: false,
+        userId: null, // Only update if userId is null (not already activated)
+      },
+      { activated: true, userId: ownerId },
+      { new: true }
+    );
+
+    return licence;
+  }
   /**
    * Find license by ID
    */
@@ -151,7 +173,13 @@ class LicenseKeyService {
   public async findLicenseByTransactionId(transactionId: string) {
     return await Licence.findOne({ flutterwaveTransactionId: transactionId });
   }
+
+  /**
+   * Find license by license key string
+   */
+  public async findLicenseByKey(licenceKey: string) {
+    return await Licence.findOne({ licenceKey });
+  }
 }
 
 export const licenseKeyService = new LicenseKeyService();
-

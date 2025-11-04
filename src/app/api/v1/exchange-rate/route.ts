@@ -250,20 +250,135 @@ async function handler(request: Request) {
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId);
         
+        // Check if it's a timeout error
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
           logger.error('Flutterwave API request timeout', {
             currency,
             timeout: FLUTTERWAVE_API_TIMEOUT,
             environment: process.env.VERCEL ? 'production' : 'development',
           });
+          
+          // Fallback: Try to get a cached rate even if expired (better than nothing)
+          const expiredCache = rateCache.get(currency);
+          if (expiredCache) {
+            logger.warn('Using expired cache due to Flutterwave timeout', {
+              currency,
+              rate: expiredCache.rate,
+              age: Date.now() - expiredCache.timestamp,
+            });
+            return utils.customResponse({
+              status: 200,
+              message: MessageResponse.Success,
+              description: "Exchange rate retrieved from cache (may be slightly outdated due to service timeout)",
+              data: {
+                currency: currency,
+                rate: expiredCache.rate,
+                from: 'USD',
+                to: currency,
+                source: 'cache-expired',
+                warning: 'Rate may be outdated',
+              },
+            });
+          }
+          
+          // Last resort: Return a reasonable estimate based on common rates
+          // This is better than failing completely
+          const estimatedRates: Record<string, number> = {
+            'NGN': 1500,  // Approximate NGN rate
+            'GHS': 12,    // Approximate GHS rate
+            'KES': 130,   // Approximate KES rate
+            'ZAR': 18,    // Approximate ZAR rate
+            'EGP': 30,    // Approximate EGP rate
+            'UGX': 3700,  // Approximate UGX rate
+            'TZS': 2300,  // Approximate TZS rate
+            'RWF': 1200,  // Approximate RWF rate
+            'XOF': 600,   // Approximate XOF rate
+            'XAF': 600,   // Approximate XAF rate
+            'GBP': 0.8,   // Approximate GBP rate
+            'EUR': 0.92,  // Approximate EUR rate
+          };
+          
+          const estimatedRate = estimatedRates[currency];
+          if (estimatedRate) {
+            logger.warn('Using estimated rate due to Flutterwave timeout', {
+              currency,
+              estimatedRate,
+            });
+            return utils.customResponse({
+              status: 200,
+              message: MessageResponse.Success,
+              description: "Exchange rate estimated (Flutterwave service timeout - rate may not be accurate)",
+              data: {
+                currency: currency,
+                rate: estimatedRate,
+                from: 'USD',
+                to: currency,
+                source: 'estimated',
+                warning: 'This is an estimated rate. Please verify with Flutterwave for accurate pricing.',
+              },
+            });
+          }
+          
+          // Final fallback: Return timeout error
           return utils.customResponse({
             status: 504,
             message: MessageResponse.Error,
-            description: "Exchange rate service temporarily unavailable. Please try again in a moment.",
+            description: "Exchange rate service timed out. Please check your network connection and try again.",
             data: null,
           });
         }
         
+        // Check if it's a network error (connection refused, DNS error, etc.)
+        const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown error';
+        const isNetworkError = 
+          errorMessage.includes('fetch failed') ||
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('network') ||
+          errorMessage.includes('ENOTFOUND') ||
+          errorMessage.includes('ECONNREFUSED') ||
+          errorMessage.includes('ETIMEDOUT') ||
+          errorMessage.includes('ECONNRESET');
+        
+        if (isNetworkError) {
+          logger.error('Network error fetching exchange rate from Flutterwave', {
+            currency,
+            error: errorMessage,
+            errorName: fetchError instanceof Error ? fetchError.name : 'Unknown',
+          });
+          
+          // Try expired cache as fallback
+          const expiredCache = rateCache.get(currency);
+          if (expiredCache) {
+            logger.warn('Using expired cache due to network error', {
+              currency,
+              rate: expiredCache.rate,
+              age: Date.now() - expiredCache.timestamp,
+            });
+            return utils.customResponse({
+              status: 200,
+              message: MessageResponse.Success,
+              description: "Exchange rate retrieved from cache (network error - rate may be outdated)",
+              data: {
+                currency: currency,
+                rate: expiredCache.rate,
+                from: 'USD',
+                to: currency,
+                source: 'cache-expired',
+                warning: 'Rate may be outdated due to network error',
+              },
+            });
+          }
+          
+          // Return network error
+          return utils.customResponse({
+            status: 503,
+            message: MessageResponse.Error,
+            description: "Network error: Unable to connect to exchange rate service. Please check your internet connection and try again.",
+            data: null,
+          });
+        }
+        
+        // Other errors - rethrow to be handled by outer catch
         throw fetchError;
       }
     } catch (error: unknown) {

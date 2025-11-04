@@ -3,7 +3,10 @@ import { IEditHotelServiceUserInput } from "@/lib/server/hotelService/interface"
 import { hotelServiceValidator } from "@/lib/server/hotelService/valdator";
 import GeneralMiddleware from "@/lib/server/middleware";
 import { roomController } from "@/lib/server/room/controller";
-import { IAddRoomUserInput, IEditRoomUserInput } from "@/lib/server/room/interface";
+import {
+  IAddRoomUserInput,
+  IEditRoomUserInput,
+} from "@/lib/server/room/interface";
 import { roomValidator } from "@/lib/server/room/validator";
 import { roomTypeController } from "@/lib/server/roomType/controller";
 import {
@@ -21,15 +24,24 @@ async function handler(request: Request) {
 
   await connectDB();
 
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
+
   const body: IEditHotelServiceUserInput = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
   if (!hotelExist.valid) return user.response!;
 
-  const validationResponse = hotelServiceValidator.editHotelService(body, request);
+  const validationResponse = hotelServiceValidator.editHotelService(
+    body,
+    request
+  );
   if (!validationResponse.valid) return validationResponse.response!;
 
   return await hotelServiceController.editHotelService(

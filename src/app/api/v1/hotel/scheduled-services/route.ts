@@ -11,13 +11,21 @@ async function handler(request: Request) {
 
   await connectDB();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const licenceKey = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+  if (!licenceKey.valid) return licenceKey.response!;
+
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);
   if (!hotelExist.valid) return user.response!;
 
-  return await scheduleServiceController.fetchAllScheduledServices({ hotelId: auth.hotelId });
+  return await scheduleServiceController.fetchAllScheduledServices({
+    hotelId: auth.hotelId,
+  });
 }
 
 export const GET = utils.withErrorHandling(handler);

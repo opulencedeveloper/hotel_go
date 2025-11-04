@@ -1,6 +1,9 @@
 import GeneralMiddleware from "@/lib/server/middleware";
 import { roomController } from "@/lib/server/room/controller";
-import { IAddRoomUserInput, IEditRoomUserInput } from "@/lib/server/room/interface";
+import {
+  IAddRoomUserInput,
+  IEditRoomUserInput,
+} from "@/lib/server/room/interface";
 import { roomValidator } from "@/lib/server/room/validator";
 import { roomTypeController } from "@/lib/server/roomType/controller";
 import {
@@ -20,7 +23,10 @@ async function handler(request: Request) {
 
   const body: IEditRoomUserInput = await request.json();
 
-  const user = await GeneralMiddleware.doesUserExist(auth.userId!, auth.userType!);
+  const user = await GeneralMiddleware.doesUserExist(
+    auth.userId!,
+    auth.userType!
+  );
   if (!user.valid) return user.response!;
 
   const hotelExist = await GeneralMiddleware.hotelExist(auth.hotelId!);

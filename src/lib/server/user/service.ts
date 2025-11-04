@@ -113,6 +113,19 @@ class UserService {
     return user;
   }
 
+  public async findUserByIdAndUpdateLicenseKeyId(
+    userId: Types.ObjectId,
+    licenseKeyId: Types.ObjectId
+  ) {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { licenseKeyId },
+      { new: true }
+    );
+
+    return user;
+  }
+
   // public async findUserByPassword(password: string) {
   //   const user = await User.findOne({ password });
 

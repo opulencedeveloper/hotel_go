@@ -103,6 +103,13 @@ class RoomService {
     return rooms;
   }
 
+  /**
+   * Count rooms by hotelId - optimized for counting without fetching documents
+   */
+  public async countRoomsByHotelId(hotelId: Types.ObjectId): Promise<number> {
+    return await Room.countDocuments({ hotelId });
+  }
+
   public async updateRoomStatusByIdAndHotelId(
     roomId: Types.ObjectId,
     hotelId: Types.ObjectId,

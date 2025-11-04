@@ -117,8 +117,8 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
       opacity: 0.1;
     }
     .hotel-icon {
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       margin: 0 auto 15px;
       position: relative;
       z-index: 1;
@@ -379,8 +379,8 @@ export const sendForgotPasswordEmail = async (input: IForgotPasswordEmail) => {
       opacity: 0.1;
     }
     .security-icon {
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       margin: 0 auto 15px;
       position: relative;
       z-index: 1;
@@ -631,8 +631,8 @@ export const sendLicenseKeyEmail = async (input: ILicenseKeyEmail) => {
       opacity: 0.1;
     }
     .success-icon {
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       margin: 0 auto 15px;
       position: relative;
       z-index: 1;
