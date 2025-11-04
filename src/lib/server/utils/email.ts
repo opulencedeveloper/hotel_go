@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-import { IForgotPasswordEmail, IOTP, ISendEmail, IVerificationEmail } from "./interface";
+import { IForgotPasswordEmail, IOTP, ISendEmail, IVerificationEmail, ILicenseKeyEmail } from "./interface";
 import { IForgotPassword } from "../auth/interface";
 
 const emailHost = process.env.EMAILHOST || "";
@@ -568,6 +568,279 @@ export const sendForgotPasswordEmail = async (input: IForgotPasswordEmail) => {
       <p>Professional Hotel Management Solutions</p>
       <div class="social-links">
         <a href="#">Support</a> | <a href="#">Security Center</a> | <a href="#">Privacy Policy</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+  });
+};
+
+export const sendLicenseKeyEmail = async (input: ILicenseKeyEmail) => {
+  const { email, firstName, licenseKey, planName, expiresAt, billingPeriod } = input;
+  
+  // Format expiration date
+  const expirationDate = new Date(expiresAt).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  
+  const billingPeriodText = billingPeriod === 'yearly' ? 'Yearly' : 'Quarterly';
+  const userName = firstName || email.split('@')[0];
+
+  return sendEmail({
+    receiverEmail: email,
+    subject: "HotelGo - Your License Key is Ready! 🎉",
+    emailTemplate: `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      margin: 0;
+      padding: 20px;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      padding: 30px 20px;
+      text-align: center;
+      position: relative;
+    }
+    .email-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="success" patternUnits="userSpaceOnUse" width="20" height="20"><circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23success)"/></svg>');
+      opacity: 0.1;
+    }
+    .success-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      border-radius: 12px;
+      margin: 0 auto 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      position: relative;
+      z-index: 1;
+    }
+    .email-header h1 {
+      color: #ffffff;
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
+    }
+    .email-header p {
+      color: #d1fae5;
+      margin: 5px 0 0;
+      font-size: 14px;
+      position: relative;
+      z-index: 1;
+    }
+    .email-content {
+      padding: 40px 30px;
+    }
+    .email-content h2 {
+      color: #1e293b;
+      font-size: 24px;
+      margin: 0 0 20px;
+      font-weight: 600;
+    }
+    .email-content p {
+      color: #64748b;
+      line-height: 1.6;
+      margin: 0 0 20px;
+      font-size: 16px;
+    }
+    .success-banner {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 25px 0;
+      text-align: center;
+      border: 2px solid #10b981;
+    }
+    .success-banner h3 {
+      color: #059669;
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .success-banner p {
+      color: #047857;
+      margin: 0;
+      font-size: 14px;
+    }
+    .license-section {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 12px;
+      padding: 25px;
+      margin: 25px 0;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+    }
+    .license-key {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 20px 30px;
+      border-radius: 8px;
+      letter-spacing: 2px;
+      font-family: 'Courier New', monospace;
+      margin: 15px 0;
+      display: inline-block;
+      box-shadow: 0 4px 12px rgba(30, 41, 59, 0.3);
+      word-break: break-all;
+    }
+    .plan-info {
+      background: #f8fafc;
+      border-left: 4px solid #10b981;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .plan-info p {
+      color: #64748b;
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .plan-info strong {
+      color: #1e293b;
+    }
+    .info-section {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .info-section p {
+      color: #92400e;
+      margin: 0;
+      font-size: 14px;
+    }
+    .warning-section {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .warning-section p {
+      color: #dc2626;
+      margin: 0;
+      font-size: 14px;
+    }
+    .email-footer {
+      background: #f8fafc;
+      text-align: center;
+      padding: 25px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .email-footer p {
+      color: #64748b;
+      font-size: 12px;
+      margin: 5px 0;
+    }
+    .social-links {
+      margin: 15px 0;
+    }
+    .social-links a {
+      display: inline-block;
+      margin: 0 10px;
+      color: #64748b;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 15px 35px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .cta-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <div class="success-icon">🎉</div>
+      <h1>Payment Successful!</h1>
+      <p>Your HotelGo License Key is Ready</p>
+    </div>
+    <div class="email-content">
+      <h2>Congratulations, ${userName}!</h2>
+      <p>Thank you for your purchase! Your payment has been successfully processed and your HotelGo subscription is now active.</p>
+      
+      <div class="success-banner">
+        <h3>✅ Payment Confirmed</h3>
+        <p>Your ${planName} plan (${billingPeriodText}) subscription is now active</p>
+      </div>
+
+      <div class="license-section">
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 15px; font-weight: 600;">Your License Key:</p>
+        <div class="license-key">${licenseKey}</div>
+        <p style="color: #64748b; font-size: 12px; margin-top: 15px;">Keep this key safe! You'll need it to activate your HotelGo account.</p>
+      </div>
+
+      <div class="plan-info">
+        <p><strong>Plan:</strong> ${planName} (${billingPeriodText})</p>
+        <p><strong>Expires:</strong> ${expirationDate}</p>
+        <p><strong>Billing Period:</strong> ${billingPeriodText}</p>
+      </div>
+
+      <div class="info-section">
+        <p><strong>Next Steps:</strong></p>
+        <p style="margin-top: 10px;">1. Log in to your HotelGo account (or create one if you haven't already)</p>
+        <p>2. Enter your license key when prompted</p>
+        <p>3. Start managing your hotel operations with ease!</p>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${baseUrl}/dashboard" class="cta-button">Go to Dashboard</a>
+      </div>
+
+      <div class="warning-section">
+        <p><strong>Important:</strong> Please save this license key in a secure location. You'll need it to activate and manage your subscription. If you lose this key, please contact our support team.</p>
+      </div>
+
+      <p>If you have any questions or need assistance, our support team is here to help. Simply reply to this email or visit our support center.</p>
+    </div>
+    <div class="email-footer">
+      <p>&copy; ${new Date().getFullYear()} HotelGo. All rights reserved.</p>
+      <p>Professional Hotel Management Solutions</p>
+      <div class="social-links">
+        <a href="#">Support</a> | <a href="#">Documentation</a> | <a href="#">Privacy Policy</a>
       </div>
     </div>
   </div>

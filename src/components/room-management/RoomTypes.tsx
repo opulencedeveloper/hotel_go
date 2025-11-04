@@ -483,13 +483,13 @@ export default function RoomTypes() {
                 View Details
               </button>
               <FeatureGuard permission="rooms.edit_type">
-                <button
-                  onClick={() => handleEditClick(type)}
-                  className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
-                >
-                  <Edit className="w-3 h-3 inline mr-1" />
-                  Edit
-                </button>
+              <button
+                onClick={() => handleEditClick(type)}
+                className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200"
+              >
+                <Edit className="w-3 h-3 inline mr-1" />
+                Edit
+              </button>
               </FeatureGuard>
               {/* <button 
                 onClick={() => handleDeleteClick(type)}

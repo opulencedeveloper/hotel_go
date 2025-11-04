@@ -60,22 +60,22 @@ export default function ServiceHeader({
         <div className="mt-8 lg:mt-0 lg:ml-8">
           <div className="flex flex-col gap-3">
             <FeatureGuard permission="services.create">
-              <button 
-                onClick={onAddService}
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Service</span>
-              </button>
+            <button 
+              onClick={onAddService}
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Service</span>
+            </button>
             </FeatureGuard>
             <FeatureGuard permission="services.schedule">
-              <button 
-                onClick={onSchedule}
-                className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
-              >
-                <Calendar className="w-4 h-4" />
-                <span>Schedule</span>
-              </button>
+            <button 
+              onClick={onSchedule}
+              className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 min-w-[160px]"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Schedule</span>
+            </button>
             </FeatureGuard>
             {/* <button 
               onClick={onSettings}

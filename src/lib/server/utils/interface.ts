@@ -59,3 +59,12 @@ export interface IForgotPasswordEmail {
   email: string;
   expiryTime: string;
 }
+
+export interface ILicenseKeyEmail {
+  email: string;
+  firstName?: string;
+  licenseKey: string;
+  planName: string;
+  expiresAt: Date;
+  billingPeriod: 'yearly' | 'quarterly';
+}

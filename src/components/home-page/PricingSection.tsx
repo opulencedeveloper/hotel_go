@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { useHttp } from '@/hooks/useHttp';
+import PaymentModal from './PaymentModal';
 
 interface PricingPlan {
+  _id?: string;
   name: string;
   price: { quarterly: number; yearly: number } | null;
   rooms: string;
@@ -45,6 +47,8 @@ export default function PricingSection({
   const [activeTab, setActiveTab] = useState<'yearly' | 'quarterly'>('yearly');
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(!initialPricingPlans.length);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{ id: string; name: string; billingPeriod: 'yearly' | 'quarterly' } | null>(null);
 
   // Debug: Log currency changes
   useEffect(() => {
@@ -75,6 +79,7 @@ export default function PricingSection({
 
   // Map API plan to PricingPlan interface
   const mapPlanData = (plan: any): PricingPlan => ({
+    _id: plan._id || plan.id,
     name: plan.name,
     price: plan.price ? {
       quarterly: plan.price.quarterly,
@@ -318,6 +323,9 @@ export default function PricingSection({
                 onClick={() => {
                   if (plan.name === 'Enterprise') {
                     alert('Contact us at sales@hotelgo.com for Enterprise pricing');
+                  } else if (plan._id && billingPeriod) {
+                    setSelectedPlan({ id: plan._id, name: plan.name, billingPeriod });
+                    setShowPaymentModal(true);
                   } else {
                     router.push('/register');
                   }
@@ -338,6 +346,21 @@ export default function PricingSection({
           ))}
           </motion.div>
         </AnimatePresence>
+
+        {/* Payment Modal */}
+        {selectedPlan && (
+          <PaymentModal
+            isOpen={showPaymentModal}
+            onClose={() => {
+              setShowPaymentModal(false);
+              setSelectedPlan(null);
+            }}
+            planId={selectedPlan.id}
+            planName={selectedPlan.name}
+            currency={userCurrency}
+            billingPeriod={selectedPlan.billingPeriod}
+          />
+        )}
       </div>
     </section>
   );

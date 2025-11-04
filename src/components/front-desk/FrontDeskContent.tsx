@@ -99,20 +99,20 @@ export default function FrontDeskContent({
               'text-green-600'
             )
           ) : (
-            <div className="space-y-3">
+          <div className="space-y-3">
               {filteredArrivals.map((arrival) => (
-                <GuestCard
-                  key={arrival._id}
-                  booking={arrival}
-                  type="arrival"
-                  onView={onView}
-                  onEdit={onEdit}
-                  onRoomAssignment={onRoomAssignment}
-                  onCheckIn={onCheckIn}
-                  onCancel={onCancel}
-                />
-              ))}
-            </div>
+              <GuestCard
+                key={arrival._id}
+                booking={arrival}
+                type="arrival"
+                onView={onView}
+                onEdit={onEdit}
+                onRoomAssignment={onRoomAssignment}
+                onCheckIn={onCheckIn}
+                onCancel={onCancel}
+              />
+            ))}
+          </div>
           )}
         </div>
       )}
@@ -132,24 +132,24 @@ export default function FrontDeskContent({
               'text-orange-600'
             )
           ) : (
-            <div className="space-y-3">
+          <div className="space-y-3">
               {filteredDepartures.map((departure) => {
-                const folio = getGuestFolio(departure._id);
-                return (
-                  <GuestCard
-                    key={departure._id}
-                    booking={departure}
-                    type="departure"
-                    folio={folio}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onPrintReceipt={() => onPrintReceipt('checkout', departure)}
-                    onCheckOut={onCheckOut}
-                    onCancel={onCancel}
-                  />
-                );
-              })}
-            </div>
+              const folio = getGuestFolio(departure._id);
+              return (
+                <GuestCard
+                  key={departure._id}
+                  booking={departure}
+                  type="departure"
+                  folio={folio}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onPrintReceipt={() => onPrintReceipt('checkout', departure)}
+                  onCheckOut={onCheckOut}
+                  onCancel={onCancel}
+                />
+              );
+            })}
+          </div>
           )}
         </div>
       )}
@@ -168,23 +168,23 @@ export default function FrontDeskContent({
               'text-blue-600'
             )
           ) : (
-            <div className="space-y-3">
+          <div className="space-y-3">
               {filteredInHouse.map((guest) => {
-                const folio = getGuestFolio(guest._id);
-                return (
-                  <GuestCard
-                    key={guest._id}
-                    booking={guest}
-                    type="inhouse"
-                    folio={folio}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onPrintReceipt={() => onPrintReceipt('checkin', guest)}
-                    onCancel={onCancel}
-                  />
-                );
-              })}
-            </div>
+              const folio = getGuestFolio(guest._id);
+              return (
+                <GuestCard
+                  key={guest._id}
+                  booking={guest}
+                  type="inhouse"
+                  folio={folio}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onPrintReceipt={() => onPrintReceipt('checkin', guest)}
+                  onCancel={onCancel}
+                />
+              );
+            })}
+          </div>
           )}
         </div>
       )}

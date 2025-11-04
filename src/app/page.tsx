@@ -202,6 +202,14 @@ async function fetchExchangeRate(currency: string): Promise<number> {
 
       console.log('📡 Flutterwave response status:', response.status);
 
+      // Check content type before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error('❌ Flutterwave API returned non-JSON response:', errorText.substring(0, 500));
+        throw new Error(`Flutterwave API returned ${contentType || 'unknown content type'}`);
+      }
+
       if (response.ok) {
         const data = await response.json();
         console.log('📊 Flutterwave response data:', JSON.stringify(data, null, 2));

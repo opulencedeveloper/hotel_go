@@ -2,6 +2,9 @@ import { cookies } from "next/headers";
 import { utils } from "@/lib/server/utils";
 import { MessageResponse } from "@/lib/server/utils/enum";
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 async function handler(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
