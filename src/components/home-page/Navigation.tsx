@@ -52,7 +52,14 @@ export default function Navigation() {
           <div className="hidden md:flex items-center space-x-8">
             <motion.a 
               href="#features" 
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                const element = document.getElementById('features');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="text-gray-700 hover:text-primary-600 font-medium cursor-pointer"
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
@@ -60,7 +67,14 @@ export default function Navigation() {
             </motion.a>
             <motion.a 
               href="#pricing" 
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                const element = document.getElementById('pricing');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="text-gray-700 hover:text-primary-600 font-medium cursor-pointer"
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
@@ -68,7 +82,14 @@ export default function Navigation() {
             </motion.a>
             <motion.a 
               href="#testimonials" 
-              className="text-gray-700 hover:text-primary-600 font-medium"
+              onClick={(e) => {
+                e.preventDefault();
+                const element = document.getElementById('testimonials');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="text-gray-700 hover:text-primary-600 font-medium cursor-pointer"
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
@@ -76,9 +97,9 @@ export default function Navigation() {
             </motion.a>
             <motion.button 
               onClick={() => router.push('/login')}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow-lg font-medium"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
+              className="px-6 py-2 text-gray-700 bg-transparent border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 font-medium"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
               Sign In

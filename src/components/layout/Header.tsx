@@ -59,6 +59,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { countries, currencyOptions } from "@/resources/auth";
 import { toast } from "sonner";
 import { useHttp } from "@/hooks/useHttp";
+import { useRouter } from "next/navigation";
+import { removeAuthSessionInfo } from "@/utils/auth";
+import ConfirmationDialog from "@/components/common/ConfirmationDialog";
 import {
   RoomSliceParams,
   RoomTypeSliceParams,
@@ -119,6 +122,8 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const [stayType, setStayType] = useState<StayType>(StayType.RESERVED);
   const [showWalkInModal, setShowWalkInModal] = useState(false);
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const router = useRouter();
 
   // Refs for date and time inputs
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -157,6 +162,13 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     isLoading: isSwitchingHotel,
     sendHttpRequest: switchHotelRequest,
     error: switchHotelError,
+  } = useHttp();
+
+  // HTTP hook for logout
+  const {
+    isLoading: isLoggingOut,
+    sendHttpRequest: logoutRequest,
+    error: logoutError,
   } = useHttp();
 
   // Helper function to validate capacity
@@ -684,6 +696,25 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     });
   };
 
+  // Handler for logout
+  const handleLogout = () => {
+    logoutRequest({
+      requestConfig: {
+        url: "/auth/logout",
+        method: "POST",
+        successMessage: "Logged out successfully!",
+      },
+      successRes: (res) => {
+        // Clear client-side session data
+        removeAuthSessionInfo();
+        // Close the modal
+        setShowLogoutModal(false);
+        // Redirect to login page
+        router.replace("/login");
+      },
+    });
+  };
+
   // Property form validation
   const validatePropertyField = (
     fieldName: string,
@@ -977,7 +1008,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
                 )}
               </div>
               <button
-                // onClick={logout}
+                onClick={() => setShowLogoutModal(true)}
                 className="p-2 text-secondary-400 hover:text-secondary-600 flex-shrink-0"
                 title="Logout"
               >
@@ -3323,6 +3354,19 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
           </div>
         </div>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <ConfirmationDialog
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to logout? You will need to sign in again to access your account."
+        confirmText="Logout"
+        cancelText="Cancel"
+        isLoading={isLoggingOut}
+        variant="warning"
+      />
     </header>
   );
 }

@@ -7,17 +7,33 @@ import PricingSection from './PricingSection';
 import TestimonialsSection from './TestimonialsSection';
 import CTASection from './CTASection';
 import Footer from './Footer';
-import { useCurrency } from './useCurrency';
-import { pricingPlans, testimonials } from './pricingData';
+import { testimonials } from './pricingData';
 
-export default function HomePageBody() {
-  const {
-    userCurrency,
-    exchangeRate,
-    isLoadingRate,
-    formatPrice,
-    convertPrice,
-  } = useCurrency();
+interface HomePageBodyProps {
+  initialPricingPlans?: any[];
+  serverCurrency?: string;
+  serverExchangeRate?: number;
+}
+
+export default function HomePageBody({ 
+  initialPricingPlans = [],
+  serverCurrency = 'USD',
+  serverExchangeRate = 1,
+}: HomePageBodyProps) {
+  // Format price with currency (server-provided currency)
+  const formatPrice = (amount: number, currency: string = serverCurrency): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Convert function (no-op since prices are already converted on server)
+  const convertPrice = (amount: number): number => {
+    return amount; // Prices are already converted on server
+  };
 
   return (
     <>
@@ -26,10 +42,10 @@ export default function HomePageBody() {
         <HeroSection />
         <FeaturesSection />
         <PricingSection
-          pricingPlans={pricingPlans}
-          userCurrency={userCurrency}
-          exchangeRate={exchangeRate}
-          isLoadingRate={isLoadingRate}
+          initialPricingPlans={initialPricingPlans}
+          userCurrency={serverCurrency}
+          exchangeRate={serverExchangeRate}
+          isLoadingRate={false}
           formatPrice={formatPrice}
           convertPrice={convertPrice}
         />

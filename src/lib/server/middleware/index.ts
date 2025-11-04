@@ -219,7 +219,7 @@ export default class GeneralMiddleware {
     if (userRole === UserType.Staff) {
       user = await staffService.findStaffById(userId!.toString());
     }
-console.log("user-user-user", user)
+    
     if (!user) {
       return {
         valid: false,

@@ -19,6 +19,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                  // Send timezone to server to detect country
+                  fetch('/api/detect-location?timezone=' + encodeURIComponent(timezone), {
+                    method: 'GET',
+                    credentials: 'include'
+                  }).catch(function() {});
+                } catch (e) {
+                  console.warn('Timezone detection failed:', e);
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased">
         <ErrorBoundary>
           <ReduxProvider>
