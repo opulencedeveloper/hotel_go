@@ -87,24 +87,23 @@ async function fetchExchangeRate(currency: string): Promise<number> {
 
   // Try Flutterwave first (if API key is available)
   if (flutterwaveKey) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch('https://api.flutterwave.com/v3/rates', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${flutterwaveKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'USD',
-          to: currency,
-          amount: 1,
-        }),
-        signal: controller.signal,
-        next: { revalidate: 0 }, // Don't cache
-      });
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            
+            // Flutterwave uses GET request to transfers/rates endpoint with query parameters
+            const response = await fetch(
+              `https://api.flutterwave.com/v3/transfers/rates?amount=1&destination_currency=${currency}&source_currency=USD`,
+              {
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${flutterwaveKey}`,
+                  'Content-Type': 'application/json',
+                },
+                signal: controller.signal,
+                next: { revalidate: 0 }, // Don't cache
+              }
+            );
 
       clearTimeout(timeoutId);
 

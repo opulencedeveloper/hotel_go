@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useHttp } from '@/hooks/useHttp';
@@ -26,6 +26,14 @@ export default function PaymentModal({
   const [emailError, setEmailError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const { isLoading, sendHttpRequest, error } = useHttp();
+
+  // Reset isProcessing when loading completes and there's an error
+  // Success case is handled in successRes callback
+  useEffect(() => {
+    if (!isLoading && isProcessing && error) {
+      setIsProcessing(false);
+    }
+  }, [isLoading, error, isProcessing]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

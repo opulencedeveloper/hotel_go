@@ -39,18 +39,17 @@ async function handler(request: Request) {
     // Try Flutterwave first (if API key is available)
     if (flutterwaveKey) {
       try {
-        const response = await fetch('https://api.flutterwave.com/v3/rates', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${flutterwaveKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'USD',
-            to: currency,
-            amount: 1,
-          }),
-        });
+        // Flutterwave uses GET request to transfers/rates endpoint with query parameters
+        const response = await fetch(
+          `https://api.flutterwave.com/v3/transfers/rates?amount=1&destination_currency=${currency}&source_currency=USD`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${flutterwaveKey}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();

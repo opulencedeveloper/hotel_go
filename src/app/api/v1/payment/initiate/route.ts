@@ -107,19 +107,18 @@ async function handler(request: Request) {
         try {
           console.log(`🔄 Converting USD ${usdPrice} to ${currency}...`);
           
-          // Fetch exchange rate - request conversion for the full amount
-          const rateResponse = await fetch('https://api.flutterwave.com/v3/rates', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${flutterwaveKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'USD',
-              to: currency,
-              amount: usdPrice, // Pass the full USD amount to convert
-            }),
-          });
+          // Fetch exchange rate using GET request to transfers/rates endpoint
+          // Flutterwave uses GET with query parameters, not POST
+          const rateResponse = await fetch(
+            `https://api.flutterwave.com/v3/transfers/rates?amount=${usdPrice}&destination_currency=${currency}&source_currency=USD`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${flutterwaveKey}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
 
           // Check content type before parsing JSON
           const contentType = rateResponse.headers.get('content-type');
