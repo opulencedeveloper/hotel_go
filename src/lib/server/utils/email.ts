@@ -9,7 +9,8 @@ const emailSenderPassword = process.env.EMAILSENDERPASSWORD;
 const emailFrom = process.env.EMAILFROM;
 const adminEmail = process.env.ADMIN_EMAIL || "";
 const companyName = process.env.COMPANY_NAME || "";
-  const baseUrl = process.env.FRONTEND_URL || "";
+const baseUrl = process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+const logoUrl = `${baseUrl}/logo.png`;
 
 
 
@@ -116,18 +117,17 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
       opacity: 0.1;
     }
     .hotel-icon {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      border-radius: 12px;
+      width: 80px;
+      height: 80px;
       margin: 0 auto 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: white;
       position: relative;
       z-index: 1;
+    }
+    .hotel-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
     }
     .email-header h1 {
       color: #ffffff;
@@ -279,7 +279,9 @@ export const sendEmailVerificationMail = async (input: IVerificationEmail) => {
 <body>
   <div class="email-container">
     <div class="email-header">
-      <div class="hotel-icon">🏨</div>
+      <div class="hotel-icon">
+        <img src="${logoUrl}" alt="HotelGo Logo" />
+      </div>
       <h1>HotelGo</h1>
       <p>Professional Hotel Management System</p>
     </div>
@@ -377,18 +379,17 @@ export const sendForgotPasswordEmail = async (input: IForgotPasswordEmail) => {
       opacity: 0.1;
     }
     .security-icon {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      border-radius: 12px;
+      width: 80px;
+      height: 80px;
       margin: 0 auto 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: white;
       position: relative;
       z-index: 1;
+    }
+    .security-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
     }
     .email-header h1 {
       color: #ffffff;
@@ -527,7 +528,9 @@ export const sendForgotPasswordEmail = async (input: IForgotPasswordEmail) => {
 <body>
   <div class="email-container">
     <div class="email-header">
-      <div class="security-icon">🔐</div>
+      <div class="security-icon">
+        <img src="${logoUrl}" alt="HotelGo Logo" />
+      </div>
       <h1>HotelGo</h1>
       <p>Password Reset Request</p>
     </div>
@@ -628,18 +631,17 @@ export const sendLicenseKeyEmail = async (input: ILicenseKeyEmail) => {
       opacity: 0.1;
     }
     .success-icon {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-      border-radius: 12px;
+      width: 80px;
+      height: 80px;
       margin: 0 auto 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: white;
       position: relative;
       z-index: 1;
+    }
+    .success-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
     }
     .email-header h1 {
       color: #ffffff;
@@ -794,7 +796,9 @@ export const sendLicenseKeyEmail = async (input: ILicenseKeyEmail) => {
 <body>
   <div class="email-container">
     <div class="email-header">
-      <div class="success-icon">🎉</div>
+      <div class="success-icon">
+        <img src="${logoUrl}" alt="HotelGo Logo" />
+      </div>
       <h1>Payment Successful!</h1>
       <p>Your HotelGo License Key is Ready</p>
     </div>

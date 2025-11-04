@@ -219,7 +219,7 @@ class AuthController {
 
     await authService.saveOtp({ email, otp });
 
-    sendEmailVerificationMail({
+   await sendEmailVerificationMail({
       email,
       otp,
       firstName,
@@ -262,7 +262,7 @@ class AuthController {
 
     await authService.saveOtp({ email, otp });
 
-    sendForgotPasswordEmail({ email, otp, firstName, expiryTime: "2 minutes" });
+   await sendForgotPasswordEmail({ email, otp, firstName, expiryTime: "2 minutes" });
 
     return utils.customResponse({
       status: 200,
@@ -299,7 +299,7 @@ class AuthController {
 
       await authService.saveOtp({ email, otp });
 
-      sendEmailVerificationMail({
+      await sendEmailVerificationMail({
         email,
         otp,
         firstName,
