@@ -77,6 +77,7 @@ export async function apiAuthMiddleware(request: NextRequest) {
     '/api/v1/auth/login',
    // "/api/v1/admin/create",
    "/api/v1/payment/initiate",
+   "/api/v1/payment/verify",
    "/api/v1/payment/webhook",
    "/api/v1/admin/create-plan",
    "/api/v1/plans",
