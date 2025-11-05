@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import logoImage from '@/assets/logo/logo.jpeg';
+import logoImage from '@/assets/logo/logo.png';
 
 export default function Navigation() {
   const router = useRouter();
