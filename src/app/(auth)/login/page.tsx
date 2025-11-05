@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Building2,
   Eye,
@@ -19,6 +20,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useHttp } from "@/hooks/useHttp";
 import { tokenStorage } from "@/lib/auth-storage";
 import { toast } from "sonner";
+import logoImage from "@/assets/logo/app-icon.png";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -82,8 +84,14 @@ export default function LoginPage() {
           <div className="text-white space-y-8 hidden lg:block">
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl">
-                  <Hotel className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-2xl p-2">
+                  <Image 
+                    src={logoImage} 
+                    alt="HotelGO Logo" 
+                    width={48} 
+                    height={48} 
+                    className="object-contain"
+                  />
                 </div>
                 <div>
                   <h1 className="text-4xl font-bold">HotelGo</h1>
@@ -175,8 +183,14 @@ export default function LoginPage() {
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
               {/* Mobile Logo */}
               <div className="flex items-center justify-center mb-8 lg:hidden">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Hotel className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg p-2">
+                  <Image 
+                    src={logoImage} 
+                    alt="HotelGO Logo" 
+                    width={32} 
+                    height={32} 
+                    className="object-contain"
+                  />
                 </div>
                 <span className="ml-3 text-2xl font-bold text-white">
                   HotelGo

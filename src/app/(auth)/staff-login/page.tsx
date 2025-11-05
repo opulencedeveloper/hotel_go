@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Eye,
   EyeOff,
@@ -15,6 +16,7 @@ import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useHttp } from "@/hooks/useHttp";
 import { toast } from "sonner";
 import { UserRole } from "@/utils/enum";
+import logoImage from "@/assets/logo/app-icon.png";
 
 export default function StaffLoginPage() {
   const [email, setEmail] = useState("");
@@ -126,8 +128,14 @@ export default function StaffLoginPage() {
           <div className="bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 p-8">
             {/* Mobile Logo */}
             <div className="flex items-center justify-center mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Users className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg p-2">
+                <Image 
+                  src={logoImage} 
+                  alt="HotelGO Logo" 
+                  width={32} 
+                  height={32} 
+                  className="object-contain"
+                />
               </div>
               <span className="ml-3 text-2xl font-bold text-white">
                 Staff Login

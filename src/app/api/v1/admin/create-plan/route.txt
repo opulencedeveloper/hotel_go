@@ -6,15 +6,15 @@ import { utils } from "@/lib/server/utils";
 import { connectDB } from "@/lib/server/utils/db";
 
 async function handler(request: Request) {
-  const auth = utils.verifyAuth();
-  if (!auth.valid) return auth.response!;
+//   const auth = utils.verifyAuth();
+//   if (!auth.valid) return auth.response!;
 
   await connectDB();
 
   const body: ICreatePlan = await request.json();
 
-  const user = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
-  if (!user.valid) return user.response!;
+//   const user = await GeneralMiddleware.hasLicenseKey(auth.ownerId);
+//   if (!user.valid) return user.response!;
 
   const validationResponse = planValidator.createPlan(body);
   if (!validationResponse.valid) return validationResponse.response!;

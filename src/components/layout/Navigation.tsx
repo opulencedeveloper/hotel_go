@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { getNavigationItems } from "@/lib/auth";
+import logoImage from "@/assets/logo/app-icon.png";
 
 import {
   Home,
@@ -90,7 +92,18 @@ export default function Navigation({ sidebarOpen, setSidebarOpen }: NavigationPr
         />
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col">
           <div className="flex items-center justify-between h-16 px-4 border-b border-secondary-200 flex-shrink-0">
-            <h1 className="text-xl font-bold text-primary-600">HotelGo</h1>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Image 
+                  src={logoImage} 
+                  alt="HotelGO Logo" 
+                  width={32} 
+                  height={32} 
+                  className="object-contain"
+                />
+              </div>
+              <h1 className="text-xl font-bold text-primary-600">HotelGo</h1>
+            </div>
             <button
               onClick={() => setSidebarOpen(false)}
               className="p-2 rounded-md text-secondary-400 hover:text-secondary-600"
@@ -126,7 +139,18 @@ export default function Navigation({ sidebarOpen, setSidebarOpen }: NavigationPr
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col h-full bg-white border-r border-secondary-200">
           <div className="flex items-center h-16 px-4 border-b border-secondary-200 flex-shrink-0">
-            <h1 className="text-xl font-bold text-primary-600">HotelGo</h1>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Image 
+                  src={logoImage} 
+                  alt="HotelGO Logo" 
+                  width={32} 
+                  height={32} 
+                  className="object-contain"
+                />
+              </div>
+              <h1 className="text-xl font-bold text-primary-600">HotelGo</h1>
+            </div>
           </div>
           <nav className="flex-1 overflow-y-auto pb-4">
             {navItems.map((item) => {

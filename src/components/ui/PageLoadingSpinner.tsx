@@ -1,4 +1,6 @@
 import { Building2, Bed, Users, DollarSign } from "lucide-react";
+import Image from "next/image";
+import logoImage from "@/assets/logo/app-icon.png";
 
 export default function PageLoadingSpinner() {
   return (
@@ -6,8 +8,14 @@ export default function PageLoadingSpinner() {
       <div className="text-center">
         {/* Hotel-themed animated logo */}
         <div className="relative mb-8">
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse">
-            <Building2 className="w-12 h-12 text-white" />
+          <div className="w-24 h-24 mx-auto bg-white rounded-2xl flex items-center justify-center shadow-2xl animate-pulse p-3">
+            <Image 
+              src={logoImage} 
+              alt="HotelGO Logo" 
+              width={72} 
+              height={72} 
+              className="object-contain"
+            />
           </div>
           
           {/* Floating hotel icons */}

@@ -79,18 +79,15 @@ export default function CTASection() {
             <span>Get Started</span>
             <ArrowRight className="w-5 h-5" />
           </motion.button>
-          <motion.button 
-            onClick={() => {
-              const featuresSection = document.getElementById('features');
-              featuresSection?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl font-semibold text-lg border border-white/30 shadow-lg"
+          <motion.a 
+            href="mailto:support@hotelgo.pro?subject=Request Demo"
+            className="px-8 py-4 bg-white/10 backdrop-blur-md text-white rounded-2xl font-semibold text-lg border border-white/30 shadow-lg inline-flex items-center justify-center"
             whileHover={{ scale: 1.05, y: -2, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
             whileTap={{ scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400 }}
           >
-            Learn More
-          </motion.button>
+            Request Demo
+          </motion.a>
         </motion.div>
       </motion.div>
     </section>

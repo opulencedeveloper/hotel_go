@@ -75,7 +75,7 @@ export async function apiAuthMiddleware(request: NextRequest) {
   // Skip auth for public API routes
   const publicApiRoutes = [
     '/api/v1/auth/login',
-   // "/api/v1/admin/create",
+    "/api/v1/admin/create",
    '/api/v1/exchange-rate',
    "/api/v1/payment/initiate",
    "/api/v1/payment/verify",

@@ -10,7 +10,7 @@ export default function HeroSection() {
   const opacity = useTransform(scrollYProgress, [0, 0.3], [1, 0]);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20 z-0">
       {/* Background Image */}
       <motion.div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -40,7 +40,7 @@ export default function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Sparkles className="w-4 h-4 text-white" />
-            <span className="text-sm font-medium text-white">Trusted by 500+ hotels worldwide</span>
+            <span className="text-sm font-medium text-white">Trusted by "50,000" hotels.</span>
           </motion.div>
           
           <motion.h1 

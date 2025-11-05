@@ -2,9 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Loader2, CheckCircle2, AlertCircle, ChevronDown, User } from 'lucide-react';
+import { X, Loader2, CheckCircle2, AlertCircle, ChevronDown, User, Mail } from 'lucide-react';
 import { useHttp } from '@/hooks/useHttp';
 import { FLUTTERWAVE_SUPPORTED_CURRENCIES } from '@/lib/utils/flutterwave-currencies';
+import Image from 'next/image';
+
+import LogoIcon from "@/assets/logo/app-icon.png";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -411,6 +414,8 @@ export default function PaymentModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Stop any event bubbling
+    
     setEmailError('');
 
     if (!name.trim()) {
@@ -430,8 +435,17 @@ export default function PaymentModal({
 
     setIsProcessing(true);
 
+    // Guard to prevent double execution
+    let hasHandledPayment = false;
+
     sendHttpRequest({
       successRes: (res: { data?: { data?: { paymentLink?: string } } }) => {
+        // Prevent double execution
+        if (hasHandledPayment) {
+          return;
+        }
+        hasHandledPayment = true;
+
         const paymentLink = res?.data?.data?.paymentLink;
         
         if (paymentLink && typeof paymentLink === 'string' && paymentLink.trim().length > 0) {
@@ -439,21 +453,14 @@ export default function PaymentModal({
           try {
             new URL(paymentLink);
             
-            // Try to open in new tab
-            const newWindow = window.open(paymentLink, '_blank', 'noopener,noreferrer');
+            // Open payment link in current tab
+            setIsProcessing(false);
+            onClose();
+            setName('');
+            setEmail('');
             
-            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-              // Browser blocked popup, redirect in same tab
-              window.location.href = paymentLink;
-            } else {
-              // Successfully opened in new tab, close modal after a delay
-              setTimeout(() => {
-                onClose();
-                setName('');
-                setEmail('');
-                setIsProcessing(false);
-              }, 1000);
-            }
+            // Redirect current tab to payment link
+            window.location.href = paymentLink;
           } catch (urlError) {
             setEmailError('Invalid payment link received. Please contact support.');
             setIsProcessing(false);
@@ -526,9 +533,15 @@ export default function PaymentModal({
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.1, type: 'spring' }}
-              className="w-16 h-16 bg-gradient-to-r from-primary-600 to-primary-800 rounded-full flex items-center justify-center mx-auto mb-4"
+              className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
             >
-              <Mail className="w-8 h-8 text-white" />
+              <Image
+                src={LogoIcon}
+                alt="HotelGo Logo"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
             </motion.div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Purchase License Key
@@ -586,7 +599,7 @@ export default function PaymentModal({
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="space-y-3 sm:space-y-4">
             {/* Name Input */}
             <div>
               <label
@@ -749,7 +762,8 @@ export default function PaymentModal({
 
             {/* Submit Button */}
             <motion.button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={isLoading || isProcessing || !name.trim() || !email.trim() || isLoadingRate}
               whileHover={{ scale: isLoading || isProcessing || isLoadingRate ? 1 : 1.02 }}
               whileTap={{ scale: isLoading || isProcessing || isLoadingRate ? 1 : 0.98 }}

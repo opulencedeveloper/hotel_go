@@ -46,7 +46,9 @@ export const sendEmail = async (input: ISendEmail) => {
   const { receiverEmail, subject, emailTemplate } = input;
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: emailHost || "hotelgo.pro",
+    port: 465,
+    secure: true, // true for 465, false for other ports
     auth: {
       user: emailSender,
       pass: emailSenderPassword,

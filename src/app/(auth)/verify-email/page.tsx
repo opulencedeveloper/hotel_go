@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Building2, Mail, CheckCircle, AlertCircle, RefreshCw, Hotel, Shield, Clock, Users, Star, ArrowRight } from 'lucide-react';
 import { useHttp } from '@/hooks/useHttp';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { toast } from 'sonner';
+import logoImage from '@/assets/logo/app-icon.png';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -187,8 +189,14 @@ export default function VerifyEmailPage() {
           <div className="text-white space-y-8 hidden lg:block">
             <div className="space-y-6">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-2xl">
-                  <Hotel className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-2xl p-2">
+                  <Image 
+                    src={logoImage} 
+                    alt="HotelGO Logo" 
+                    width={48} 
+                    height={48} 
+                    className="object-contain"
+                  />
                 </div>
                 <div>
                   <h1 className="text-4xl font-bold">HotelGo</h1>

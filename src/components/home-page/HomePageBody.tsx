@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Navigation from './Navigation';
 import HeroSection from './HeroSection';
 import FeaturesSection from './FeaturesSection';
@@ -16,6 +17,55 @@ interface HomePageBodyProps {
 export default function HomePageBody({ 
   initialPricingPlans = [],
 }: HomePageBodyProps) {
+  // Handle scrolling to section when navigating from other pages
+  useEffect(() => {
+    // Check sessionStorage for section to scroll to
+    const sectionId = sessionStorage.getItem('scrollToSection');
+    const hadSectionId = !!sectionId;
+    
+    if (sectionId) {
+      // Clear sessionStorage
+      sessionStorage.removeItem('scrollToSection');
+      
+      // Wait for page to fully render, then scroll
+      const scrollToSection = () => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          // Small delay to ensure page is rendered
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 100);
+          return true;
+        }
+        return false;
+      };
+
+      // Try scrolling immediately
+      if (!scrollToSection()) {
+        // If element not found, try again after a short delay
+        const checkInterval = setInterval(() => {
+          if (scrollToSection()) {
+            clearInterval(checkInterval);
+          }
+        }, 100);
+
+        // Clear interval after 2 seconds
+        setTimeout(() => clearInterval(checkInterval), 2000);
+      }
+    }
+
+    // Also check URL hash if no sectionId was in sessionStorage
+    const hash = window.location.hash.replace('#', '');
+    if (hash && !hadSectionId) {
+      const element = document.getElementById(hash);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+  }, []);
+
   return (
     <>
       <div className="min-h-screen bg-white">
